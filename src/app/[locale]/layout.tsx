@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { env } from "@/env/server";
 import { isLocale, locales } from "@/i18n/locales";
 import { buildLocalizedAlternates } from "@/lib/metadata";
+import { ThemeScript } from "@/components/theme-script";
 import "@/styles/globals.css";
 
 type LocaleLayoutProps = {
@@ -32,8 +33,11 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   }
 
   return (
-    <html lang={locale}>
-      <body>{children}</body>
+    <html lang={locale} suppressHydrationWarning>
+      <body>
+        <ThemeScript />
+        {children}
+      </body>
     </html>
   );
 }

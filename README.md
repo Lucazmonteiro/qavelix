@@ -1,6 +1,6 @@
 # QAVELIX
 
-QAVELIX Phase 1 is the project foundation: a secure, localized, deployment-ready Next.js application.
+QAVELIX is being built in phases. Phase 1 created the secure technical foundation, and Phase 2 adds the responsive design system, landing page, navigation, footer, language selector, theme controls, and accessibility basics.
 
 ## Included in Phase 1
 
@@ -14,7 +14,17 @@ QAVELIX Phase 1 is the project foundation: a secure, localized, deployment-ready
 - Vercel-ready configuration
 - Git-ready ignore rules and project structure
 
-## Explicitly excluded from Phase 1
+## Included in Phase 2
+
+- Complete responsive landing page
+- Reusable design-system components
+- Semantic color tokens for light and dark themes
+- Persistent dark/light/system theme selector
+- Responsive header navigation and footer navigation
+- Localized language selector for `en`, `pt-BR`, and `es`
+- Accessibility basics: semantic landmarks, skip link, keyboard focus states, labels, contrast-aware tokens, and reduced-motion handling
+
+## Explicitly excluded from current phases
 
 - FFmpeg or media compression logic
 - Payments

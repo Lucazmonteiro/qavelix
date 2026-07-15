@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { AppShell } from "@/components/app-shell";
 import { FoundationCard } from "@/components/foundation-card";
+import { SectionHeading } from "@/components/section-heading";
 import { getDictionary } from "@/i18n/dictionaries";
-import { isLocale, localeLabels, locales } from "@/i18n/locales";
+import { isLocale } from "@/i18n/locales";
 import { buildLocalizedAlternates } from "@/lib/metadata";
 
 type HomePageProps = {
@@ -36,59 +38,111 @@ export default async function HomePage({ params }: HomePageProps) {
   }
 
   const dictionary = getDictionary(locale);
+  const design = dictionary.home.sections.designSystem;
+  const accessibility = dictionary.home.sections.accessibility;
+  const readiness = dictionary.home.sections.readiness;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-10 sm:px-8 lg:px-10">
-      <header className="flex items-center justify-between gap-4">
-        <a className="text-xl font-bold tracking-normal" href={`/${locale}`}>
-          QAVELIX
-        </a>
-        <nav aria-label="Language selector" className="flex flex-wrap gap-2">
-          {locales.map((availableLocale) => (
-            <a
-              aria-current={availableLocale === locale ? "page" : undefined}
-              className="border-border bg-surface rounded-md border px-3 py-2 text-sm font-medium transition hover:border-accent"
-              href={`/${availableLocale}`}
-              key={availableLocale}
-            >
-              {localeLabels[availableLocale]}
-            </a>
+    <AppShell dictionary={dictionary} locale={locale}>
+      <main className="page-shell" id="main-content">
+        <section className="hero-section" id="product">
+          <div className="hero-section__content">
+            <p className="eyebrow">{dictionary.home.eyebrow}</p>
+            <h1>{dictionary.home.title}</h1>
+            <p className="hero-section__description">{dictionary.home.description}</p>
+
+            <div className="hero-section__actions">
+              <a className="button button--primary" href={`/${locale}#design-system`}>
+                {dictionary.home.primaryAction}
+              </a>
+              <a className="button button--secondary" href={`/${locale}#accessibility`}>
+                {dictionary.home.secondaryAction}
+              </a>
+            </div>
+
+            <dl className="stat-grid" aria-label={dictionary.home.statusLabel}>
+              {dictionary.home.stats.map((stat) => (
+                <div className="stat-grid__item" key={stat.label}>
+                  <dt>{stat.label}</dt>
+                  <dd>{stat.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          <aside className="product-preview" aria-labelledby="preview-title">
+            <p className="product-preview__label">{dictionary.home.previewLabel}</p>
+            <h2 id="preview-title">{dictionary.home.previewTitle}</h2>
+            <p>{dictionary.home.previewDescription}</p>
+            <ul>
+              {dictionary.home.previewItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <div className="scope-note">
+              <span>{dictionary.home.statusLabel}</span>
+              <strong>{dictionary.home.statusValue}</strong>
+            </div>
+          </aside>
+        </section>
+
+        <section className="card-grid" aria-label={dictionary.home.eyebrow}>
+          {dictionary.home.principles.map((principle) => (
+            <FoundationCard
+              description={principle.description}
+              key={principle.title}
+              title={principle.title}
+            />
           ))}
-        </nav>
-      </header>
+        </section>
 
-      <section className="grid flex-1 items-center gap-10 py-16 lg:grid-cols-[1.1fr_0.9fr]">
-        <div>
-          <p className="text-accent text-sm font-bold uppercase">
-            {dictionary.home.eyebrow}
-          </p>
-          <h1 className="mt-4 max-w-3xl text-5xl font-bold tracking-normal sm:text-6xl">
-            {dictionary.home.title}
-          </h1>
-          <p className="text-muted mt-6 max-w-2xl text-lg leading-8">
-            {dictionary.home.description}
-          </p>
-        </div>
-
-        <aside className="border-border bg-surface shadow-soft rounded-lg border p-6">
-          <p className="text-muted text-sm font-semibold uppercase">
-            {dictionary.home.statusLabel}
-          </p>
-          <p className="mt-3 text-2xl font-semibold leading-9">
-            {dictionary.home.statusValue}
-          </p>
-        </aside>
-      </section>
-
-      <section className="grid gap-4 pb-12 md:grid-cols-3">
-        {dictionary.home.principles.map((principle) => (
-          <FoundationCard
-            description={principle.description}
-            key={principle.title}
-            title={principle.title}
+        <section className="content-section" id="design-system">
+          <SectionHeading
+            description={design.description}
+            eyebrow={design.eyebrow}
+            title={design.title}
           />
-        ))}
-      </section>
-    </main>
+          <div className="feature-grid">
+            {design.items.map((item) => (
+              <FoundationCard
+                description={item.description}
+                key={item.title}
+                title={item.title}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="split-section" id="accessibility">
+          <SectionHeading
+            description={accessibility.description}
+            eyebrow={accessibility.eyebrow}
+            title={accessibility.title}
+          />
+          <ul className="check-list">
+            {accessibility.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="content-section content-section--last" id="readiness">
+          <SectionHeading
+            description={readiness.description}
+            eyebrow={readiness.eyebrow}
+            title={readiness.title}
+          />
+          <div className="feature-grid">
+            {readiness.items.map((item) => (
+              <FoundationCard
+                description={item.description}
+                key={item.title}
+                title={item.title}
+              />
+            ))}
+          </div>
+        </section>
+      </main>
+    </AppShell>
   );
 }
