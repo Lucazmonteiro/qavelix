@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="QAVELIX">
+  <rect width="64" height="64" rx="12" fill="#161616"/>
+  <path d="M18 32c0-8.3 5.9-14 14-14s14 5.7 14 14c0 3.3-.9 6.2-2.6 8.5l5.1 5.1-5.6 5.6-5.2-5.2A15.8 15.8 0 0 1 32 46c-8.1 0-14-5.7-14-14Zm8 0c0 4.1 2.4 7 6 7s6-2.9 6-7-2.4-7-6-7-6 2.9-6 7Z" fill="#f7f5f0"/>
+  <path d="m39 39 8 8" stroke="#0f766e" stroke-width="5" stroke-linecap="round"/>
+</svg>

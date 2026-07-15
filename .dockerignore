@@ -1,0 +1,8 @@
+.next
+.git
+coverage
+Dockerfile
+node_modules
+npm-debug.log*
+PROMPTS
+README.md
