@@ -32,6 +32,7 @@ type UploadCopy = {
   bitrateLabel: string;
   frameRateLabel: string;
   formatLabel: string;
+  unknownLabel: string;
   emptyState: string;
   clientErrors: {
     unsupportedExtension: string;
@@ -39,6 +40,9 @@ type UploadCopy = {
     tooLarge: string;
     empty: string;
     multiple: string;
+    invalidSignature: string;
+    analysisUnavailable: string;
+    analysisFailed: string;
   };
 };
 
@@ -63,6 +67,11 @@ type UploadState =
       message: string;
     };
 
+type UploadError = {
+  code?: string;
+  message?: string;
+};
+
 type UploadResponse =
   | {
       ok: true;
@@ -70,9 +79,7 @@ type UploadResponse =
     }
   | {
       ok: false;
-      error: {
-        message: string;
-      };
+      error: UploadError;
     };
 
 function getExtension(fileName: string) {
@@ -80,9 +87,9 @@ function getExtension(fileName: string) {
   return dotIndex >= 0 ? fileName.slice(dotIndex).toLowerCase() : "";
 }
 
-function formatDuration(seconds: number | null) {
+function formatDuration(seconds: number | null, unknownLabel: string) {
   if (seconds === null) {
-    return "Unknown";
+    return unknownLabel;
   }
 
   const roundedSeconds = Math.round(seconds);
@@ -92,16 +99,41 @@ function formatDuration(seconds: number | null) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
-function formatBitrate(bitrate: number | null) {
+function formatBitrate(bitrate: number | null, unknownLabel: string) {
   if (bitrate === null) {
-    return "Unknown";
+    return unknownLabel;
   }
 
   return `${Math.round(bitrate / 1000).toLocaleString()} kbps`;
 }
 
-function formatValue(value: number | string | null) {
-  return value === null || value === "" ? "Unknown" : String(value);
+function formatValue(value: number | string | null, unknownLabel: string) {
+  return value === null || value === "" ? unknownLabel : String(value);
+}
+
+function getUploadErrorMessage(copy: UploadCopy, error: UploadError) {
+  const errors = copy.clientErrors;
+
+  switch (error.code) {
+    case "missing_file":
+      return errors.multiple;
+    case "empty_file":
+      return errors.empty;
+    case "file_too_large":
+      return errors.tooLarge;
+    case "invalid_extension":
+      return errors.unsupportedExtension;
+    case "invalid_mime":
+      return errors.unsupportedMime;
+    case "invalid_signature":
+      return errors.invalidSignature;
+    case "ffprobe_unavailable":
+      return errors.analysisUnavailable;
+    case "ffprobe_failed":
+      return errors.analysisFailed;
+    default:
+      return errors.analysisFailed;
+  }
 }
 
 export function UploadValidator({ copy }: UploadValidatorProps) {
@@ -167,7 +199,10 @@ export function UploadValidator({ copy }: UploadValidatorProps) {
       const payload = (await response.json()) as UploadResponse;
 
       if (!payload.ok) {
-        setState({ status: "error", message: payload.error.message });
+        setState({
+          status: "error",
+          message: getUploadErrorMessage(copy, payload.error),
+        });
         return;
       }
 
@@ -175,7 +210,7 @@ export function UploadValidator({ copy }: UploadValidatorProps) {
     } catch {
       setState({
         status: "error",
-        message: "The upload could not be analyzed. Try again.",
+        message: copy.clientErrors.analysisFailed,
       });
     } finally {
       if (inputRef.current) {
@@ -268,35 +303,50 @@ export function UploadValidator({ copy }: UploadValidatorProps) {
                 </div>
                 <div>
                   <dt>{copy.durationLabel}</dt>
-                  <dd>{formatDuration(state.analysis.media.durationSeconds)}</dd>
+                  <dd>
+                    {formatDuration(
+                      state.analysis.media.durationSeconds,
+                      copy.unknownLabel,
+                    )}
+                  </dd>
                 </div>
                 <div>
                   <dt>{copy.resolutionLabel}</dt>
                   <dd>
                     {state.analysis.media.width && state.analysis.media.height
                       ? `${state.analysis.media.width} x ${state.analysis.media.height}`
-                      : "Unknown"}
+                      : copy.unknownLabel}
                   </dd>
                 </div>
                 <div>
                   <dt>{copy.videoCodecLabel}</dt>
-                  <dd>{formatValue(state.analysis.media.videoCodec)}</dd>
+                  <dd>
+                    {formatValue(state.analysis.media.videoCodec, copy.unknownLabel)}
+                  </dd>
                 </div>
                 <div>
                   <dt>{copy.audioCodecLabel}</dt>
-                  <dd>{formatValue(state.analysis.media.audioCodec)}</dd>
+                  <dd>
+                    {formatValue(state.analysis.media.audioCodec, copy.unknownLabel)}
+                  </dd>
                 </div>
                 <div>
                   <dt>{copy.bitrateLabel}</dt>
-                  <dd>{formatBitrate(state.analysis.media.bitrate)}</dd>
+                  <dd>
+                    {formatBitrate(state.analysis.media.bitrate, copy.unknownLabel)}
+                  </dd>
                 </div>
                 <div>
                   <dt>{copy.frameRateLabel}</dt>
-                  <dd>{formatValue(state.analysis.media.frameRate)}</dd>
+                  <dd>
+                    {formatValue(state.analysis.media.frameRate, copy.unknownLabel)}
+                  </dd>
                 </div>
                 <div>
                   <dt>{copy.formatLabel}</dt>
-                  <dd>{formatValue(state.analysis.media.formatName)}</dd>
+                  <dd>
+                    {formatValue(state.analysis.media.formatName, copy.unknownLabel)}
+                  </dd>
                 </div>
               </>
             ) : null}

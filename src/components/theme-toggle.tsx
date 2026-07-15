@@ -2,73 +2,54 @@
 
 import { useEffect, useState } from "react";
 
-type ThemeMode = "light" | "dark" | "system";
+type ThemeMode = "light" | "dark";
 
 type ThemeToggleProps = {
   label: string;
   lightLabel: string;
   darkLabel: string;
-  systemLabel: string;
 };
 
-const modes: ThemeMode[] = ["light", "dark", "system"];
+const modes: ThemeMode[] = ["light", "dark"];
 
-function resolveTheme(mode: ThemeMode) {
-  if (mode === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-
-  return mode;
-}
-
-export function ThemeToggle({
-  label,
-  lightLabel,
-  darkLabel,
-  systemLabel,
-}: ThemeToggleProps) {
-  const [mode, setMode] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") {
-      return "system";
-    }
-
-    const storedMode = window.localStorage.getItem("qavelix-theme-mode");
-
-    if (storedMode === "light" || storedMode === "dark" || storedMode === "system") {
-      return storedMode;
-    }
-
-    return "system";
-  });
+export function ThemeToggle({ label, lightLabel, darkLabel }: ThemeToggleProps) {
+  const [mounted, setMounted] = useState(false);
+  const [mode, setMode] = useState<ThemeMode>("dark");
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const frameId = window.requestAnimationFrame(() => {
+      const storedTheme = window.localStorage.getItem("qavelix-theme");
 
-    const applyTheme = () => {
-      const resolvedTheme = resolveTheme(mode);
-      document.documentElement.dataset.theme = resolvedTheme;
-      document.documentElement.style.colorScheme = resolvedTheme;
-      window.localStorage.setItem("qavelix-theme-mode", mode);
-      window.localStorage.setItem("qavelix-theme", resolvedTheme);
-    };
+      if (storedTheme === "light" || storedTheme === "dark") {
+        setMode(storedTheme);
+      }
 
-    applyTheme();
-    mediaQuery.addEventListener("change", applyTheme);
+      setMounted(true);
+    });
 
-    return () => mediaQuery.removeEventListener("change", applyTheme);
-  }, [mode]);
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) {
+      return;
+    }
+
+    document.documentElement.dataset.theme = mode;
+    document.documentElement.style.colorScheme = mode;
+    window.localStorage.setItem("qavelix-theme", mode);
+  }, [mode, mounted]);
 
   const labels: Record<ThemeMode, string> = {
     light: lightLabel,
     dark: darkLabel,
-    system: systemLabel,
   };
 
   return (
     <div className="theme-toggle" aria-label={label} role="group">
       {modes.map((themeMode) => (
         <button
-          aria-pressed={mode === themeMode}
+          aria-pressed={mounted ? mode === themeMode : false}
           className="theme-toggle__button"
           key={themeMode}
           onClick={() => setMode(themeMode)}

@@ -26,7 +26,7 @@ export function AppFooter({ locale, dictionary }: AppFooterProps) {
           <a
             className="brand brand--footer"
             href={`/${locale}`}
-            aria-label="QAVELIX home"
+            aria-label={dictionary.navigation.homeLabel}
           >
             <span className="brand__mark" aria-hidden="true">
               Q

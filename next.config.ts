@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+const isDevelopment = process.env.NODE_ENV === "development";
+const scriptSource = isDevelopment
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+  : "script-src 'self' 'unsafe-inline'";
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
@@ -9,7 +14,7 @@ const securityHeaders = [
       "form-action 'self'",
       "frame-ancestors 'none'",
       "object-src 'none'",
-      "script-src 'self' 'unsafe-inline'",
+      scriptSource,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "media-src 'self' blob:",

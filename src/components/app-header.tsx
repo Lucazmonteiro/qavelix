@@ -24,14 +24,21 @@ export function AppHeader({ locale, dictionary }: AppHeaderProps) {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <a className="brand" href={`/${locale}`} aria-label="QAVELIX home">
+        <a
+          className="brand"
+          href={`/${locale}`}
+          aria-label={dictionary.navigation.homeLabel}
+        >
           <span className="brand__mark" aria-hidden="true">
             Q
           </span>
           <span className="brand__text">QAVELIX</span>
         </a>
 
-        <nav className="primary-nav" aria-label="Primary navigation">
+        <nav
+          className="primary-nav"
+          aria-label={dictionary.navigation.primaryNavigationLabel}
+        >
           {navigationItems.map((item) => (
             <a className="primary-nav__link" href={item.href} key={item.href}>
               {item.label}
@@ -48,7 +55,6 @@ export function AppHeader({ locale, dictionary }: AppHeaderProps) {
             darkLabel={dictionary.navigation.darkTheme}
             label={dictionary.navigation.themeLabel}
             lightLabel={dictionary.navigation.lightTheme}
-            systemLabel={dictionary.navigation.systemTheme}
           />
         </div>
       </div>

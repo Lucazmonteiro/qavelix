@@ -1,6 +1,6 @@
 # QAVELIX
 
-QAVELIX is being built in phases. Phase 1 created the secure technical foundation, Phase 2 added the responsive design system, Phase 3 added secure upload validation with FFprobe metadata analysis, Phase 4 added queued FFmpeg compression, and Phase 5 adds secure downloads with cleanup lifecycle handling.
+QAVELIX is being built in phases. Phase 1 created the secure technical foundation, Phase 2 added the responsive design system, Phase 3 added secure upload validation with FFprobe metadata analysis, Phase 4 added queued FFmpeg compression, Phase 5 added secure downloads with cleanup lifecycle handling, and Phase 6 hardened the application security layer.
 
 ## Included in Phase 1
 
@@ -8,6 +8,7 @@ QAVELIX is being built in phases. Phase 1 created the secure technical foundatio
 - Tailwind CSS
 - ESLint and Prettier
 - Locale routing for `en`, `pt-BR`, and `es`
+- Centralized UTF-8 localization dictionaries for English, Brazilian Portuguese, and European Spanish
 - Environment validation with Zod
 - Security headers in `next.config.ts`
 - Docker-ready production image configuration
@@ -19,9 +20,10 @@ QAVELIX is being built in phases. Phase 1 created the secure technical foundatio
 - Complete responsive landing page
 - Reusable design-system components
 - Semantic color tokens for light and dark themes
-- Persistent dark/light/system theme selector
+- Persistent light/dark theme selector with Dark as the first-visit default
 - Responsive header navigation and footer navigation
 - Localized language selector for `en`, `pt-BR`, and `es`
+- Native-quality product, validation, compression, accessibility, metadata, and footer copy in all supported locales
 - Accessibility basics: semantic landmarks, skip link, keyboard focus states, labels, contrast-aware tokens, and reduced-motion handling
 
 ## Included in Phase 3

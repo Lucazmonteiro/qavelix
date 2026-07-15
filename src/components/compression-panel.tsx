@@ -41,7 +41,14 @@ type CompressionCopy = {
   presetDescriptions: Record<CompressionPresetId, string>;
   errors: {
     noFile: string;
+    empty: string;
+    tooLarge: string;
+    unsupportedExtension: string;
+    unsupportedMime: string;
+    invalidSignature: string;
+    queueFull: string;
     uploadFailed: string;
+    jobFailed: string;
     cancelFailed: string;
   };
 };
@@ -58,7 +65,8 @@ type JobResponse =
   | {
       ok: false;
       error: {
-        message: string;
+        code?: string;
+        message?: string;
       };
     };
 
@@ -89,6 +97,30 @@ function getStatusLabel(copy: CompressionCopy, job: CompressionJobSnapshot | nul
   } satisfies Record<CompressionJobSnapshot["status"], string>;
 
   return labels[job.status];
+}
+
+function getCompressionErrorMessage(
+  copy: CompressionCopy,
+  error: { code?: string; message?: string },
+) {
+  switch (error.code) {
+    case "missing_file":
+      return copy.errors.noFile;
+    case "empty_file":
+      return copy.errors.empty;
+    case "file_too_large":
+      return copy.errors.tooLarge;
+    case "invalid_extension":
+      return copy.errors.unsupportedExtension;
+    case "invalid_mime":
+      return copy.errors.unsupportedMime;
+    case "invalid_signature":
+      return copy.errors.invalidSignature;
+    case "queue_full":
+      return copy.errors.queueFull;
+    default:
+      return copy.errors.uploadFailed;
+  }
 }
 
 export function CompressionPanel({ copy }: CompressionPanelProps) {
@@ -141,11 +173,11 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
     }
 
     if (selectedFile.size === 0) {
-      return "The selected file is empty.";
+      return copy.errors.empty;
     }
 
     if (selectedFile.size > MAX_UPLOAD_BYTES) {
-      return `The selected file exceeds ${formatBytes(MAX_UPLOAD_BYTES)}.`;
+      return copy.errors.tooLarge;
     }
 
     if (
@@ -153,13 +185,13 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
         getExtension(selectedFile.name) as (typeof acceptedExtensions)[number],
       )
     ) {
-      return "The selected file extension is not supported.";
+      return copy.errors.unsupportedExtension;
     }
 
     if (
       !acceptedMimeTypes.includes(selectedFile.type as (typeof acceptedMimeTypes)[number])
     ) {
-      return "The selected file MIME type is not supported.";
+      return copy.errors.unsupportedMime;
     }
 
     return null;
@@ -187,7 +219,7 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
       const payload = (await response.json()) as JobResponse;
 
       if (!payload.ok) {
-        setError(payload.error.message || copy.errors.uploadFailed);
+        setError(getCompressionErrorMessage(copy, payload.error));
         return;
       }
 
@@ -209,7 +241,7 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
       const payload = (await response.json()) as JobResponse;
 
       if (!payload.ok) {
-        setError(payload.error.message || copy.errors.cancelFailed);
+        setError(copy.errors.cancelFailed);
         return;
       }
 
@@ -231,7 +263,7 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
       const payload = (await response.json()) as JobResponse;
 
       if (!payload.ok) {
-        setError(payload.error.message || copy.errors.cancelFailed);
+        setError(copy.errors.cancelFailed);
         return;
       }
 
@@ -339,7 +371,9 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
           </div>
 
           {error ? <p className="compression-status__error">{error}</p> : null}
-          {job?.error ? <p className="compression-status__error">{job.error}</p> : null}
+          {job?.error ? (
+            <p className="compression-status__error">{copy.errors.jobFailed}</p>
+          ) : null}
 
           <div className="compression-status__actions">
             <button
