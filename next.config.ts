@@ -9,13 +9,21 @@ const securityHeaders = [
       "form-action 'self'",
       "frame-ancestors 'none'",
       "object-src 'none'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
+      "media-src 'self' blob:",
       "font-src 'self'",
       "connect-src 'self'",
+      "frame-src 'none'",
+      "child-src 'none'",
+      "manifest-src 'self'",
       "upgrade-insecure-requests",
     ].join("; "),
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
   },
   {
     key: "Referrer-Policy",
@@ -28,6 +36,18 @@ const securityHeaders = [
   {
     key: "X-Frame-Options",
     value: "DENY",
+  },
+  {
+    key: "X-Download-Options",
+    value: "noopen",
+  },
+  {
+    key: "Cross-Origin-Opener-Policy",
+    value: "same-origin",
+  },
+  {
+    key: "Cross-Origin-Resource-Policy",
+    value: "same-origin",
   },
   {
     key: "Permissions-Policy",

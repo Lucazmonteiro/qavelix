@@ -3,18 +3,26 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { NextResponse } from "next/server";
-
 import { analyzeWithFfprobe } from "@/lib/server/ffprobe";
+import {
+  enforceApiSecurity,
+  logSecurityEvent,
+  rejectOversizedRequest,
+  securityJson,
+} from "@/lib/server/security";
 import { validateFileIdentity } from "@/lib/server/upload-validation";
-import type { UploadAnalysis, UploadValidationError } from "@/lib/upload-policy";
+import {
+  MAX_UPLOAD_BYTES,
+  type UploadAnalysis,
+  type UploadValidationError,
+} from "@/lib/upload-policy";
 
 export const runtime = "nodejs";
 
 const uploadFieldName = "file";
 
-function errorResponse(error: UploadValidationError, status = 400) {
-  return NextResponse.json({ ok: false, error }, { status });
+function errorResponse(error: UploadValidationError, status = 400, requestId?: string) {
+  return securityJson({ ok: false, error }, { status, requestId });
 }
 
 function sanitizeExtension(fileName: string) {
@@ -25,6 +33,27 @@ function sanitizeExtension(fileName: string) {
 }
 
 export async function POST(request: Request) {
+  const security = enforceApiSecurity(request, {
+    route: "upload.analyze",
+    limit: 10,
+    windowMs: 60_000,
+    requireSameOrigin: true,
+  });
+
+  if (!security.ok) {
+    return security.response;
+  }
+
+  const oversizedResponse = rejectOversizedRequest(
+    request,
+    MAX_UPLOAD_BYTES + 2 * 1024 * 1024,
+    security.requestId,
+  );
+
+  if (oversizedResponse) {
+    return oversizedResponse;
+  }
+
   let temporaryPath: string | null = null;
 
   try {
@@ -32,17 +61,26 @@ export async function POST(request: Request) {
     const file = formData.get(uploadFieldName);
 
     if (!(file instanceof File)) {
-      return errorResponse({
-        code: "missing_file",
-        message: "Upload a single video file for validation.",
-      });
+      return errorResponse(
+        {
+          code: "missing_file",
+          message: "Upload a single video file for validation.",
+        },
+        400,
+        security.requestId,
+      );
     }
 
     const bytes = new Uint8Array(await file.arrayBuffer());
     const validationError = validateFileIdentity(file, bytes.slice(0, 16));
 
     if (validationError) {
-      return errorResponse(validationError);
+      logSecurityEvent("warn", "upload_validation_rejected", {
+        requestId: security.requestId,
+        fingerprint: security.fingerprint,
+        code: validationError.code,
+      });
+      return errorResponse(validationError, 400, security.requestId);
     }
 
     const uploadDirectory = path.join(os.tmpdir(), "qavelix-upload-analysis");
@@ -75,28 +113,44 @@ export async function POST(request: Request) {
             : "FFprobe could not analyze the selected file.",
         },
         isUnavailable ? 503 : 422,
+        security.requestId,
       );
     }
 
-    return NextResponse.json({
-      ok: true,
-      analysis: {
-        file: {
-          name: file.name,
-          size: file.size,
-          mimeType: file.type,
-          extension,
-        },
-        media,
-      } satisfies UploadAnalysis,
+    logSecurityEvent("info", "upload_analyzed", {
+      requestId: security.requestId,
+      fingerprint: security.fingerprint,
+      size: file.size,
+      mimeType: file.type,
     });
+
+    return securityJson(
+      {
+        ok: true,
+        analysis: {
+          file: {
+            name: file.name,
+            size: file.size,
+            mimeType: file.type,
+            extension,
+          },
+          media,
+        } satisfies UploadAnalysis,
+      },
+      { requestId: security.requestId },
+    );
   } catch {
+    logSecurityEvent("error", "upload_analysis_failed", {
+      requestId: security.requestId,
+      fingerprint: security.fingerprint,
+    });
     return errorResponse(
       {
         code: "ffprobe_failed",
         message: "The upload could not be processed. Try another supported video file.",
       },
       500,
+      security.requestId,
     );
   } finally {
     if (temporaryPath) {

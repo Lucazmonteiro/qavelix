@@ -31,10 +31,14 @@ type CreateJobResult =
     }
   | {
       ok: false;
-      error: UploadValidationError | { code: "invalid_preset"; message: string };
+      error:
+        | UploadValidationError
+        | { code: "invalid_preset" | "queue_full"; message: string };
     };
 
 const compressionDirectory = path.join(os.tmpdir(), "qavelix-compression");
+const maxRetainedJobs = 50;
+const maxQueuedJobs = 10;
 const signingSecret = randomBytes(32);
 const queue: string[] = [];
 const jobs = new Map<string, CompressionJob>();
@@ -281,10 +285,40 @@ async function processNextJob() {
   await runJob(job);
 }
 
+function pruneTerminalJobs() {
+  if (jobs.size <= maxRetainedJobs) {
+    return;
+  }
+
+  const terminalJobs = [...jobs.values()]
+    .filter((job) => ["failed", "cancelled", "expired", "deleted"].includes(job.status))
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+
+  for (const job of terminalJobs) {
+    if (jobs.size <= maxRetainedJobs) {
+      return;
+    }
+
+    jobs.delete(job.id);
+  }
+}
+
 export async function createCompressionJob(
   file: File,
   preset: CompressionPresetId,
 ): Promise<CreateJobResult> {
+  pruneTerminalJobs();
+
+  if (queue.length >= maxQueuedJobs) {
+    return {
+      ok: false,
+      error: {
+        code: "queue_full",
+        message: "The compression queue is full. Try again later.",
+      },
+    };
+  }
+
   const bytes = new Uint8Array(await file.arrayBuffer());
   const validationError = validateFileIdentity(file, bytes.slice(0, 16));
 

@@ -52,6 +52,16 @@ QAVELIX is being built in phases. Phase 1 created the secure technical foundatio
 - Private no-store download responses with safe attachment filenames
 - Cleanup of input files after compression and output files after deletion or expiration
 
+## Included in Phase 6
+
+- Hardened CSP and security headers
+- Same-origin enforcement for state-changing API routes
+- In-memory rate limiting for upload, compression, status, delete, and download routes
+- Request size preflight before multipart parsing
+- UUID and signed token validation before job/download lookups
+- Bounded compression queue and retained job lifecycle storage
+- Structured server-side security logging with request IDs
+
 ## Explicitly excluded from current phases
 
 - Arbitrary media conversion settings outside the fixed presets
