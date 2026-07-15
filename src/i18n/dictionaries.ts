@@ -14,6 +14,7 @@ type Dictionary = {
     skipToContent: string;
     product: string;
     upload: string;
+    compression: string;
     design: string;
     accessibility: string;
     readiness: string;
@@ -92,6 +93,40 @@ type Dictionary = {
       multiple: string;
     };
   };
+  compression: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    dropTitle: string;
+    dropDescription: string;
+    browseLabel: string;
+    presetLabel: string;
+    startLabel: string;
+    cancelLabel: string;
+    progressLabel: string;
+    queuedLabel: string;
+    runningLabel: string;
+    completedLabel: string;
+    failedLabel: string;
+    cancelledLabel: string;
+    originalSizeLabel: string;
+    compressedSizeLabel: string;
+    presetNames: {
+      balanced: string;
+      small: string;
+      high: string;
+    };
+    presetDescriptions: {
+      balanced: string;
+      small: string;
+      high: string;
+    };
+    errors: {
+      noFile: string;
+      uploadFailed: string;
+      cancelFailed: string;
+    };
+  };
   footer: {
     description: string;
     phase: string;
@@ -110,6 +145,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       skipToContent: "Skip to content",
       product: "Product",
       upload: "Upload validation",
+      compression: "Compression",
       design: "Design system",
       accessibility: "Accessibility",
       readiness: "Readiness",
@@ -123,12 +159,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       eyebrow: "Phase 3 upload validation",
       title: "QAVELIX",
       description:
-        "A secure browser-based media utility foundation with localized UI, resilient themes, and strict upload validation before any compression workflow is introduced.",
+        "A secure browser-based media utility foundation with localized UI, resilient themes, strict upload validation, and queued FFmpeg compression.",
       primaryAction: "Validate upload",
       secondaryAction: "Review security",
       statusLabel: "Current scope",
       statusValue:
-        "Upload validation and FFprobe analysis only. Compression, payments, ads, and accounts remain intentionally excluded.",
+        "Upload validation, FFprobe analysis, and FFmpeg compression are active. Payments, ads, and accounts remain intentionally excluded.",
       previewLabel: "Validation preview",
       previewTitle: "Prepared for safe media intake",
       previewDescription:
@@ -200,7 +236,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           eyebrow: "Readiness",
           title: "Ready to extend without rewriting",
           description:
-            "The upload validation system is intentionally limited to safe intake and metadata extraction while avoiding future-phase compression functionality.",
+            "The compression system is intentionally limited to fixed presets, queueing, progress, cancellation, and secure FFmpeg execution.",
           items: [
             {
               title: "Landing page",
@@ -225,7 +261,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       eyebrow: "Phase 3 upload validation",
       title: "Secure media upload checks",
       description:
-        "Drop a video file to validate size, extension, MIME type, file signature, and FFprobe metadata before any future compression workflow exists.",
+        "Drop a video file to validate size, extension, MIME type, file signature, and FFprobe metadata before compression.",
       dropTitle: "Drop one video file here",
       dropDescription:
         "Files are temporarily analyzed, never stored permanently, and deleted after FFprobe finishes.",
@@ -254,6 +290,42 @@ const dictionaries: Record<Locale, Dictionary> = {
         multiple: "Upload one file at a time.",
       },
     },
+    compression: {
+      eyebrow: "Phase 4 compression",
+      title: "FFmpeg compression queue",
+      description:
+        "Compress one validated video with a fixed preset. Jobs run through a server queue, report FFmpeg progress, and can be cancelled while queued or running.",
+      dropTitle: "Drop one video for compression",
+      dropDescription:
+        "Compression uses secure FFmpeg execution with fixed argument arrays, temporary random paths, and no shell interpolation.",
+      browseLabel: "Choose compression file",
+      presetLabel: "Compression preset",
+      startLabel: "Start compression",
+      cancelLabel: "Cancel job",
+      progressLabel: "Progress",
+      queuedLabel: "Queued",
+      runningLabel: "Running",
+      completedLabel: "Completed",
+      failedLabel: "Failed",
+      cancelledLabel: "Cancelled",
+      originalSizeLabel: "Original size",
+      compressedSizeLabel: "Compressed size",
+      presetNames: {
+        balanced: "Balanced",
+        small: "Small file",
+        high: "High quality",
+      },
+      presetDescriptions: {
+        balanced: "1080p target with a practical quality and size tradeoff.",
+        small: "720p target for smaller output files.",
+        high: "Higher visual quality with a larger output.",
+      },
+      errors: {
+        noFile: "Choose one supported video file before starting compression.",
+        uploadFailed: "Compression could not be started.",
+        cancelFailed: "The compression job could not be cancelled.",
+      },
+    },
     footer: {
       description:
         "QAVELIX is being built in deliberate phases. This phase adds secure upload validation and metadata analysis.",
@@ -271,6 +343,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       skipToContent: "Pular para o conteudo",
       product: "Produto",
       upload: "Validacao de upload",
+      compression: "Compressao",
       design: "Sistema de design",
       accessibility: "Acessibilidade",
       readiness: "Prontidao",
@@ -284,12 +357,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       eyebrow: "Validacao de upload da fase 3",
       title: "QAVELIX",
       description:
-        "Uma fundacao segura para utilitario de midia no navegador, com UI localizada, temas resilientes e validacao rigorosa antes de qualquer fluxo de compressao.",
+        "Uma fundacao segura para utilitario de midia no navegador, com UI localizada, temas resilientes, validacao rigorosa e compressao FFmpeg em fila.",
       primaryAction: "Validar upload",
       secondaryAction: "Ver seguranca",
       statusLabel: "Escopo atual",
       statusValue:
-        "Somente validacao de upload e analise com FFprobe. Compressao, pagamentos, anuncios e contas continuam excluidos.",
+        "Validacao de upload, analise com FFprobe e compressao FFmpeg estao ativas. Pagamentos, anuncios e contas continuam excluidos.",
       previewLabel: "Previa de validacao",
       previewTitle: "Preparado para entrada segura de midia",
       previewDescription:
@@ -361,7 +434,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           eyebrow: "Prontidao",
           title: "Pronto para evoluir sem reescrever",
           description:
-            "A validacao de upload se limita a entrada segura e extracao de metadados, sem implementar compressao de fases futuras.",
+            "A compressao se limita a presets fixos, fila, progresso, cancelamento e execucao segura do FFmpeg.",
           items: [
             {
               title: "Landing page",
@@ -386,7 +459,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       eyebrow: "Validacao de upload da fase 3",
       title: "Verificacoes seguras de midia",
       description:
-        "Solte um video para validar tamanho, extensao, MIME, assinatura do arquivo e metadados do FFprobe antes de qualquer fluxo futuro de compressao.",
+        "Solte um video para validar tamanho, extensao, MIME, assinatura do arquivo e metadados do FFprobe antes da compressao.",
       dropTitle: "Solte um video aqui",
       dropDescription:
         "Os arquivos sao analisados temporariamente, nunca ficam armazenados de forma permanente e sao removidos apos o FFprobe terminar.",
@@ -415,6 +488,42 @@ const dictionaries: Record<Locale, Dictionary> = {
         multiple: "Envie um arquivo por vez.",
       },
     },
+    compression: {
+      eyebrow: "Compressao da fase 4",
+      title: "Fila de compressao FFmpeg",
+      description:
+        "Comprima um video validado com um preset fixo. Os trabalhos passam por uma fila no servidor, reportam progresso do FFmpeg e podem ser cancelados.",
+      dropTitle: "Solte um video para compressao",
+      dropDescription:
+        "A compressao usa execucao segura do FFmpeg com argumentos fixos, caminhos temporarios aleatorios e sem interpolacao de shell.",
+      browseLabel: "Escolher arquivo",
+      presetLabel: "Preset de compressao",
+      startLabel: "Iniciar compressao",
+      cancelLabel: "Cancelar trabalho",
+      progressLabel: "Progresso",
+      queuedLabel: "Na fila",
+      runningLabel: "Executando",
+      completedLabel: "Concluido",
+      failedLabel: "Falhou",
+      cancelledLabel: "Cancelado",
+      originalSizeLabel: "Tamanho original",
+      compressedSizeLabel: "Tamanho comprimido",
+      presetNames: {
+        balanced: "Equilibrado",
+        small: "Arquivo menor",
+        high: "Alta qualidade",
+      },
+      presetDescriptions: {
+        balanced: "Alvo 1080p com equilibrio pratico entre qualidade e tamanho.",
+        small: "Alvo 720p para saidas menores.",
+        high: "Maior qualidade visual com arquivo maior.",
+      },
+      errors: {
+        noFile: "Escolha um video aceito antes de iniciar a compressao.",
+        uploadFailed: "Nao foi possivel iniciar a compressao.",
+        cancelFailed: "Nao foi possivel cancelar o trabalho.",
+      },
+    },
     footer: {
       description:
         "O QAVELIX esta sendo construido em fases deliberadas. Esta fase adiciona validacao segura de upload e analise de metadados.",
@@ -432,6 +541,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       skipToContent: "Saltar al contenido",
       product: "Producto",
       upload: "Validacion de carga",
+      compression: "Compresion",
       design: "Sistema de diseno",
       accessibility: "Accesibilidad",
       readiness: "Preparacion",
@@ -445,12 +555,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       eyebrow: "Validacion de carga de fase 3",
       title: "QAVELIX",
       description:
-        "Una base segura para una utilidad multimedia en el navegador, con UI localizada, temas resilientes y validacion estricta antes de cualquier flujo de compresion.",
+        "Una base segura para una utilidad multimedia en el navegador, con UI localizada, temas resilientes, validacion estricta y compresion FFmpeg en cola.",
       primaryAction: "Validar carga",
       secondaryAction: "Ver seguridad",
       statusLabel: "Alcance actual",
       statusValue:
-        "Solo validacion de carga y analisis con FFprobe. Compresion, pagos, anuncios y cuentas siguen excluidos.",
+        "Validacion de carga, analisis con FFprobe y compresion FFmpeg estan activos. Pagos, anuncios y cuentas siguen excluidos.",
       previewLabel: "Vista de validacion",
       previewTitle: "Preparado para entrada segura de medios",
       previewDescription:
@@ -522,7 +632,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           eyebrow: "Preparacion",
           title: "Listo para extender sin reescribir",
           description:
-            "La validacion de carga se limita a entrada segura y extraccion de metadatos, sin implementar compresion de fases futuras.",
+            "La compresion se limita a presets fijos, cola, progreso, cancelacion y ejecucion segura de FFmpeg.",
           items: [
             {
               title: "Landing page",
@@ -547,7 +657,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       eyebrow: "Validacion de carga de fase 3",
       title: "Controles seguros de medios",
       description:
-        "Arrastra un video para validar tamano, extension, MIME, firma del archivo y metadatos de FFprobe antes de cualquier flujo futuro de compresion.",
+        "Arrastra un video para validar tamano, extension, MIME, firma del archivo y metadatos de FFprobe antes de la compresion.",
       dropTitle: "Suelta un video aqui",
       dropDescription:
         "Los archivos se analizan temporalmente, nunca se almacenan de forma permanente y se eliminan despues de FFprobe.",
@@ -574,6 +684,42 @@ const dictionaries: Record<Locale, Dictionary> = {
         tooLarge: "Este archivo supera el limite de 250 MB.",
         empty: "Este archivo esta vacio.",
         multiple: "Sube un archivo a la vez.",
+      },
+    },
+    compression: {
+      eyebrow: "Compresion de fase 4",
+      title: "Cola de compresion FFmpeg",
+      description:
+        "Comprime un video validado con un preset fijo. Los trabajos pasan por una cola del servidor, reportan progreso de FFmpeg y pueden cancelarse.",
+      dropTitle: "Suelta un video para compresion",
+      dropDescription:
+        "La compresion usa ejecucion segura de FFmpeg con argumentos fijos, rutas temporales aleatorias y sin interpolacion de shell.",
+      browseLabel: "Elegir archivo",
+      presetLabel: "Preset de compresion",
+      startLabel: "Iniciar compresion",
+      cancelLabel: "Cancelar trabajo",
+      progressLabel: "Progreso",
+      queuedLabel: "En cola",
+      runningLabel: "Ejecutando",
+      completedLabel: "Completado",
+      failedLabel: "Fallido",
+      cancelledLabel: "Cancelado",
+      originalSizeLabel: "Tamano original",
+      compressedSizeLabel: "Tamano comprimido",
+      presetNames: {
+        balanced: "Equilibrado",
+        small: "Archivo pequeno",
+        high: "Alta calidad",
+      },
+      presetDescriptions: {
+        balanced: "Objetivo 1080p con equilibrio practico entre calidad y tamano.",
+        small: "Objetivo 720p para archivos mas pequenos.",
+        high: "Mayor calidad visual con salida mas grande.",
+      },
+      errors: {
+        noFile: "Elige un video admitido antes de iniciar la compresion.",
+        uploadFailed: "No se pudo iniciar la compresion.",
+        cancelFailed: "No se pudo cancelar el trabajo.",
       },
     },
     footer: {

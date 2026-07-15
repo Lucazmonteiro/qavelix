@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
+import { CompressionPanel } from "@/components/compression-panel";
 import { FoundationCard } from "@/components/foundation-card";
 import { SectionHeading } from "@/components/section-heading";
 import { UploadValidator } from "@/components/upload-validator";
@@ -88,6 +89,8 @@ export default async function HomePage({ params }: HomePageProps) {
         </section>
 
         <UploadValidator copy={dictionary.upload} />
+
+        <CompressionPanel copy={dictionary.compression} />
 
         <section className="card-grid" aria-label={dictionary.home.eyebrow}>
           {dictionary.home.principles.map((principle) => (
