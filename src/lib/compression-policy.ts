@@ -21,8 +21,10 @@ export const compressionPresets = {
 
 export type CompressionPresetId = keyof typeof compressionPresets;
 
+export const DOWNLOAD_TTL_MS = 30 * 60 * 1000;
+
 export type CompressionJobStatus =
-  "queued" | "running" | "completed" | "failed" | "cancelled";
+  "queued" | "running" | "completed" | "failed" | "cancelled" | "expired" | "deleted";
 
 export type CompressionJobSnapshot = {
   id: string;
@@ -35,6 +37,8 @@ export type CompressionJobSnapshot = {
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
+  expiresAt: string | null;
+  downloadUrl: string | null;
   error: string | null;
 };
 

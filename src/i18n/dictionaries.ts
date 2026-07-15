@@ -109,8 +109,13 @@ type Dictionary = {
     completedLabel: string;
     failedLabel: string;
     cancelledLabel: string;
+    expiredLabel: string;
+    deletedLabel: string;
     originalSizeLabel: string;
     compressedSizeLabel: string;
+    expiresLabel: string;
+    downloadLabel: string;
+    deleteLabel: string;
     presetNames: {
       balanced: string;
       small: string;
@@ -308,8 +313,13 @@ const dictionaries: Record<Locale, Dictionary> = {
       completedLabel: "Completed",
       failedLabel: "Failed",
       cancelledLabel: "Cancelled",
+      expiredLabel: "Expired",
+      deletedLabel: "Deleted",
       originalSizeLabel: "Original size",
       compressedSizeLabel: "Compressed size",
+      expiresLabel: "Expires",
+      downloadLabel: "Download",
+      deleteLabel: "Delete file",
       presetNames: {
         balanced: "Balanced",
         small: "Small file",
@@ -506,8 +516,13 @@ const dictionaries: Record<Locale, Dictionary> = {
       completedLabel: "Concluido",
       failedLabel: "Falhou",
       cancelledLabel: "Cancelado",
+      expiredLabel: "Expirado",
+      deletedLabel: "Excluido",
       originalSizeLabel: "Tamanho original",
       compressedSizeLabel: "Tamanho comprimido",
+      expiresLabel: "Expira",
+      downloadLabel: "Baixar",
+      deleteLabel: "Excluir arquivo",
       presetNames: {
         balanced: "Equilibrado",
         small: "Arquivo menor",
@@ -704,8 +719,13 @@ const dictionaries: Record<Locale, Dictionary> = {
       completedLabel: "Completado",
       failedLabel: "Fallido",
       cancelledLabel: "Cancelado",
+      expiredLabel: "Expirado",
+      deletedLabel: "Eliminado",
       originalSizeLabel: "Tamano original",
       compressedSizeLabel: "Tamano comprimido",
+      expiresLabel: "Expira",
+      downloadLabel: "Descargar",
+      deleteLabel: "Eliminar archivo",
       presetNames: {
         balanced: "Equilibrado",
         small: "Archivo pequeno",

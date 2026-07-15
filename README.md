@@ -1,6 +1,6 @@
 # QAVELIX
 
-QAVELIX is being built in phases. Phase 1 created the secure technical foundation, Phase 2 added the responsive design system, Phase 3 added secure upload validation with FFprobe metadata analysis, and Phase 4 adds queued FFmpeg compression.
+QAVELIX is being built in phases. Phase 1 created the secure technical foundation, Phase 2 added the responsive design system, Phase 3 added secure upload validation with FFprobe metadata analysis, Phase 4 added queued FFmpeg compression, and Phase 5 adds secure downloads with cleanup lifecycle handling.
 
 ## Included in Phase 1
 
@@ -42,6 +42,15 @@ QAVELIX is being built in phases. Phase 1 created the secure technical foundatio
 - Queued/running job cancellation
 - Secure FFmpeg execution through argument arrays with `shell: false`
 - Temporary random input/output paths with cleanup after each job
+
+## Included in Phase 5
+
+- Signed download URLs for completed compression jobs
+- Temporary output retention with automatic expiration
+- Manual delete for completed output files
+- Lifecycle states for completed, expired, deleted, cancelled, and failed jobs
+- Private no-store download responses with safe attachment filenames
+- Cleanup of input files after compression and output files after deletion or expiration
 
 ## Explicitly excluded from current phases
 

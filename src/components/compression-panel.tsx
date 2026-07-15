@@ -30,8 +30,13 @@ type CompressionCopy = {
   completedLabel: string;
   failedLabel: string;
   cancelledLabel: string;
+  expiredLabel: string;
+  deletedLabel: string;
   originalSizeLabel: string;
   compressedSizeLabel: string;
+  expiresLabel: string;
+  downloadLabel: string;
+  deleteLabel: string;
   presetNames: Record<CompressionPresetId, string>;
   presetDescriptions: Record<CompressionPresetId, string>;
   errors: {
@@ -79,6 +84,8 @@ function getStatusLabel(copy: CompressionCopy, job: CompressionJobSnapshot | nul
     completed: copy.completedLabel,
     failed: copy.failedLabel,
     cancelled: copy.cancelledLabel,
+    expired: copy.expiredLabel,
+    deleted: copy.deletedLabel,
   } satisfies Record<CompressionJobSnapshot["status"], string>;
 
   return labels[job.status];
@@ -212,6 +219,28 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
     }
   }
 
+  async function deleteJob() {
+    if (!job || job.status !== "completed") {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/compression/jobs/${job.id}`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json()) as JobResponse;
+
+      if (!payload.ok) {
+        setError(payload.error.message || copy.errors.cancelFailed);
+        return;
+      }
+
+      setJob(payload.job);
+    } catch {
+      setError(copy.errors.cancelFailed);
+    }
+  }
+
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setIsDragging(false);
@@ -293,6 +322,10 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
               <dt>{copy.compressedSizeLabel}</dt>
               <dd>{job?.outputSize ? formatBytes(job.outputSize) : "-"}</dd>
             </div>
+            <div>
+              <dt>{copy.expiresLabel}</dt>
+              <dd>{job?.expiresAt ? new Date(job.expiresAt).toLocaleString() : "-"}</dd>
+            </div>
           </dl>
 
           <div className="progress-block">
@@ -317,6 +350,11 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
             >
               {copy.startLabel}
             </button>
+            {job?.status === "completed" && job.downloadUrl ? (
+              <a className="button button--primary" href={job.downloadUrl}>
+                {copy.downloadLabel}
+              </a>
+            ) : null}
             <button
               className="button button--secondary"
               disabled={!canPoll(job)}
@@ -324,6 +362,14 @@ export function CompressionPanel({ copy }: CompressionPanelProps) {
               type="button"
             >
               {copy.cancelLabel}
+            </button>
+            <button
+              className="button button--secondary"
+              disabled={job?.status !== "completed"}
+              onClick={() => void deleteJob()}
+              type="button"
+            >
+              {copy.deleteLabel}
             </button>
           </div>
         </aside>

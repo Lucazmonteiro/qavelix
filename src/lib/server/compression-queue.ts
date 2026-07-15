@@ -1,11 +1,12 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { randomUUID } from "node:crypto";
-import { mkdir, rm, stat, writeFile } from "node:fs/promises";
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 import {
   compressionPresets,
+  DOWNLOAD_TTL_MS,
   type CompressionJobSnapshot,
   type CompressionJobStatus,
   type CompressionPresetId,
@@ -18,6 +19,9 @@ type CompressionJob = CompressionJobSnapshot & {
   inputPath: string;
   outputPath: string;
   process: ChildProcessWithoutNullStreams | null;
+  downloadToken: string | null;
+  downloadSignature: string | null;
+  cleanupTimer: ReturnType<typeof setTimeout> | null;
 };
 
 type CreateJobResult =
@@ -31,6 +35,7 @@ type CreateJobResult =
     };
 
 const compressionDirectory = path.join(os.tmpdir(), "qavelix-compression");
+const signingSecret = randomBytes(32);
 const queue: string[] = [];
 const jobs = new Map<string, CompressionJob>();
 
@@ -48,6 +53,11 @@ function snapshot(job: CompressionJob): CompressionJobSnapshot {
     createdAt: job.createdAt,
     startedAt: job.startedAt,
     completedAt: job.completedAt,
+    expiresAt: job.expiresAt,
+    downloadUrl:
+      job.status === "completed" && job.downloadToken && job.downloadSignature
+        ? `/api/compression/jobs/${job.id}/download?token=${encodeURIComponent(job.downloadToken)}&signature=${encodeURIComponent(job.downloadSignature)}`
+        : null,
     error: job.error,
   };
 }
@@ -64,9 +74,30 @@ function setJobStatus(
     job.startedAt = new Date().toISOString();
   }
 
-  if (status === "completed" || status === "failed" || status === "cancelled") {
+  if (
+    status === "completed" ||
+    status === "failed" ||
+    status === "cancelled" ||
+    status === "expired" ||
+    status === "deleted"
+  ) {
     job.completedAt = new Date().toISOString();
   }
+}
+
+function createDownloadSignature(jobId: string, token: string, expiresAt: string) {
+  return createHmac("sha256", signingSecret)
+    .update(`${jobId}.${token}.${expiresAt}`)
+    .digest("base64url");
+}
+
+function constantTimeEqual(left: string, right: string) {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+
+  return (
+    leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer)
+  );
 }
 
 function sanitizeExtension(fileName: string) {
@@ -77,10 +108,31 @@ function sanitizeExtension(fileName: string) {
 }
 
 async function cleanupJobFiles(job: CompressionJob) {
+  if (job.cleanupTimer) {
+    clearTimeout(job.cleanupTimer);
+    job.cleanupTimer = null;
+  }
+
   await Promise.all([
     rm(job.inputPath, { force: true }),
     rm(job.outputPath, { force: true }),
   ]);
+}
+
+async function cleanupInputFile(job: CompressionJob) {
+  await rm(job.inputPath, { force: true });
+}
+
+function scheduleExpiration(job: CompressionJob) {
+  if (!job.expiresAt) {
+    return;
+  }
+
+  const delay = Math.max(0, new Date(job.expiresAt).getTime() - Date.now());
+
+  job.cleanupTimer = setTimeout(() => {
+    void expireCompressionJob(job.id);
+  }, delay);
 }
 
 function parseProgress(chunk: Buffer, durationSeconds: number | null) {
@@ -178,9 +230,17 @@ async function runJob(job: CompressionJob) {
 
     if (job.status !== "cancelled") {
       const outputStats = await stat(job.outputPath);
+      const token = randomBytes(32).toString("base64url");
+      const expiresAt = new Date(Date.now() + DOWNLOAD_TTL_MS).toISOString();
+
       job.outputSize = outputStats.size;
       job.progress = 100;
+      job.expiresAt = expiresAt;
+      job.downloadToken = token;
+      job.downloadSignature = createDownloadSignature(job.id, token, expiresAt);
       setJobStatus(job, "completed");
+      await cleanupInputFile(job);
+      scheduleExpiration(job);
     }
   } catch (error) {
     if (job.status !== "cancelled") {
@@ -193,7 +253,9 @@ async function runJob(job: CompressionJob) {
   } finally {
     job.process = null;
     activeJobId = null;
-    await cleanupJobFiles(job);
+    if (job.status !== "completed") {
+      await cleanupJobFiles(job);
+    }
     void processNextJob();
   }
 }
@@ -258,10 +320,15 @@ export async function createCompressionJob(
     createdAt: new Date().toISOString(),
     startedAt: null,
     completedAt: null,
+    expiresAt: null,
+    downloadUrl: null,
     error: null,
     inputPath,
     outputPath,
     process: null,
+    downloadToken: null,
+    downloadSignature: null,
+    cleanupTimer: null,
   };
 
   jobs.set(id, job);
@@ -304,5 +371,69 @@ export async function cancelCompressionJob(id: string) {
     return snapshot(job);
   }
 
+  if (job.status === "completed") {
+    setJobStatus(job, "deleted");
+    job.progress = 100;
+    job.downloadToken = null;
+    job.downloadSignature = null;
+    job.expiresAt = null;
+    await cleanupJobFiles(job);
+    return snapshot(job);
+  }
+
   return snapshot(job);
+}
+
+export async function expireCompressionJob(id: string) {
+  const job = jobs.get(id);
+
+  if (!job || job.status !== "completed") {
+    return null;
+  }
+
+  setJobStatus(job, "expired");
+  job.downloadToken = null;
+  job.downloadSignature = null;
+  await cleanupJobFiles(job);
+
+  return snapshot(job);
+}
+
+export async function readCompressionDownload(
+  id: string,
+  token: string,
+  signature: string,
+) {
+  const job = jobs.get(id);
+
+  if (
+    !job ||
+    job.status !== "completed" ||
+    !job.expiresAt ||
+    !job.downloadToken ||
+    !job.downloadSignature
+  ) {
+    return null;
+  }
+
+  if (new Date(job.expiresAt).getTime() <= Date.now()) {
+    await expireCompressionJob(id);
+    return null;
+  }
+
+  const expectedSignature = createDownloadSignature(id, token, job.expiresAt);
+
+  if (
+    !constantTimeEqual(token, job.downloadToken) ||
+    !constantTimeEqual(signature, job.downloadSignature) ||
+    !constantTimeEqual(signature, expectedSignature)
+  ) {
+    return null;
+  }
+
+  return {
+    fileName: `${path.parse(job.originalName).name}.qavelix-compressed.mp4`,
+    contentType: "video/mp4",
+    bytes: await readFile(job.outputPath),
+  };
 }
