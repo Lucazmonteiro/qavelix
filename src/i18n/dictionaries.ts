@@ -1,5 +1,10 @@
 import type { Locale } from "@/i18n/locales";
 
+type CardCopy = {
+  title: string;
+  description: string;
+};
+
 type Dictionary = {
   metadata: {
     title: string;
@@ -8,6 +13,7 @@ type Dictionary = {
   navigation: {
     skipToContent: string;
     product: string;
+    upload: string;
     design: string;
     accessibility: string;
     readiness: string;
@@ -29,10 +35,7 @@ type Dictionary = {
     previewTitle: string;
     previewDescription: string;
     previewItems: string[];
-    principles: Array<{
-      title: string;
-      description: string;
-    }>;
+    principles: CardCopy[];
     stats: Array<{
       value: string;
       label: string;
@@ -42,10 +45,7 @@ type Dictionary = {
         eyebrow: string;
         title: string;
         description: string;
-        items: Array<{
-          title: string;
-          description: string;
-        }>;
+        items: CardCopy[];
       };
       accessibility: {
         eyebrow: string;
@@ -57,11 +57,39 @@ type Dictionary = {
         eyebrow: string;
         title: string;
         description: string;
-        items: Array<{
-          title: string;
-          description: string;
-        }>;
+        items: CardCopy[];
       };
+    };
+  };
+  upload: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    dropTitle: string;
+    dropDescription: string;
+    browseLabel: string;
+    analyzingLabel: string;
+    supportedLabel: string;
+    limitsLabel: string;
+    successTitle: string;
+    errorTitle: string;
+    fileLabel: string;
+    sizeLabel: string;
+    typeLabel: string;
+    durationLabel: string;
+    resolutionLabel: string;
+    videoCodecLabel: string;
+    audioCodecLabel: string;
+    bitrateLabel: string;
+    frameRateLabel: string;
+    formatLabel: string;
+    emptyState: string;
+    clientErrors: {
+      unsupportedExtension: string;
+      unsupportedMime: string;
+      tooLarge: string;
+      empty: string;
+      multiple: string;
     };
   };
   footer: {
@@ -74,13 +102,14 @@ type Dictionary = {
 const dictionaries: Record<Locale, Dictionary> = {
   en: {
     metadata: {
-      title: "QAVELIX Design System",
+      title: "QAVELIX Upload Validation",
       description:
-        "The responsive, accessible, theme-ready design system foundation for QAVELIX.",
+        "The secure upload validation and FFprobe metadata analysis foundation for QAVELIX.",
     },
     navigation: {
       skipToContent: "Skip to content",
       product: "Product",
+      upload: "Upload validation",
       design: "Design system",
       accessibility: "Accessibility",
       readiness: "Readiness",
@@ -91,48 +120,52 @@ const dictionaries: Record<Locale, Dictionary> = {
       systemTheme: "System",
     },
     home: {
-      eyebrow: "Phase 2 design system",
+      eyebrow: "Phase 3 upload validation",
       title: "QAVELIX",
       description:
-        "A polished, responsive interface foundation for a future browser-based media utility, built with localized content, accessible controls, and resilient light and dark themes.",
-      primaryAction: "Explore system",
-      secondaryAction: "Review accessibility",
+        "A secure browser-based media utility foundation with localized UI, resilient themes, and strict upload validation before any compression workflow is introduced.",
+      primaryAction: "Validate upload",
+      secondaryAction: "Review security",
       statusLabel: "Current scope",
       statusValue:
-        "Design system and landing experience only. FFmpeg, payments, ads, and accounts remain intentionally excluded.",
-      previewLabel: "Interface preview",
-      previewTitle: "Prepared for the product phases ahead",
+        "Upload validation and FFprobe analysis only. Compression, payments, ads, and accounts remain intentionally excluded.",
+      previewLabel: "Validation preview",
+      previewTitle: "Prepared for safe media intake",
       previewDescription:
-        "The layout now supports clear navigation, theme preferences, localized content, and reusable presentation patterns.",
-      previewItems: ["Responsive shell", "Theme controls", "Localized navigation"],
+        "Files are checked for size, extension, MIME type, binary signature, and FFprobe metadata before future media processing phases.",
+      previewItems: [
+        "Drag-and-drop upload",
+        "Server-side validation",
+        "Temporary analysis",
+      ],
       principles: [
         {
-          title: "Clear hierarchy",
+          title: "Secure intake",
           description:
-            "Large decisions are easy to scan, while supporting content stays compact and predictable.",
+            "Validation happens before media analysis, and temporary files are cleaned up after inspection.",
         },
         {
-          title: "Reusable patterns",
+          title: "Clear feedback",
           description:
-            "Cards, buttons, navigation, and structured sections share a single visual language.",
+            "Errors explain exactly which upload rule failed so users can recover without guessing.",
         },
         {
           title: "Production posture",
           description:
-            "The Phase 1 security, validation, Docker, Vercel, linting, and build foundations are preserved.",
+            "The Phase 1 and Phase 2 security, deployment, i18n, theme, and accessibility foundations are preserved.",
         },
       ],
       stats: [
-        { value: "3", label: "Locales" },
-        { value: "2", label: "Themes" },
-        { value: "100%", label: "Responsive" },
+        { value: "250 MB", label: "Upload limit" },
+        { value: "5", label: "Formats" },
+        { value: "FFprobe", label: "Analysis" },
       ],
       sections: {
         designSystem: {
           eyebrow: "Design system",
           title: "A complete visual foundation",
           description:
-            "QAVELIX now has tokens, components, content structure, and page composition rules that can carry future upload and compression workflows.",
+            "QAVELIX keeps the Phase 2 tokens, components, content structure, and page composition rules while adding the upload validation interface.",
           items: [
             {
               title: "Color tokens",
@@ -147,7 +180,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             {
               title: "Interaction states",
               description:
-                "Buttons, links, selector controls, and focus rings include hover, active, current, and keyboard states.",
+                "Buttons, links, selector controls, upload states, and focus rings include hover, active, current, and keyboard states.",
             },
           ],
         },
@@ -155,11 +188,11 @@ const dictionaries: Record<Locale, Dictionary> = {
           eyebrow: "Accessibility basics",
           title: "Built for keyboard and screen-reader use",
           description:
-            "The foundation includes semantic landmarks, skip navigation, visible focus states, contrast-aware theme tokens, and reduced-motion handling.",
+            "The upload surface keeps semantic landmarks, labels, live status messages, visible focus states, contrast-aware theme tokens, and reduced-motion handling.",
           items: [
             "Skip link targets the main content.",
-            "Navigation and selectors have explicit labels.",
-            "Current locale and active theme are announced.",
+            "Upload controls have explicit labels and instructions.",
+            "Validation status uses polite live announcements.",
             "Motion is restrained for users who request reduced motion.",
           ],
         },
@@ -167,45 +200,80 @@ const dictionaries: Record<Locale, Dictionary> = {
           eyebrow: "Readiness",
           title: "Ready to extend without rewriting",
           description:
-            "The design system is intentionally broad enough for future product surfaces while avoiding future-phase functionality.",
+            "The upload validation system is intentionally limited to safe intake and metadata extraction while avoiding future-phase compression functionality.",
           items: [
             {
               title: "Landing page",
               description:
-                "The first screen communicates the product direction without implementing compression features.",
+                "The first screen communicates the product direction and now includes a validation workflow.",
             },
             {
-              title: "Navigation",
+              title: "Validation API",
               description:
-                "Header links, language switching, and footer wayfinding are localized and responsive.",
+                "Server checks MIME type, extension, binary signature, upload size, and FFprobe metadata.",
             },
             {
-              title: "Theme persistence",
+              title: "Temporary handling",
               description:
-                "The client stores the user preference and respects system color scheme when requested.",
+                "Files use random temporary names for FFprobe analysis and are deleted after processing.",
             },
           ],
         },
       },
     },
+    upload: {
+      eyebrow: "Phase 3 upload validation",
+      title: "Secure media upload checks",
+      description:
+        "Drop a video file to validate size, extension, MIME type, file signature, and FFprobe metadata before any future compression workflow exists.",
+      dropTitle: "Drop one video file here",
+      dropDescription:
+        "Files are temporarily analyzed, never stored permanently, and deleted after FFprobe finishes.",
+      browseLabel: "Choose file",
+      analyzingLabel: "Analyzing file",
+      supportedLabel: "Supported formats",
+      limitsLabel: "Maximum upload size: 250 MB",
+      successTitle: "Validation passed",
+      errorTitle: "Validation failed",
+      fileLabel: "File",
+      sizeLabel: "Size",
+      typeLabel: "MIME type",
+      durationLabel: "Duration",
+      resolutionLabel: "Resolution",
+      videoCodecLabel: "Video codec",
+      audioCodecLabel: "Audio codec",
+      bitrateLabel: "Bitrate",
+      frameRateLabel: "Frame rate",
+      formatLabel: "Container",
+      emptyState: "No file analyzed yet.",
+      clientErrors: {
+        unsupportedExtension: "This file extension is not supported.",
+        unsupportedMime: "This MIME type is not supported.",
+        tooLarge: "This file exceeds the 250 MB upload limit.",
+        empty: "This file is empty.",
+        multiple: "Upload one file at a time.",
+      },
+    },
     footer: {
       description:
-        "QAVELIX is being built in deliberate phases. This phase adds the visual and accessibility foundation.",
-      phase: "Phase 2 complete foundation",
+        "QAVELIX is being built in deliberate phases. This phase adds secure upload validation and metadata analysis.",
+      phase: "Phase 3 upload validation complete",
       linksLabel: "Footer navigation",
     },
   },
   "pt-BR": {
     metadata: {
-      title: "Sistema de design QAVELIX",
-      description: "A fundação responsiva, acessível e pronta para temas do QAVELIX.",
+      title: "Validacao de upload QAVELIX",
+      description:
+        "A fundacao segura de validacao de upload e analise de metadados com FFprobe do QAVELIX.",
     },
     navigation: {
-      skipToContent: "Pular para o conteúdo",
+      skipToContent: "Pular para o conteudo",
       product: "Produto",
+      upload: "Validacao de upload",
       design: "Sistema de design",
       accessibility: "Acessibilidade",
-      readiness: "Prontidão",
+      readiness: "Prontidao",
       languageLabel: "Selecionar idioma",
       themeLabel: "Tema",
       lightTheme: "Claro",
@@ -213,121 +281,160 @@ const dictionaries: Record<Locale, Dictionary> = {
       systemTheme: "Sistema",
     },
     home: {
-      eyebrow: "Sistema de design da fase 2",
+      eyebrow: "Validacao de upload da fase 3",
       title: "QAVELIX",
       description:
-        "Uma base visual refinada e responsiva para uma futura ferramenta de mídia no navegador, com conteúdo localizado, controles acessíveis e temas claro e escuro.",
-      primaryAction: "Explorar sistema",
-      secondaryAction: "Ver acessibilidade",
+        "Uma fundacao segura para utilitario de midia no navegador, com UI localizada, temas resilientes e validacao rigorosa antes de qualquer fluxo de compressao.",
+      primaryAction: "Validar upload",
+      secondaryAction: "Ver seguranca",
       statusLabel: "Escopo atual",
       statusValue:
-        "Somente sistema de design e landing page. FFmpeg, pagamentos, anúncios e contas continuam excluídos intencionalmente.",
-      previewLabel: "Prévia da interface",
-      previewTitle: "Preparado para as próximas fases do produto",
+        "Somente validacao de upload e analise com FFprobe. Compressao, pagamentos, anuncios e contas continuam excluidos.",
+      previewLabel: "Previa de validacao",
+      previewTitle: "Preparado para entrada segura de midia",
       previewDescription:
-        "O layout agora oferece navegação clara, preferência de tema, conteúdo localizado e padrões visuais reutilizáveis.",
-      previewItems: ["Estrutura responsiva", "Controles de tema", "Navegação localizada"],
+        "Arquivos sao verificados por tamanho, extensao, MIME, assinatura binaria e metadados do FFprobe antes das proximas fases.",
+      previewItems: [
+        "Upload com arrastar e soltar",
+        "Validacao no servidor",
+        "Analise temporaria",
+      ],
       principles: [
         {
-          title: "Hierarquia clara",
+          title: "Entrada segura",
           description:
-            "As decisões principais são fáceis de entender, enquanto o conteúdo de apoio permanece compacto e previsível.",
+            "A validacao acontece antes da analise de midia, e arquivos temporarios sao removidos depois da inspecao.",
         },
         {
-          title: "Padrões reutilizáveis",
+          title: "Feedback claro",
           description:
-            "Cards, botões, navegação e seções estruturadas compartilham uma única linguagem visual.",
+            "Erros explicam exatamente qual regra de upload falhou para que o usuario possa corrigir sem adivinhar.",
         },
         {
-          title: "Postura de produção",
+          title: "Postura de producao",
           description:
-            "As bases de segurança, validação, Docker, Vercel, lint e build da fase 1 foram preservadas.",
+            "As bases de seguranca, deploy, i18n, tema e acessibilidade das fases 1 e 2 foram preservadas.",
         },
       ],
       stats: [
-        { value: "3", label: "Idiomas" },
-        { value: "2", label: "Temas" },
-        { value: "100%", label: "Responsivo" },
+        { value: "250 MB", label: "Limite" },
+        { value: "5", label: "Formatos" },
+        { value: "FFprobe", label: "Analise" },
       ],
       sections: {
         designSystem: {
           eyebrow: "Sistema de design",
-          title: "Uma fundação visual completa",
+          title: "Uma fundacao visual completa",
           description:
-            "O QAVELIX agora tem tokens, componentes, estrutura de conteúdo e regras de composição para futuras telas de upload e compressão.",
+            "O QAVELIX mantem os tokens, componentes, estrutura de conteudo e regras visuais da fase 2 ao adicionar a interface de validacao.",
           items: [
             {
               title: "Tokens de cor",
               description:
-                "Variáveis semânticas definem superfícies, textos, bordas, destaques, foco e estados para os dois temas.",
+                "Variaveis semanticas definem superficies, textos, bordas, destaques, foco e estados para os dois temas.",
             },
             {
               title: "Primitivos de layout",
               description:
-                "Estrutura responsiva, larguras controladas, espaçamento de seções e ritmo de cards mantêm a consistência.",
+                "Estrutura responsiva, larguras controladas, espacamento de secoes e ritmo de cards mantem consistencia.",
             },
             {
-              title: "Estados de interação",
+              title: "Estados de interacao",
               description:
-                "Botões, links, seletores e foco por teclado incluem estados de hover, ativo, atual e acessível.",
+                "Botoes, links, seletores, estados de upload e foco por teclado incluem hover, ativo, atual e acessivel.",
             },
           ],
         },
         accessibility: {
-          eyebrow: "Acessibilidade básica",
+          eyebrow: "Acessibilidade basica",
           title: "Feito para teclado e leitores de tela",
           description:
-            "A fundação inclui landmarks semânticos, link de pular navegação, foco visível, contraste nos temas e tratamento para movimento reduzido.",
+            "A area de upload mantem landmarks semanticos, rotulos, mensagens de status, foco visivel, contraste e movimento reduzido.",
           items: [
-            "Link de pular navegação aponta para o conteúdo principal.",
-            "Navegação e seletores têm rótulos explícitos.",
-            "Idioma atual e tema ativo são anunciados.",
-            "O movimento é contido para quem prefere movimento reduzido.",
+            "Link de pular navegacao aponta para o conteudo principal.",
+            "Controles de upload tem rotulos e instrucoes explicitas.",
+            "O status de validacao usa anuncios ao vivo educados.",
+            "O movimento e contido para quem prefere movimento reduzido.",
           ],
         },
         readiness: {
-          eyebrow: "Prontidão",
+          eyebrow: "Prontidao",
           title: "Pronto para evoluir sem reescrever",
           description:
-            "O sistema de design é amplo o suficiente para futuras telas do produto sem implementar funcionalidades de fases futuras.",
+            "A validacao de upload se limita a entrada segura e extracao de metadados, sem implementar compressao de fases futuras.",
           items: [
             {
               title: "Landing page",
               description:
-                "A primeira tela comunica a direção do produto sem implementar recursos de compressão.",
+                "A primeira tela comunica a direcao do produto e agora inclui um fluxo de validacao.",
             },
             {
-              title: "Navegação",
+              title: "API de validacao",
               description:
-                "Links do cabeçalho, troca de idioma e navegação do rodapé são localizados e responsivos.",
+                "O servidor verifica MIME, extensao, assinatura binaria, tamanho e metadados do FFprobe.",
             },
             {
-              title: "Persistência de tema",
+              title: "Tratamento temporario",
               description:
-                "O cliente salva a preferência do usuário e respeita o esquema de cores do sistema quando solicitado.",
+                "Arquivos usam nomes temporarios aleatorios para analise com FFprobe e sao removidos depois.",
             },
           ],
         },
       },
     },
+    upload: {
+      eyebrow: "Validacao de upload da fase 3",
+      title: "Verificacoes seguras de midia",
+      description:
+        "Solte um video para validar tamanho, extensao, MIME, assinatura do arquivo e metadados do FFprobe antes de qualquer fluxo futuro de compressao.",
+      dropTitle: "Solte um video aqui",
+      dropDescription:
+        "Os arquivos sao analisados temporariamente, nunca ficam armazenados de forma permanente e sao removidos apos o FFprobe terminar.",
+      browseLabel: "Escolher arquivo",
+      analyzingLabel: "Analisando arquivo",
+      supportedLabel: "Formatos aceitos",
+      limitsLabel: "Tamanho maximo: 250 MB",
+      successTitle: "Validacao aprovada",
+      errorTitle: "Validacao falhou",
+      fileLabel: "Arquivo",
+      sizeLabel: "Tamanho",
+      typeLabel: "Tipo MIME",
+      durationLabel: "Duracao",
+      resolutionLabel: "Resolucao",
+      videoCodecLabel: "Codec de video",
+      audioCodecLabel: "Codec de audio",
+      bitrateLabel: "Bitrate",
+      frameRateLabel: "Taxa de quadros",
+      formatLabel: "Container",
+      emptyState: "Nenhum arquivo analisado ainda.",
+      clientErrors: {
+        unsupportedExtension: "Esta extensao de arquivo nao e aceita.",
+        unsupportedMime: "Este tipo MIME nao e aceito.",
+        tooLarge: "Este arquivo excede o limite de 250 MB.",
+        empty: "Este arquivo esta vazio.",
+        multiple: "Envie um arquivo por vez.",
+      },
+    },
     footer: {
       description:
-        "O QAVELIX está sendo construído em fases deliberadas. Esta fase adiciona a fundação visual e de acessibilidade.",
-      phase: "Fundação da fase 2 concluída",
-      linksLabel: "Navegação do rodapé",
+        "O QAVELIX esta sendo construido em fases deliberadas. Esta fase adiciona validacao segura de upload e analise de metadados.",
+      phase: "Validacao de upload da fase 3 concluida",
+      linksLabel: "Navegacao do rodape",
     },
   },
   es: {
     metadata: {
-      title: "Sistema de diseño QAVELIX",
-      description: "La base responsive, accesible y preparada para temas de QAVELIX.",
+      title: "Validacion de carga QAVELIX",
+      description:
+        "La base segura de validacion de carga y analisis de metadatos con FFprobe de QAVELIX.",
     },
     navigation: {
       skipToContent: "Saltar al contenido",
       product: "Producto",
-      design: "Sistema de diseño",
+      upload: "Validacion de carga",
+      design: "Sistema de diseno",
       accessibility: "Accesibilidad",
-      readiness: "Preparación",
+      readiness: "Preparacion",
       languageLabel: "Seleccionar idioma",
       themeLabel: "Tema",
       lightTheme: "Claro",
@@ -335,112 +442,145 @@ const dictionaries: Record<Locale, Dictionary> = {
       systemTheme: "Sistema",
     },
     home: {
-      eyebrow: "Sistema de diseño de la fase 2",
+      eyebrow: "Validacion de carga de fase 3",
       title: "QAVELIX",
       description:
-        "Una base visual pulida y responsive para una futura herramienta multimedia en el navegador, con contenido localizado, controles accesibles y temas claro y oscuro.",
-      primaryAction: "Explorar sistema",
-      secondaryAction: "Ver accesibilidad",
+        "Una base segura para una utilidad multimedia en el navegador, con UI localizada, temas resilientes y validacion estricta antes de cualquier flujo de compresion.",
+      primaryAction: "Validar carga",
+      secondaryAction: "Ver seguridad",
       statusLabel: "Alcance actual",
       statusValue:
-        "Solo sistema de diseño y landing page. FFmpeg, pagos, anuncios y cuentas siguen excluidos intencionalmente.",
-      previewLabel: "Vista de interfaz",
-      previewTitle: "Preparado para las próximas fases del producto",
+        "Solo validacion de carga y analisis con FFprobe. Compresion, pagos, anuncios y cuentas siguen excluidos.",
+      previewLabel: "Vista de validacion",
+      previewTitle: "Preparado para entrada segura de medios",
       previewDescription:
-        "El layout ahora ofrece navegación clara, preferencias de tema, contenido localizado y patrones visuales reutilizables.",
+        "Los archivos se verifican por tamano, extension, MIME, firma binaria y metadatos de FFprobe antes de futuras fases.",
       previewItems: [
-        "Estructura responsive",
-        "Controles de tema",
-        "Navegación localizada",
+        "Carga con arrastrar y soltar",
+        "Validacion del servidor",
+        "Analisis temporal",
       ],
       principles: [
         {
-          title: "Jerarquía clara",
+          title: "Entrada segura",
           description:
-            "Las decisiones principales son fáciles de revisar, mientras el contenido de apoyo se mantiene compacto y predecible.",
+            "La validacion ocurre antes del analisis de medios, y los archivos temporales se eliminan despues de la inspeccion.",
         },
         {
-          title: "Patrones reutilizables",
+          title: "Feedback claro",
           description:
-            "Tarjetas, botones, navegación y secciones estructuradas comparten un mismo lenguaje visual.",
+            "Los errores explican exactamente que regla de carga fallo para que el usuario pueda corregir sin adivinar.",
         },
         {
-          title: "Postura de producción",
+          title: "Postura de produccion",
           description:
-            "Las bases de seguridad, validación, Docker, Vercel, lint y build de la fase 1 se conservan.",
+            "Las bases de seguridad, despliegue, i18n, tema y accesibilidad de las fases 1 y 2 se conservan.",
         },
       ],
       stats: [
-        { value: "3", label: "Idiomas" },
-        { value: "2", label: "Temas" },
-        { value: "100%", label: "Responsive" },
+        { value: "250 MB", label: "Limite" },
+        { value: "5", label: "Formatos" },
+        { value: "FFprobe", label: "Analisis" },
       ],
       sections: {
         designSystem: {
-          eyebrow: "Sistema de diseño",
+          eyebrow: "Sistema de diseno",
           title: "Una base visual completa",
           description:
-            "QAVELIX ahora tiene tokens, componentes, estructura de contenido y reglas de composición para futuras pantallas de carga y compresión.",
+            "QAVELIX conserva los tokens, componentes, estructura de contenido y reglas visuales de fase 2 al agregar la interfaz de validacion.",
           items: [
             {
               title: "Tokens de color",
               description:
-                "Variables semánticas definen superficies, texto, bordes, acentos, foco y estados para ambos temas.",
+                "Variables semanticas definen superficies, texto, bordes, acentos, foco y estados para ambos temas.",
             },
             {
               title: "Primitivos de layout",
               description:
-                "Una estructura responsive, anchos controlados, espaciado de secciones y ritmo de tarjetas mantienen la consistencia.",
+                "Una estructura responsive, anchos controlados, espaciado de secciones y ritmo de tarjetas mantienen consistencia.",
             },
             {
-              title: "Estados de interacción",
+              title: "Estados de interaccion",
               description:
-                "Botones, enlaces, selectores y foco por teclado incluyen estados hover, activo, actual y accesible.",
+                "Botones, enlaces, selectores, estados de carga y foco por teclado incluyen hover, activo, actual y accesible.",
             },
           ],
         },
         accessibility: {
-          eyebrow: "Accesibilidad básica",
+          eyebrow: "Accesibilidad basica",
           title: "Hecho para teclado y lectores de pantalla",
           description:
-            "La base incluye landmarks semánticos, enlace de salto, foco visible, tokens con contraste y soporte para movimiento reducido.",
+            "La superficie de carga conserva landmarks semanticos, etiquetas, mensajes de estado, foco visible, contraste y movimiento reducido.",
           items: [
             "El enlace de salto apunta al contenido principal.",
-            "La navegación y los selectores tienen etiquetas explícitas.",
-            "El idioma actual y el tema activo se anuncian.",
+            "Los controles de carga tienen etiquetas e instrucciones explicitas.",
+            "El estado de validacion usa anuncios en vivo educados.",
             "El movimiento se limita cuando el usuario lo solicita.",
           ],
         },
         readiness: {
-          eyebrow: "Preparación",
+          eyebrow: "Preparacion",
           title: "Listo para extender sin reescribir",
           description:
-            "El sistema de diseño es suficientemente amplio para futuras superficies del producto sin implementar funciones de fases futuras.",
+            "La validacion de carga se limita a entrada segura y extraccion de metadatos, sin implementar compresion de fases futuras.",
           items: [
             {
               title: "Landing page",
               description:
-                "La primera pantalla comunica la dirección del producto sin implementar funciones de compresión.",
+                "La primera pantalla comunica la direccion del producto y ahora incluye un flujo de validacion.",
             },
             {
-              title: "Navegación",
+              title: "API de validacion",
               description:
-                "Los enlaces del encabezado, el cambio de idioma y el footer están localizados y son responsive.",
+                "El servidor verifica MIME, extension, firma binaria, tamano y metadatos de FFprobe.",
             },
             {
-              title: "Persistencia de tema",
+              title: "Manejo temporal",
               description:
-                "El cliente guarda la preferencia del usuario y respeta el esquema de color del sistema cuando se solicita.",
+                "Los archivos usan nombres temporales aleatorios para FFprobe y se eliminan despues del proceso.",
             },
           ],
         },
       },
     },
+    upload: {
+      eyebrow: "Validacion de carga de fase 3",
+      title: "Controles seguros de medios",
+      description:
+        "Arrastra un video para validar tamano, extension, MIME, firma del archivo y metadatos de FFprobe antes de cualquier flujo futuro de compresion.",
+      dropTitle: "Suelta un video aqui",
+      dropDescription:
+        "Los archivos se analizan temporalmente, nunca se almacenan de forma permanente y se eliminan despues de FFprobe.",
+      browseLabel: "Elegir archivo",
+      analyzingLabel: "Analizando archivo",
+      supportedLabel: "Formatos admitidos",
+      limitsLabel: "Tamano maximo: 250 MB",
+      successTitle: "Validacion aprobada",
+      errorTitle: "Validacion fallida",
+      fileLabel: "Archivo",
+      sizeLabel: "Tamano",
+      typeLabel: "Tipo MIME",
+      durationLabel: "Duracion",
+      resolutionLabel: "Resolucion",
+      videoCodecLabel: "Codec de video",
+      audioCodecLabel: "Codec de audio",
+      bitrateLabel: "Bitrate",
+      frameRateLabel: "Fotogramas",
+      formatLabel: "Contenedor",
+      emptyState: "Aun no se analizo ningun archivo.",
+      clientErrors: {
+        unsupportedExtension: "Esta extension de archivo no es compatible.",
+        unsupportedMime: "Este tipo MIME no es compatible.",
+        tooLarge: "Este archivo supera el limite de 250 MB.",
+        empty: "Este archivo esta vacio.",
+        multiple: "Sube un archivo a la vez.",
+      },
+    },
     footer: {
       description:
-        "QAVELIX se está construyendo en fases deliberadas. Esta fase añade la base visual y de accesibilidad.",
-      phase: "Base de fase 2 completada",
-      linksLabel: "Navegación del footer",
+        "QAVELIX se esta construyendo en fases deliberadas. Esta fase agrega validacion segura de carga y analisis de metadatos.",
+      phase: "Validacion de carga de fase 3 completada",
+      linksLabel: "Navegacion del footer",
     },
   },
 };

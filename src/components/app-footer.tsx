@@ -12,6 +12,7 @@ type AppFooterProps = {
 export function AppFooter({ locale, dictionary }: AppFooterProps) {
   const links = [
     { href: `/${locale}#product`, label: dictionary.navigation.product },
+    { href: `/${locale}#upload-validation`, label: dictionary.navigation.upload },
     { href: `/${locale}#design-system`, label: dictionary.navigation.design },
     { href: `/${locale}#accessibility`, label: dictionary.navigation.accessibility },
     { href: `/${locale}#readiness`, label: dictionary.navigation.readiness },

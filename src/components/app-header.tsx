@@ -14,6 +14,7 @@ type AppHeaderProps = {
 export function AppHeader({ locale, dictionary }: AppHeaderProps) {
   const navigationItems = [
     { href: `/${locale}#product`, label: dictionary.navigation.product },
+    { href: `/${locale}#upload-validation`, label: dictionary.navigation.upload },
     { href: `/${locale}#design-system`, label: dictionary.navigation.design },
     { href: `/${locale}#accessibility`, label: dictionary.navigation.accessibility },
     { href: `/${locale}#readiness`, label: dictionary.navigation.readiness },

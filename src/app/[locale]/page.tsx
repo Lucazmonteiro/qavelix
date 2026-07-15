@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { FoundationCard } from "@/components/foundation-card";
 import { SectionHeading } from "@/components/section-heading";
+import { UploadValidator } from "@/components/upload-validator";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale } from "@/i18n/locales";
 import { buildLocalizedAlternates } from "@/lib/metadata";
@@ -52,10 +53,10 @@ export default async function HomePage({ params }: HomePageProps) {
             <p className="hero-section__description">{dictionary.home.description}</p>
 
             <div className="hero-section__actions">
-              <a className="button button--primary" href={`/${locale}#design-system`}>
+              <a className="button button--primary" href={`/${locale}#upload-validation`}>
                 {dictionary.home.primaryAction}
               </a>
-              <a className="button button--secondary" href={`/${locale}#accessibility`}>
+              <a className="button button--secondary" href={`/${locale}#readiness`}>
                 {dictionary.home.secondaryAction}
               </a>
             </div>
@@ -85,6 +86,8 @@ export default async function HomePage({ params }: HomePageProps) {
             </div>
           </aside>
         </section>
+
+        <UploadValidator copy={dictionary.upload} />
 
         <section className="card-grid" aria-label={dictionary.home.eyebrow}>
           {dictionary.home.principles.map((principle) => (

@@ -1,6 +1,6 @@
 # QAVELIX
 
-QAVELIX is being built in phases. Phase 1 created the secure technical foundation, and Phase 2 adds the responsive design system, landing page, navigation, footer, language selector, theme controls, and accessibility basics.
+QAVELIX is being built in phases. Phase 1 created the secure technical foundation, Phase 2 added the responsive design system, and Phase 3 adds secure upload validation with FFprobe metadata analysis.
 
 ## Included in Phase 1
 
@@ -24,9 +24,18 @@ QAVELIX is being built in phases. Phase 1 created the secure technical foundatio
 - Localized language selector for `en`, `pt-BR`, and `es`
 - Accessibility basics: semantic landmarks, skip link, keyboard focus states, labels, contrast-aware tokens, and reduced-motion handling
 
+## Included in Phase 3
+
+- Drag-and-drop video upload validation UI
+- Client-side prechecks for size, extension, MIME type, empty files, and single-file upload
+- Server-side validation for extension, MIME type, binary file signature, and upload size
+- FFprobe metadata extraction for duration, bitrate, container, codecs, resolution, and frame rate
+- Random temporary file naming and cleanup after analysis
+- Structured upload errors for recoverable failure states
+
 ## Explicitly excluded from current phases
 
-- FFmpeg or media compression logic
+- FFmpeg compression or media conversion logic
 - Payments
 - Ads
 - User accounts or authentication
