@@ -8,7 +8,7 @@ import { SectionHeading } from "@/components/section-heading";
 import { UploadValidator } from "@/components/upload-validator";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale } from "@/i18n/locales";
-import { buildLocalizedAlternates } from "@/lib/metadata";
+import { buildSeoMetadata } from "@/lib/metadata";
 
 type HomePageProps = {
   params: Promise<{
@@ -25,11 +25,11 @@ export async function generateMetadata({ params }: HomePageProps): Promise<Metad
 
   const dictionary = getDictionary(locale);
 
-  return {
+  return buildSeoMetadata({
     title: dictionary.metadata.title,
     description: dictionary.metadata.description,
-    alternates: buildLocalizedAlternates(),
-  };
+    locale,
+  });
 }
 
 export default async function HomePage({ params }: HomePageProps) {

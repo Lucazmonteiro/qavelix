@@ -1,8 +1,24 @@
 import type { Locale } from "@/i18n/locales";
+import type { ContentPageSlug } from "@/config/content-pages";
 
 type CardCopy = {
   title: string;
   description: string;
+};
+
+type ContentPageCopy = {
+  label: string;
+  metadata: {
+    title: string;
+    description: string;
+  };
+  eyebrow: string;
+  title: string;
+  description: string;
+  sections: Array<{
+    title: string;
+    body: string[];
+  }>;
 };
 
 type Dictionary = {
@@ -149,6 +165,7 @@ type Dictionary = {
     phase: string;
     linksLabel: string;
   };
+  pages: Record<ContentPageSlug, ContentPageCopy>;
 };
 
 const dictionaries: Record<Locale, Dictionary> = {
@@ -366,6 +383,178 @@ const dictionaries: Record<Locale, Dictionary> = {
       phase: "Secure media workflow foundation",
       linksLabel: "Footer navigation",
     },
+    pages: {
+      about: {
+        label: "About",
+        metadata: {
+          title: "About QAVELIX",
+          description:
+            "Learn about the QAVELIX secure media workflow, its current scope, and the principles behind the product.",
+        },
+        eyebrow: "About",
+        title: "Secure media workflows, built deliberately",
+        description:
+          "QAVELIX is a privacy-focused browser workflow for validating, analyzing, compressing, and downloading video files through a controlled server process.",
+        sections: [
+          {
+            title: "Current scope",
+            body: [
+              "The current product foundation focuses on secure file intake, FFprobe metadata analysis, queued FFmpeg compression, signed temporary downloads, and localized user interface patterns.",
+              "Payments, ads, accounts, arbitrary conversion settings, and long-term file storage remain outside the current scope.",
+            ],
+          },
+          {
+            title: "Product principles",
+            body: [
+              "Every phase is designed to preserve security, accessibility, localization, and deployment readiness while adding only the capabilities needed for the next milestone.",
+              "Temporary files are treated as short-lived processing artifacts and are removed after analysis, completion, deletion, or expiration.",
+            ],
+          },
+        ],
+      },
+      contact: {
+        label: "Contact",
+        metadata: {
+          title: "Contact QAVELIX",
+          description:
+            "Find the placeholder contact information for QAVELIX product, security, and legal inquiries.",
+        },
+        eyebrow: "Contact",
+        title: "Contact placeholders",
+        description:
+          "This page reserves the contact surface for future support, security, and legal channels.",
+        sections: [
+          {
+            title: "General inquiries",
+            body: [
+              "A production contact address will be added before public launch.",
+              "Until then, this placeholder confirms where product and support contact information will live.",
+            ],
+          },
+          {
+            title: "Security and legal notices",
+            body: [
+              "Dedicated security and legal contact channels will be published before QAVELIX is offered to external users.",
+              "Do not submit sensitive personal data through placeholder contact surfaces.",
+            ],
+          },
+        ],
+      },
+      faq: {
+        label: "FAQ",
+        metadata: {
+          title: "QAVELIX FAQ",
+          description:
+            "Read answers to common questions about QAVELIX validation, compression, downloads, storage, and current product scope.",
+        },
+        eyebrow: "FAQ",
+        title: "Frequently asked questions",
+        description:
+          "These answers describe the current foundation and will evolve as future phases add production policies and support channels.",
+        sections: [
+          {
+            title: "Does QAVELIX store uploaded files?",
+            body: [
+              "Uploaded files are treated as temporary processing inputs. Validation files are removed after metadata analysis, and compression inputs are removed after the job leaves active processing.",
+              "Completed compressed outputs are available through signed temporary download links until they expire or are manually deleted.",
+            ],
+          },
+          {
+            title: "Which files are supported?",
+            body: [
+              "The current workflow supports a fixed set of common video formats and rejects unsupported extensions, MIME types, empty files, oversized files, and mismatched binary signatures.",
+            ],
+          },
+          {
+            title: "Is this a final legal policy?",
+            body: [
+              "No. The FAQ, privacy policy, terms, and cookie policy pages are placeholders for Phase 7 and must be reviewed before public launch.",
+            ],
+          },
+        ],
+      },
+      "privacy-policy": {
+        label: "Privacy Policy",
+        metadata: {
+          title: "QAVELIX Privacy Policy",
+          description:
+            "Read the placeholder privacy policy for QAVELIX, including temporary file handling and future policy scope.",
+        },
+        eyebrow: "Privacy",
+        title: "Privacy Policy placeholder",
+        description:
+          "This placeholder outlines the intended privacy posture for the current QAVELIX foundation and is not a final legal policy.",
+        sections: [
+          {
+            title: "Data handling",
+            body: [
+              "QAVELIX currently processes selected video files to validate file identity, extract media metadata, run queued compression jobs, and provide signed temporary downloads.",
+              "Temporary files are not intended for permanent storage and are removed through the workflow cleanup lifecycle.",
+            ],
+          },
+          {
+            title: "Future policy review",
+            body: [
+              "Before any public launch, this page should be replaced or reviewed by qualified legal counsel and updated with the production data controller, contact details, retention periods, subprocessors, user rights, and jurisdiction-specific disclosures.",
+            ],
+          },
+        ],
+      },
+      terms: {
+        label: "Terms",
+        metadata: {
+          title: "QAVELIX Terms",
+          description:
+            "Read the placeholder terms for QAVELIX, including current feature scope and future legal review requirements.",
+        },
+        eyebrow: "Terms",
+        title: "Terms placeholder",
+        description:
+          "These terms are placeholders for the current development phase and are not a final agreement for public use.",
+        sections: [
+          {
+            title: "Permitted use",
+            body: [
+              "The current product foundation is intended for controlled testing of secure media validation, compression, and temporary downloads.",
+              "Users should only upload files they are authorized to process and should not upload unlawful, sensitive, or confidential material during development.",
+            ],
+          },
+          {
+            title: "No production agreement yet",
+            body: [
+              "Final terms should define acceptable use, service availability, disclaimers, liability limits, intellectual property rights, dispute terms, and account or payment terms if those features are added later.",
+            ],
+          },
+        ],
+      },
+      "cookie-policy": {
+        label: "Cookie Policy",
+        metadata: {
+          title: "QAVELIX Cookie Policy",
+          description:
+            "Read the placeholder cookie policy for QAVELIX, including current local theme preference storage.",
+        },
+        eyebrow: "Cookies",
+        title: "Cookie Policy placeholder",
+        description:
+          "This placeholder explains the current preference storage behavior and reserves space for a future production cookie policy.",
+        sections: [
+          {
+            title: "Current storage",
+            body: [
+              "QAVELIX currently stores the selected Light or Dark theme in localStorage so the interface can preserve the user's preference across page reloads.",
+              "The current foundation does not include advertising cookies, analytics cookies, payment tracking, or account sessions.",
+            ],
+          },
+          {
+            title: "Future policy review",
+            body: [
+              "If analytics, authentication, marketing, embedded media, or third-party services are added later, this page should be updated with a full cookie inventory and any required consent controls.",
+            ],
+          },
+        ],
+      },
+    },
   },
   "pt-BR": {
     metadata: {
@@ -582,6 +771,178 @@ const dictionaries: Record<Locale, Dictionary> = {
       phase: "Base segura para fluxo de mídia",
       linksLabel: "Navegação do rodapé",
     },
+    pages: {
+      about: {
+        label: "Sobre",
+        metadata: {
+          title: "Sobre o QAVELIX",
+          description:
+            "Conheça o fluxo seguro de mídia do QAVELIX, o escopo atual e os princípios do produto.",
+        },
+        eyebrow: "Sobre",
+        title: "Fluxos seguros de mídia, construídos com cuidado",
+        description:
+          "O QAVELIX é um fluxo no navegador, com foco em privacidade, para validar, analisar, comprimir e baixar vídeos por meio de um processo controlado no servidor.",
+        sections: [
+          {
+            title: "Escopo atual",
+            body: [
+              "A base atual do produto se concentra em entrada segura de arquivos, análise de metadados com FFprobe, compressão FFmpeg em fila, downloads temporários assinados e padrões de interface localizados.",
+              "Pagamentos, anúncios, contas, configurações arbitrárias de conversão e armazenamento permanente de arquivos continuam fora do escopo atual.",
+            ],
+          },
+          {
+            title: "Princípios do produto",
+            body: [
+              "Cada fase foi pensada para preservar segurança, acessibilidade, localização e prontidão para deploy enquanto adiciona apenas os recursos necessários para o próximo marco.",
+              "Arquivos temporários são tratados como artefatos de processamento de curta duração e são removidos após análise, conclusão, exclusão ou expiração.",
+            ],
+          },
+        ],
+      },
+      contact: {
+        label: "Contato",
+        metadata: {
+          title: "Contato QAVELIX",
+          description:
+            "Veja as informações provisórias de contato para assuntos de produto, segurança e jurídico do QAVELIX.",
+        },
+        eyebrow: "Contato",
+        title: "Canais de contato provisórios",
+        description:
+          "Esta página reserva o espaço de contato para futuros canais de suporte, segurança e jurídico.",
+        sections: [
+          {
+            title: "Dúvidas gerais",
+            body: [
+              "Um endereço de contato de produção será adicionado antes do lançamento público.",
+              "Até lá, este placeholder confirma onde ficarão as informações de produto e suporte.",
+            ],
+          },
+          {
+            title: "Avisos de segurança e jurídico",
+            body: [
+              "Canais dedicados para segurança e jurídico serão publicados antes de o QAVELIX ser oferecido a usuários externos.",
+              "Não envie dados pessoais sensíveis por superfícies de contato provisórias.",
+            ],
+          },
+        ],
+      },
+      faq: {
+        label: "FAQ",
+        metadata: {
+          title: "FAQ do QAVELIX",
+          description:
+            "Leia respostas sobre validação, compressão, downloads, armazenamento e escopo atual do QAVELIX.",
+        },
+        eyebrow: "FAQ",
+        title: "Perguntas frequentes",
+        description:
+          "Estas respostas descrevem a base atual e serão atualizadas conforme fases futuras adicionarem políticas de produção e canais de suporte.",
+        sections: [
+          {
+            title: "O QAVELIX armazena arquivos enviados?",
+            body: [
+              "Arquivos enviados são tratados como entradas temporárias de processamento. Arquivos de validação são removidos depois da análise de metadados, e entradas de compressão são removidas quando o job sai do processamento ativo.",
+              "Arquivos comprimidos concluídos ficam disponíveis por links temporários assinados até expirarem ou serem excluídos manualmente.",
+            ],
+          },
+          {
+            title: "Quais arquivos são aceitos?",
+            body: [
+              "O fluxo atual aceita um conjunto fixo de formatos comuns de vídeo e rejeita extensões não aceitas, tipos MIME não aceitos, arquivos vazios, arquivos grandes demais e assinaturas binárias incompatíveis.",
+            ],
+          },
+          {
+            title: "Esta é uma política jurídica final?",
+            body: [
+              "Não. As páginas de FAQ, política de privacidade, termos e política de cookies são placeholders da Fase 7 e precisam de revisão antes do lançamento público.",
+            ],
+          },
+        ],
+      },
+      "privacy-policy": {
+        label: "Política de Privacidade",
+        metadata: {
+          title: "Política de Privacidade do QAVELIX",
+          description:
+            "Leia a política de privacidade provisória do QAVELIX, incluindo tratamento temporário de arquivos e escopo futuro.",
+        },
+        eyebrow: "Privacidade",
+        title: "Placeholder da Política de Privacidade",
+        description:
+          "Este placeholder descreve a postura de privacidade pretendida para a base atual do QAVELIX e não é uma política jurídica final.",
+        sections: [
+          {
+            title: "Tratamento de dados",
+            body: [
+              "O QAVELIX atualmente processa vídeos selecionados para validar identidade do arquivo, extrair metadados de mídia, executar jobs de compressão em fila e fornecer downloads temporários assinados.",
+              "Arquivos temporários não são destinados a armazenamento permanente e são removidos pelo ciclo de limpeza do fluxo.",
+            ],
+          },
+          {
+            title: "Revisão futura da política",
+            body: [
+              "Antes de qualquer lançamento público, esta página deve ser substituída ou revisada por assessoria jurídica qualificada e atualizada com controlador de dados, contatos, prazos de retenção, subprocessadores, direitos dos usuários e divulgações específicas por jurisdição.",
+            ],
+          },
+        ],
+      },
+      terms: {
+        label: "Termos",
+        metadata: {
+          title: "Termos do QAVELIX",
+          description:
+            "Leia os termos provisórios do QAVELIX, incluindo o escopo atual de recursos e a necessidade de revisão jurídica futura.",
+        },
+        eyebrow: "Termos",
+        title: "Placeholder dos Termos",
+        description:
+          "Estes termos são provisórios para a fase atual de desenvolvimento e não são um acordo final para uso público.",
+        sections: [
+          {
+            title: "Uso permitido",
+            body: [
+              "A base atual do produto se destina a testes controlados de validação segura de mídia, compressão e downloads temporários.",
+              "Usuários devem enviar apenas arquivos que tenham autorização para processar e não devem enviar material ilegal, sensível ou confidencial durante o desenvolvimento.",
+            ],
+          },
+          {
+            title: "Ainda não há contrato de produção",
+            body: [
+              "Os termos finais devem definir uso aceitável, disponibilidade do serviço, isenções, limites de responsabilidade, direitos de propriedade intelectual, resolução de disputas e termos de conta ou pagamento se esses recursos forem adicionados depois.",
+            ],
+          },
+        ],
+      },
+      "cookie-policy": {
+        label: "Política de Cookies",
+        metadata: {
+          title: "Política de Cookies do QAVELIX",
+          description:
+            "Leia a política de cookies provisória do QAVELIX, incluindo o armazenamento local da preferência de tema.",
+        },
+        eyebrow: "Cookies",
+        title: "Placeholder da Política de Cookies",
+        description:
+          "Este placeholder explica o comportamento atual de armazenamento de preferências e reserva espaço para uma futura política de cookies de produção.",
+        sections: [
+          {
+            title: "Armazenamento atual",
+            body: [
+              "O QAVELIX atualmente armazena o tema Claro ou Escuro selecionado no localStorage para preservar a preferência do usuário entre recarregamentos de página.",
+              "A base atual não inclui cookies de publicidade, cookies de analytics, rastreamento de pagamentos ou sessões de conta.",
+            ],
+          },
+          {
+            title: "Revisão futura da política",
+            body: [
+              "Se analytics, autenticação, marketing, mídia incorporada ou serviços de terceiros forem adicionados depois, esta página deve ser atualizada com um inventário completo de cookies e os controles de consentimento necessários.",
+            ],
+          },
+        ],
+      },
+    },
   },
   es: {
     metadata: {
@@ -797,6 +1158,178 @@ const dictionaries: Record<Locale, Dictionary> = {
         "QAVELIX es un flujo multimedia seguro construido por fases, con bases de validación, compresión, limpieza de descargas y localización.",
       phase: "Base segura para el flujo multimedia",
       linksLabel: "Navegación del pie de página",
+    },
+    pages: {
+      about: {
+        label: "Acerca de",
+        metadata: {
+          title: "Acerca de QAVELIX",
+          description:
+            "Conoce el flujo multimedia seguro de QAVELIX, su alcance actual y los principios del producto.",
+        },
+        eyebrow: "Acerca de",
+        title: "Flujos multimedia seguros, construidos con criterio",
+        description:
+          "QAVELIX es un flujo en el navegador, centrado en la privacidad, para validar, analizar, comprimir y descargar vídeos mediante un proceso controlado en el servidor.",
+        sections: [
+          {
+            title: "Alcance actual",
+            body: [
+              "La base actual del producto se centra en la entrada segura de archivos, el análisis de metadatos con FFprobe, la compresión FFmpeg en cola, las descargas temporales firmadas y patrones de interfaz localizados.",
+              "Los pagos, anuncios, cuentas, ajustes arbitrarios de conversión y almacenamiento permanente de archivos quedan fuera del alcance actual.",
+            ],
+          },
+          {
+            title: "Principios del producto",
+            body: [
+              "Cada fase está diseñada para preservar seguridad, accesibilidad, localización y preparación para despliegue mientras añade solo las capacidades necesarias para el siguiente hito.",
+              "Los archivos temporales se tratan como artefactos de procesamiento de corta duración y se eliminan tras el análisis, la finalización, la eliminación o la caducidad.",
+            ],
+          },
+        ],
+      },
+      contact: {
+        label: "Contacto",
+        metadata: {
+          title: "Contacto QAVELIX",
+          description:
+            "Consulta la información provisional de contacto para asuntos de producto, seguridad y legales de QAVELIX.",
+        },
+        eyebrow: "Contacto",
+        title: "Canales de contacto provisionales",
+        description:
+          "Esta página reserva la superficie de contacto para futuros canales de soporte, seguridad y asuntos legales.",
+        sections: [
+          {
+            title: "Consultas generales",
+            body: [
+              "Se añadirá una dirección de contacto de producción antes del lanzamiento público.",
+              "Hasta entonces, este placeholder confirma dónde estarán las vías de contacto de producto y soporte.",
+            ],
+          },
+          {
+            title: "Avisos de seguridad y legales",
+            body: [
+              "Los canales dedicados de seguridad y asuntos legales se publicarán antes de que QAVELIX se ofrezca a usuarios externos.",
+              "No envíes datos personales sensibles a través de superficies de contacto provisionales.",
+            ],
+          },
+        ],
+      },
+      faq: {
+        label: "FAQ",
+        metadata: {
+          title: "FAQ de QAVELIX",
+          description:
+            "Lee respuestas sobre validación, compresión, descargas, almacenamiento y alcance actual de QAVELIX.",
+        },
+        eyebrow: "FAQ",
+        title: "Preguntas frecuentes",
+        description:
+          "Estas respuestas describen la base actual y evolucionarán cuando fases futuras añadan políticas de producción y canales de soporte.",
+        sections: [
+          {
+            title: "¿QAVELIX almacena los archivos cargados?",
+            body: [
+              "Los archivos cargados se tratan como entradas temporales de procesamiento. Los archivos de validación se eliminan después del análisis de metadatos, y las entradas de compresión se eliminan cuando el trabajo sale del procesamiento activo.",
+              "Los archivos comprimidos completados quedan disponibles mediante enlaces temporales firmados hasta que caducan o se eliminan manualmente.",
+            ],
+          },
+          {
+            title: "¿Qué archivos se admiten?",
+            body: [
+              "El flujo actual admite un conjunto fijo de formatos de vídeo habituales y rechaza extensiones no admitidas, tipos MIME no admitidos, archivos vacíos, archivos demasiado grandes y firmas binarias incompatibles.",
+            ],
+          },
+          {
+            title: "¿Es una política legal definitiva?",
+            body: [
+              "No. Las páginas de FAQ, política de privacidad, términos y política de cookies son placeholders de la Fase 7 y deben revisarse antes del lanzamiento público.",
+            ],
+          },
+        ],
+      },
+      "privacy-policy": {
+        label: "Política de Privacidad",
+        metadata: {
+          title: "Política de Privacidad de QAVELIX",
+          description:
+            "Lee la política de privacidad provisional de QAVELIX, incluido el tratamiento temporal de archivos y el alcance futuro.",
+        },
+        eyebrow: "Privacidad",
+        title: "Placeholder de la Política de Privacidad",
+        description:
+          "Este placeholder resume la postura de privacidad prevista para la base actual de QAVELIX y no es una política legal definitiva.",
+        sections: [
+          {
+            title: "Tratamiento de datos",
+            body: [
+              "QAVELIX procesa actualmente vídeos seleccionados para validar la identidad del archivo, extraer metadatos multimedia, ejecutar trabajos de compresión en cola y proporcionar descargas temporales firmadas.",
+              "Los archivos temporales no están pensados para almacenamiento permanente y se eliminan mediante el ciclo de limpieza del flujo.",
+            ],
+          },
+          {
+            title: "Revisión futura de la política",
+            body: [
+              "Antes de cualquier lanzamiento público, esta página debe sustituirse o revisarse por asesoría legal cualificada y actualizarse con el responsable del tratamiento, datos de contacto, plazos de conservación, subencargados, derechos de los usuarios e información específica por jurisdicción.",
+            ],
+          },
+        ],
+      },
+      terms: {
+        label: "Términos",
+        metadata: {
+          title: "Términos de QAVELIX",
+          description:
+            "Lee los términos provisionales de QAVELIX, incluido el alcance actual de funciones y los requisitos de revisión legal futura.",
+        },
+        eyebrow: "Términos",
+        title: "Placeholder de los Términos",
+        description:
+          "Estos términos son provisionales para la fase actual de desarrollo y no son un acuerdo definitivo para uso público.",
+        sections: [
+          {
+            title: "Uso permitido",
+            body: [
+              "La base actual del producto está pensada para pruebas controladas de validación multimedia segura, compresión y descargas temporales.",
+              "Los usuarios solo deben cargar archivos que estén autorizados a procesar y no deben cargar material ilícito, sensible o confidencial durante el desarrollo.",
+            ],
+          },
+          {
+            title: "Aún no existe un contrato de producción",
+            body: [
+              "Los términos definitivos deben definir uso aceptable, disponibilidad del servicio, exenciones, límites de responsabilidad, derechos de propiedad intelectual, resolución de disputas y términos de cuenta o pago si esas funciones se añaden más adelante.",
+            ],
+          },
+        ],
+      },
+      "cookie-policy": {
+        label: "Política de Cookies",
+        metadata: {
+          title: "Política de Cookies de QAVELIX",
+          description:
+            "Lee la política de cookies provisional de QAVELIX, incluido el almacenamiento local de la preferencia de tema.",
+        },
+        eyebrow: "Cookies",
+        title: "Placeholder de la Política de Cookies",
+        description:
+          "Este placeholder explica el comportamiento actual de almacenamiento de preferencias y reserva espacio para una futura política de cookies de producción.",
+        sections: [
+          {
+            title: "Almacenamiento actual",
+            body: [
+              "QAVELIX almacena actualmente el tema Claro u Oscuro seleccionado en localStorage para conservar la preferencia del usuario entre recargas de página.",
+              "La base actual no incluye cookies publicitarias, cookies de analítica, seguimiento de pagos ni sesiones de cuenta.",
+            ],
+          },
+          {
+            title: "Revisión futura de la política",
+            body: [
+              "Si más adelante se añaden analítica, autenticación, marketing, medios incrustados o servicios de terceros, esta página debe actualizarse con un inventario completo de cookies y los controles de consentimiento necesarios.",
+            ],
+          },
+        ],
+      },
     },
   },
 };

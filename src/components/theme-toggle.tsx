@@ -11,6 +11,30 @@ type ThemeToggleProps = {
 };
 
 const modes: ThemeMode[] = ["light", "dark"];
+const storageKey = "qavelix-theme";
+
+function getStoredTheme() {
+  try {
+    const storedTheme = window.localStorage.getItem(storageKey);
+
+    return storedTheme === "light" || storedTheme === "dark" ? storedTheme : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistTheme(theme: ThemeMode) {
+  try {
+    window.localStorage.setItem(storageKey, theme);
+  } catch {
+    return;
+  }
+}
+
+function applyTheme(theme: ThemeMode) {
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+}
 
 export function ThemeToggle({ label, lightLabel, darkLabel }: ThemeToggleProps) {
   const [mounted, setMounted] = useState(false);
@@ -18,9 +42,9 @@ export function ThemeToggle({ label, lightLabel, darkLabel }: ThemeToggleProps) 
 
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
-      const storedTheme = window.localStorage.getItem("qavelix-theme");
+      const storedTheme = getStoredTheme();
 
-      if (storedTheme === "light" || storedTheme === "dark") {
+      if (storedTheme) {
         setMode(storedTheme);
       }
 
@@ -35,10 +59,15 @@ export function ThemeToggle({ label, lightLabel, darkLabel }: ThemeToggleProps) 
       return;
     }
 
-    document.documentElement.dataset.theme = mode;
-    document.documentElement.style.colorScheme = mode;
-    window.localStorage.setItem("qavelix-theme", mode);
+    applyTheme(mode);
+    persistTheme(mode);
   }, [mode, mounted]);
+
+  function selectTheme(theme: ThemeMode) {
+    setMode(theme);
+    applyTheme(theme);
+    persistTheme(theme);
+  }
 
   const labels: Record<ThemeMode, string> = {
     light: lightLabel,
@@ -51,8 +80,10 @@ export function ThemeToggle({ label, lightLabel, darkLabel }: ThemeToggleProps) 
         <button
           aria-pressed={mounted ? mode === themeMode : false}
           className="theme-toggle__button"
+          data-theme-option={themeMode}
           key={themeMode}
-          onClick={() => setMode(themeMode)}
+          onClick={() => selectTheme(themeMode)}
+          suppressHydrationWarning
           type="button"
         >
           {labels[themeMode]}

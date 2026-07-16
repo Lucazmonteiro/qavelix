@@ -4,6 +4,7 @@ const isDevelopment = process.env.NODE_ENV === "development";
 const scriptSource = isDevelopment
   ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
   : "script-src 'self' 'unsafe-inline'";
+const upgradeInsecureRequests = isDevelopment ? [] : ["upgrade-insecure-requests"];
 
 const securityHeaders = [
   {
@@ -23,7 +24,7 @@ const securityHeaders = [
       "frame-src 'none'",
       "child-src 'none'",
       "manifest-src 'self'",
-      "upgrade-insecure-requests",
+      ...upgradeInsecureRequests,
     ].join("; "),
   },
   {

@@ -1,6 +1,6 @@
 # QAVELIX
 
-QAVELIX is being built in phases. Phase 1 created the secure technical foundation, Phase 2 added the responsive design system, Phase 3 added secure upload validation with FFprobe metadata analysis, Phase 4 added queued FFmpeg compression, Phase 5 added secure downloads with cleanup lifecycle handling, and Phase 6 hardened the application security layer.
+QAVELIX is being built in phases. Phase 1 created the secure technical foundation, Phase 2 added the responsive design system, Phase 3 added secure upload validation with FFprobe metadata analysis, Phase 4 added queued FFmpeg compression, Phase 5 added secure downloads with cleanup lifecycle handling, Phase 6 hardened the application security layer, and Phase 7 adds SEO plus legal-readiness placeholder pages.
 
 ## Included in Phase 1
 
@@ -63,6 +63,14 @@ QAVELIX is being built in phases. Phase 1 created the secure technical foundatio
 - UUID and signed token validation before job/download lookups
 - Bounded compression queue and retained job lifecycle storage
 - Structured server-side security logging with request IDs
+
+## Included in Phase 7
+
+- Localized About, Contact, FAQ, Privacy Policy, Terms, and Cookie Policy placeholder pages
+- Per-locale page metadata with canonical URLs, language alternates, Open Graph, and Twitter metadata
+- Sitemap generation for all supported locale routes and content/legal pages
+- Robots policy that allows public pages and disallows API crawling
+- Footer navigation links to the SEO and legal-readiness pages
 
 ## Explicitly excluded from current phases
 

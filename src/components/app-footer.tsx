@@ -1,5 +1,6 @@
 import type { Locale } from "@/i18n/locales";
 
+import { contentPageSlugs } from "@/config/content-pages";
 import type { getDictionary } from "@/i18n/dictionaries";
 
 type Dictionary = ReturnType<typeof getDictionary>;
@@ -17,6 +18,10 @@ export function AppFooter({ locale, dictionary }: AppFooterProps) {
     { href: `/${locale}#design-system`, label: dictionary.navigation.design },
     { href: `/${locale}#accessibility`, label: dictionary.navigation.accessibility },
     { href: `/${locale}#readiness`, label: dictionary.navigation.readiness },
+    ...contentPageSlugs.map((slug) => ({
+      href: `/${locale}/${slug}`,
+      label: dictionary.pages[slug].label,
+    })),
   ];
 
   return (
