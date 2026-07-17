@@ -2,6 +2,8 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
+import { validateSameOriginRequest } from "@/lib/server/origin";
+
 type RateLimitOptions = {
   key: string;
   limit: number;
@@ -33,23 +35,7 @@ export function getClientFingerprint(request: Request) {
 }
 
 export function validateSameOrigin(request: Request) {
-  const requestUrl = new URL(request.url);
-  const origin = request.headers.get("origin");
-  const referer = request.headers.get("referer");
-
-  try {
-    if (origin) {
-      return new URL(origin).origin === requestUrl.origin;
-    }
-
-    if (referer) {
-      return new URL(referer).origin === requestUrl.origin;
-    }
-  } catch {
-    return false;
-  }
-
-  return false;
+  return validateSameOriginRequest(request);
 }
 
 export function checkRateLimit({ key, limit, windowMs }: RateLimitOptions) {

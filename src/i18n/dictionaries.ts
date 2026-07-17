@@ -40,6 +40,8 @@ type Dictionary = {
     themeLabel: string;
     lightTheme: string;
     darkTheme: string;
+    back: string;
+    backToTop: string;
   };
   home: {
     eyebrow: string;
@@ -121,22 +123,52 @@ type Dictionary = {
     dropTitle: string;
     dropDescription: string;
     browseLabel: string;
+    validatingLabel: string;
+    validationSuccessLabel: string;
+    validationFailedLabel: string;
+    fileLabel: string;
+    sizeLabel: string;
+    typeLabel: string;
+    durationLabel: string;
+    resolutionLabel: string;
+    videoCodecLabel: string;
+    audioCodecLabel: string;
+    bitrateLabel: string;
+    frameRateLabel: string;
+    formatLabel: string;
+    unknownLabel: string;
     presetLabel: string;
+    presetQuestionLabel: string;
+    recommendedLabel: string;
+    expectedReductionLabel: string;
+    useCasesLabel: string;
     startLabel: string;
     cancelLabel: string;
     progressLabel: string;
+    waitingLabel: string;
+    readyLabel: string;
     queuedLabel: string;
+    startingLabel: string;
     runningLabel: string;
     completedLabel: string;
+    optimizedLabel: string;
+    ineffectiveLabel: string;
     failedLabel: string;
     cancelledLabel: string;
     expiredLabel: string;
     deletedLabel: string;
     originalSizeLabel: string;
     compressedSizeLabel: string;
+    savedLabel: string;
+    increaseLabel: string;
+    increasePercentLabel: string;
+    reductionLabel: string;
     expiresLabel: string;
     downloadLabel: string;
+    downloadAnywayLabel: string;
     deleteLabel: string;
+    ineffectiveWarning: string;
+    successMessage: string;
     presetNames: {
       balanced: string;
       small: string;
@@ -147,6 +179,21 @@ type Dictionary = {
       small: string;
       high: string;
     };
+    presetUseCases: {
+      balanced: string[];
+      small: string[];
+      high: string[];
+    };
+    presetReductionRanges: {
+      balanced: string;
+      small: string;
+      high: string;
+    };
+    presetNotes: Partial<{
+      balanced: string;
+      small: string;
+      high: string;
+    }>;
     errors: {
       noFile: string;
       empty: string;
@@ -154,6 +201,8 @@ type Dictionary = {
       unsupportedExtension: string;
       unsupportedMime: string;
       invalidSignature: string;
+      analysisUnavailable: string;
+      analysisFailed: string;
       queueFull: string;
       uploadFailed: string;
       jobFailed: string;
@@ -189,21 +238,23 @@ const dictionaries: Record<Locale, Dictionary> = {
       themeLabel: "Theme",
       lightTheme: "Light",
       darkTheme: "Dark",
+      back: "Back",
+      backToTop: "Back to top",
     },
     home: {
-      eyebrow: "Secure media workflow",
-      title: "QAVELIX",
+      eyebrow: "Video compressor",
+      title: "QAVELIX Video Compressor",
       description:
-        "A localized browser workflow for validating video files, extracting FFprobe metadata, compressing with queued FFmpeg jobs, and serving downloads through signed temporary links.",
-      primaryAction: "Validate a file",
+        "Compress videos quickly and securely, with the quality you need in just a few clicks.",
+      primaryAction: "Upload a video",
       secondaryAction: "Review safeguards",
       statusLabel: "Active capabilities",
       statusValue:
         "Validation, metadata analysis, queued compression, signed downloads, and security controls are active. Payments, ads, and accounts are intentionally excluded.",
       previewLabel: "Workflow preview",
-      previewTitle: "Prepared for secure media intake",
+      previewTitle: "Validation runs automatically",
       previewDescription:
-        "Files are checked for size, extension, MIME type, binary signature, and FFprobe metadata before compression or download handling begins.",
+        "Every selected file is checked for size, extension, MIME type, binary signature, and media metadata before compression starts.",
       previewItems: [
         "Drag-and-drop upload",
         "Server-side validation",
@@ -338,31 +389,76 @@ const dictionaries: Record<Locale, Dictionary> = {
       dropDescription:
         "Compression uses secure FFmpeg execution with fixed argument arrays, random temporary paths, and no shell interpolation.",
       browseLabel: "Choose compression file",
+      validatingLabel: "Checking video",
+      validationSuccessLabel: "Video ready",
+      validationFailedLabel: "Video cannot be compressed",
+      fileLabel: "File",
+      sizeLabel: "Size",
+      typeLabel: "MIME type",
+      durationLabel: "Duration",
+      resolutionLabel: "Resolution",
+      videoCodecLabel: "Video codec",
+      audioCodecLabel: "Audio codec",
+      bitrateLabel: "Bitrate",
+      frameRateLabel: "Frame rate",
+      formatLabel: "Container",
+      unknownLabel: "Unknown",
       presetLabel: "Compression preset",
+      presetQuestionLabel: "How do you want to compress this video?",
+      recommendedLabel: "Recommended",
+      expectedReductionLabel: "Expected reduction",
+      useCasesLabel: "Ideal for",
       startLabel: "Start compression",
       cancelLabel: "Cancel job",
       progressLabel: "Progress",
+      waitingLabel: "Waiting for file",
+      readyLabel: "Ready to compress",
       queuedLabel: "Queued",
-      runningLabel: "Running",
+      startingLabel: "Starting",
+      runningLabel: "Compressing",
       completedLabel: "Completed",
-      failedLabel: "Failed",
+      optimizedLabel: "Optimized",
+      ineffectiveLabel: "Compression ineffective",
+      failedLabel: "Compression failed",
       cancelledLabel: "Cancelled",
       expiredLabel: "Expired",
       deletedLabel: "Deleted",
       originalSizeLabel: "Original size",
       compressedSizeLabel: "Compressed size",
+      savedLabel: "Saved",
+      increaseLabel: "Increase",
+      increasePercentLabel: "Increase percentage",
+      reductionLabel: "Reduction",
       expiresLabel: "Expires",
       downloadLabel: "Download",
+      downloadAnywayLabel: "Download anyway",
       deleteLabel: "Delete file",
+      ineffectiveWarning:
+        "The selected preset could not reduce the file size. The resulting file is larger than the original. Try the Balanced or Smaller File preset to attempt a smaller output.",
+      successMessage: "✔ Compression completed successfully",
       presetNames: {
         balanced: "Balanced",
-        small: "Small file",
-        high: "High quality",
+        small: "Smaller File",
+        high: "High Quality",
       },
       presetDescriptions: {
-        balanced: "1080p target with a practical balance of quality and size.",
-        small: "720p target for smaller output files.",
-        high: "Higher visual quality with a larger output file.",
+        balanced:
+          "The best balance between visual quality and file size for everyday publishing.",
+        small: "The strongest size reduction for quick sharing and saving space.",
+        high: "Prioritizes visual quality when preserving detail matters most.",
+      },
+      presetUseCases: {
+        balanced: ["YouTube", "Instagram", "TikTok"],
+        small: ["WhatsApp", "Email", "Saving space"],
+        high: ["Archiving", "Editing", "Master files"],
+      },
+      presetReductionRanges: {
+        balanced: "20-50%",
+        small: "40-70%",
+        high: "10-25%",
+      },
+      presetNotes: {
+        high: "Files that are already heavily compressed may not become smaller.",
       },
       errors: {
         noFile: "Choose one supported video file before starting compression.",
@@ -371,6 +467,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         unsupportedExtension: "The selected file extension is not supported.",
         unsupportedMime: "The selected file MIME type is not supported.",
         invalidSignature: "The selected file signature does not match its declared type.",
+        analysisUnavailable: "Media analysis is unavailable in this environment.",
+        analysisFailed: "The video could not be analyzed. Try another supported file.",
         queueFull: "The compression queue is full. Try again later.",
         uploadFailed: "Compression could not be started.",
         jobFailed: "Compression failed. Try another supported video file.",
@@ -576,21 +674,23 @@ const dictionaries: Record<Locale, Dictionary> = {
       themeLabel: "Tema",
       lightTheme: "Claro",
       darkTheme: "Escuro",
+      back: "Voltar",
+      backToTop: "Voltar ao início",
     },
     home: {
-      eyebrow: "Fluxo seguro de mídia",
-      title: "QAVELIX",
+      eyebrow: "Compressor de vídeo",
+      title: "Compressor de vídeo QAVELIX",
       description:
-        "Um fluxo localizado no navegador para validar vídeos, extrair metadados com FFprobe, comprimir com jobs FFmpeg em fila e liberar downloads por links temporários assinados.",
-      primaryAction: "Validar arquivo",
+        "Comprima vídeos com rapidez e segurança, mantendo a qualidade ideal em poucos cliques.",
+      primaryAction: "Enviar vídeo",
       secondaryAction: "Ver salvaguardas",
       statusLabel: "Recursos ativos",
       statusValue:
         "Validação, análise de metadados, compressão em fila, downloads assinados e controles de segurança estão ativos. Pagamentos, anúncios e contas continuam fora do escopo.",
       previewLabel: "Prévia do fluxo",
-      previewTitle: "Preparado para entrada segura de mídia",
+      previewTitle: "A validação acontece automaticamente",
       previewDescription:
-        "Os arquivos são verificados por tamanho, extensão, tipo MIME, assinatura binária e metadados do FFprobe antes da compressão ou do download.",
+        "Cada arquivo selecionado é verificado por tamanho, extensão, tipo MIME, assinatura binária e metadados de mídia antes da compressão.",
       previewItems: [
         "Upload com arrastar e soltar",
         "Validação no servidor",
@@ -725,31 +825,76 @@ const dictionaries: Record<Locale, Dictionary> = {
       dropDescription:
         "A compressão usa execução segura do FFmpeg com listas fixas de argumentos, caminhos temporários aleatórios e sem interpolação de shell.",
       browseLabel: "Escolher arquivo para compressão",
+      validatingLabel: "Verificando vídeo",
+      validationSuccessLabel: "Vídeo pronto",
+      validationFailedLabel: "Este vídeo não pode ser comprimido",
+      fileLabel: "Arquivo",
+      sizeLabel: "Tamanho",
+      typeLabel: "Tipo MIME",
+      durationLabel: "Duração",
+      resolutionLabel: "Resolução",
+      videoCodecLabel: "Codec de vídeo",
+      audioCodecLabel: "Codec de áudio",
+      bitrateLabel: "Taxa de bits",
+      frameRateLabel: "Taxa de quadros",
+      formatLabel: "Contêiner",
+      unknownLabel: "Desconhecido",
       presetLabel: "Predefinição de compressão",
+      presetQuestionLabel: "Como você deseja comprimir este vídeo?",
+      recommendedLabel: "Recomendado",
+      expectedReductionLabel: "Redução esperada",
+      useCasesLabel: "Ideal para",
       startLabel: "Iniciar compressão",
       cancelLabel: "Cancelar job",
       progressLabel: "Progresso",
+      waitingLabel: "Aguardando arquivo",
+      readyLabel: "Pronto para comprimir",
       queuedLabel: "Na fila",
-      runningLabel: "Em execução",
+      startingLabel: "Iniciando",
+      runningLabel: "Comprimindo",
       completedLabel: "Concluído",
-      failedLabel: "Falhou",
+      optimizedLabel: "Otimizado",
+      ineffectiveLabel: "Compressão ineficaz",
+      failedLabel: "Falha na compressão",
       cancelledLabel: "Cancelado",
       expiredLabel: "Expirado",
       deletedLabel: "Excluído",
       originalSizeLabel: "Tamanho original",
       compressedSizeLabel: "Tamanho comprimido",
+      savedLabel: "Economia",
+      increaseLabel: "Aumento",
+      increasePercentLabel: "Percentual de aumento",
+      reductionLabel: "Redução",
       expiresLabel: "Expira em",
       downloadLabel: "Baixar",
+      downloadAnywayLabel: "Baixar mesmo assim",
       deleteLabel: "Excluir arquivo",
+      ineffectiveWarning:
+        "O preset selecionado não conseguiu reduzir o tamanho do arquivo. O arquivo resultante ficou maior que o original. Experimente o preset 'Equilibrada' ou 'Arquivo menor' para tentar reduzir o tamanho.",
+      successMessage: "✔ Compressão concluída com sucesso",
       presetNames: {
         balanced: "Equilibrada",
         small: "Arquivo menor",
         high: "Alta qualidade",
       },
       presetDescriptions: {
-        balanced: "Alvo em 1080p com equilíbrio prático entre qualidade e tamanho.",
-        small: "Alvo em 720p para arquivos de saída menores.",
-        high: "Maior qualidade visual com um arquivo de saída maior.",
+        balanced:
+          "Melhor equilíbrio entre qualidade visual e tamanho para publicações do dia a dia.",
+        small: "Maior redução de tamanho para compartilhar rápido e economizar espaço.",
+        high: "Prioriza a qualidade visual quando preservar detalhes é o mais importante.",
+      },
+      presetUseCases: {
+        balanced: ["YouTube", "Instagram", "TikTok"],
+        small: ["WhatsApp", "E-mail", "Economizar espaço"],
+        high: ["Arquivamento", "Edição", "Master files"],
+      },
+      presetReductionRanges: {
+        balanced: "20-50%",
+        small: "40-70%",
+        high: "10-25%",
+      },
+      presetNotes: {
+        high: "Arquivos que já estão muito comprimidos podem não reduzir de tamanho.",
       },
       errors: {
         noFile: "Escolha um vídeo aceito antes de iniciar a compressão.",
@@ -759,6 +904,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         unsupportedMime: "O tipo MIME do arquivo selecionado não é aceito.",
         invalidSignature:
           "A assinatura do arquivo selecionado não corresponde ao tipo declarado.",
+        analysisUnavailable: "A análise de mídia não está disponível neste ambiente.",
+        analysisFailed: "Não foi possível analisar o vídeo. Tente outro arquivo aceito.",
         queueFull: "A fila de compressão está cheia. Tente novamente mais tarde.",
         uploadFailed: "Não foi possível iniciar a compressão.",
         jobFailed: "A compressão falhou. Tente outro vídeo aceito.",
@@ -964,21 +1111,23 @@ const dictionaries: Record<Locale, Dictionary> = {
       themeLabel: "Tema",
       lightTheme: "Claro",
       darkTheme: "Oscuro",
+      back: "Volver",
+      backToTop: "Volver al inicio",
     },
     home: {
-      eyebrow: "Flujo multimedia seguro",
-      title: "QAVELIX",
+      eyebrow: "Compresor de vídeo",
+      title: "Compresor de vídeo QAVELIX",
       description:
-        "Un flujo localizado en el navegador para validar vídeos, extraer metadatos con FFprobe, comprimir mediante trabajos FFmpeg en cola y ofrecer descargas con enlaces temporales firmados.",
-      primaryAction: "Validar archivo",
+        "Comprime vídeos de forma rápida y segura, con la calidad que necesitas en pocos clics.",
+      primaryAction: "Subir vídeo",
       secondaryAction: "Revisar medidas",
       statusLabel: "Funciones activas",
       statusValue:
         "La validación, el análisis de metadatos, la compresión en cola, las descargas firmadas y los controles de seguridad están activos. Los pagos, los anuncios y las cuentas quedan fuera del alcance.",
       previewLabel: "Vista previa del flujo",
-      previewTitle: "Preparado para una entrada multimedia segura",
+      previewTitle: "La validación se ejecuta automáticamente",
       previewDescription:
-        "Los archivos se comprueban por tamaño, extensión, tipo MIME, firma binaria y metadatos de FFprobe antes de la compresión o la descarga.",
+        "Cada archivo seleccionado se comprueba por tamaño, extensión, tipo MIME, firma binaria y metadatos multimedia antes de iniciar la compresión.",
       previewItems: [
         "Carga mediante arrastrar y soltar",
         "Validación en el servidor",
@@ -1113,31 +1262,76 @@ const dictionaries: Record<Locale, Dictionary> = {
       dropDescription:
         "La compresión usa una ejecución segura de FFmpeg con listas fijas de argumentos, rutas temporales aleatorias y sin interpolación de shell.",
       browseLabel: "Elegir archivo para compresión",
+      validatingLabel: "Comprobando vídeo",
+      validationSuccessLabel: "Vídeo listo",
+      validationFailedLabel: "Este vídeo no se puede comprimir",
+      fileLabel: "Archivo",
+      sizeLabel: "Tamaño",
+      typeLabel: "Tipo MIME",
+      durationLabel: "Duración",
+      resolutionLabel: "Resolución",
+      videoCodecLabel: "Códec de vídeo",
+      audioCodecLabel: "Códec de audio",
+      bitrateLabel: "Tasa de bits",
+      frameRateLabel: "Frecuencia de fotogramas",
+      formatLabel: "Contenedor",
+      unknownLabel: "Desconocido",
       presetLabel: "Ajuste de compresión",
+      presetQuestionLabel: "¿Cómo quieres comprimir este vídeo?",
+      recommendedLabel: "Recomendado",
+      expectedReductionLabel: "Reducción esperada",
+      useCasesLabel: "Ideal para",
       startLabel: "Iniciar compresión",
       cancelLabel: "Cancelar trabajo",
       progressLabel: "Progreso",
+      waitingLabel: "Esperando archivo",
+      readyLabel: "Listo para comprimir",
       queuedLabel: "En cola",
-      runningLabel: "En ejecución",
+      startingLabel: "Iniciando",
+      runningLabel: "Comprimiendo",
       completedLabel: "Completado",
-      failedLabel: "Fallido",
+      optimizedLabel: "Optimizado",
+      ineffectiveLabel: "Compresión ineficaz",
+      failedLabel: "Error de compresión",
       cancelledLabel: "Cancelado",
       expiredLabel: "Caducado",
       deletedLabel: "Eliminado",
       originalSizeLabel: "Tamaño original",
       compressedSizeLabel: "Tamaño comprimido",
+      savedLabel: "Ahorro",
+      increaseLabel: "Aumento",
+      increasePercentLabel: "Porcentaje de aumento",
+      reductionLabel: "Reducción",
       expiresLabel: "Caduca",
       downloadLabel: "Descargar",
+      downloadAnywayLabel: "Descargar igualmente",
       deleteLabel: "Eliminar archivo",
+      ineffectiveWarning:
+        "El ajuste seleccionado no pudo reducir el tamaño del archivo. El archivo resultante quedó más grande que el original. Prueba el ajuste Equilibrado o Archivo más pequeño para intentar reducir el tamaño.",
+      successMessage: "✔ Compresión completada correctamente",
       presetNames: {
         balanced: "Equilibrado",
         small: "Archivo más pequeño",
         high: "Alta calidad",
       },
       presetDescriptions: {
-        balanced: "Objetivo 1080p con un equilibrio práctico entre calidad y tamaño.",
-        small: "Objetivo 720p para archivos de salida más pequeños.",
-        high: "Mayor calidad visual con un archivo de salida más grande.",
+        balanced:
+          "El mejor equilibrio entre calidad visual y tamaño para publicar a diario.",
+        small: "La mayor reducción de tamaño para compartir rápido y ahorrar espacio.",
+        high: "Prioriza la calidad visual cuando conservar el detalle es lo más importante.",
+      },
+      presetUseCases: {
+        balanced: ["YouTube", "Instagram", "TikTok"],
+        small: ["WhatsApp", "Correo electrónico", "Ahorrar espacio"],
+        high: ["Archivado", "Edición", "Másteres"],
+      },
+      presetReductionRanges: {
+        balanced: "20-50%",
+        small: "40-70%",
+        high: "10-25%",
+      },
+      presetNotes: {
+        high: "Los archivos que ya están muy comprimidos pueden no reducir su tamaño.",
       },
       errors: {
         noFile: "Elige un vídeo admitido antes de iniciar la compresión.",
@@ -1147,6 +1341,9 @@ const dictionaries: Record<Locale, Dictionary> = {
         unsupportedMime: "El tipo MIME del archivo seleccionado no está admitido.",
         invalidSignature:
           "La firma del archivo seleccionado no coincide con el tipo declarado.",
+        analysisUnavailable: "El análisis multimedia no está disponible en este entorno.",
+        analysisFailed:
+          "No se ha podido analizar el vídeo. Prueba con otro archivo admitido.",
         queueFull: "La cola de compresión está llena. Inténtalo de nuevo más tarde.",
         uploadFailed: "No se ha podido iniciar la compresión.",
         jobFailed: "La compresión ha fallado. Prueba con otro vídeo admitido.",

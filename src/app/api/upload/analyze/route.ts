@@ -12,7 +12,7 @@ import {
 } from "@/lib/server/security";
 import { validateFileIdentity } from "@/lib/server/upload-validation";
 import {
-  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_REQUEST_BYTES,
   type UploadAnalysis,
   type UploadValidationError,
 } from "@/lib/upload-policy";
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
   const oversizedResponse = rejectOversizedRequest(
     request,
-    MAX_UPLOAD_BYTES + 2 * 1024 * 1024,
+    MAX_UPLOAD_REQUEST_BYTES,
     security.requestId,
   );
 

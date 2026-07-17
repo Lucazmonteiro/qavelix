@@ -13,9 +13,6 @@ type AppHeaderProps = {
 
 export function AppHeader({ locale, dictionary }: AppHeaderProps) {
   const navigationItems = [
-    { href: `/${locale}#product`, label: dictionary.navigation.product },
-    { href: `/${locale}#upload-validation`, label: dictionary.navigation.upload },
-    { href: `/${locale}#compression`, label: dictionary.navigation.compression },
     { href: `/${locale}#design-system`, label: dictionary.navigation.design },
     { href: `/${locale}#accessibility`, label: dictionary.navigation.accessibility },
     { href: `/${locale}#readiness`, label: dictionary.navigation.readiness },
@@ -36,7 +33,10 @@ export function AppHeader({ locale, dictionary }: AppHeaderProps) {
         </a>
 
         <nav
+          id="primary-navigation"
+          tabIndex={-1}
           className="primary-nav"
+          data-navigation-origin="primary-navigation"
           aria-label={dictionary.navigation.primaryNavigationLabel}
         >
           {navigationItems.map((item) => (

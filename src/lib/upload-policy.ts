@@ -1,4 +1,6 @@
 export const MAX_UPLOAD_BYTES = 250 * 1024 * 1024;
+export const UPLOAD_REQUEST_OVERHEAD_BYTES = 2 * 1024 * 1024;
+export const MAX_UPLOAD_REQUEST_BYTES = MAX_UPLOAD_BYTES + UPLOAD_REQUEST_OVERHEAD_BYTES;
 
 export const acceptedMimeTypes = [
   "video/mp4",

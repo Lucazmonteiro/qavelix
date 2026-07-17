@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { MAX_UPLOAD_REQUEST_BYTES } from "./src/lib/upload-policy";
+
 const isDevelopment = process.env.NODE_ENV === "development";
 const scriptSource = isDevelopment
   ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
@@ -61,13 +63,48 @@ const securityHeaders = [
   },
 ];
 
+const publicMetadataCacheHeaders = [
+  ...securityHeaders,
+  {
+    key: "Cache-Control",
+    value: "public, max-age=3600, stale-while-revalidate=86400",
+  },
+];
+
+const faviconCacheHeaders = [
+  ...securityHeaders,
+  {
+    key: "Cache-Control",
+    value: "public, max-age=86400, stale-while-revalidate=604800",
+  },
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
   typedRoutes: true,
+  experimental: {
+    proxyClientMaxBodySize: MAX_UPLOAD_REQUEST_BYTES,
+  },
   async headers() {
     return [
+      {
+        source: "/favicon.svg",
+        headers: faviconCacheHeaders,
+      },
+      {
+        source: "/site.webmanifest",
+        headers: publicMetadataCacheHeaders,
+      },
+      {
+        source: "/robots.txt",
+        headers: publicMetadataCacheHeaders,
+      },
+      {
+        source: "/sitemap.xml",
+        headers: publicMetadataCacheHeaders,
+      },
       {
         source: "/(.*)",
         headers: securityHeaders,

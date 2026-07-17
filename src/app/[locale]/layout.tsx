@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
   applicationName: "QAVELIX",
   alternates: buildLocalizedAlternates(),
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg",
+  },
+  manifest: "/site.webmanifest",
 };
 
 export function generateStaticParams() {

@@ -96,7 +96,7 @@ export async function withNextServer(run) {
 
   try {
     await waitForServer(baseUrl, getOutput);
-    await run({ baseUrl });
+    await run({ baseUrl, command });
   } finally {
     await stopProcess(child);
   }

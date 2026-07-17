@@ -41,7 +41,13 @@ export function AppFooter({ locale, dictionary }: AppFooterProps) {
           <p className="site-footer__description">{dictionary.footer.description}</p>
         </div>
 
-        <nav aria-label={dictionary.footer.linksLabel} className="site-footer__links">
+        <nav
+          aria-label={dictionary.footer.linksLabel}
+          className="site-footer__links"
+          data-navigation-origin="footer-navigation"
+          id="footer-navigation"
+          tabIndex={-1}
+        >
           {links.map((link) => (
             <a href={link.href} key={link.href}>
               {link.label}

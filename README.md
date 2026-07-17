@@ -1,6 +1,6 @@
 # QAVELIX
 
-QAVELIX is being built in phases. Phase 1 created the secure technical foundation, Phase 2 added the responsive design system, Phase 3 added secure upload validation with FFprobe metadata analysis, Phase 4 added queued FFmpeg compression, Phase 5 added secure downloads with cleanup lifecycle handling, Phase 6 hardened the application security layer, and Phase 7 adds SEO plus legal-readiness placeholder pages.
+QAVELIX is being built in phases. Phase 1 created the secure technical foundation, Phase 2 added the responsive design system, Phase 3 added secure upload validation with FFprobe metadata analysis, Phase 4 added queued FFmpeg compression, Phase 5 added secure downloads with cleanup lifecycle handling, Phase 6 hardened the application security layer, Phase 7 adds SEO plus legal-readiness placeholder pages, Phase 8 adds automated tests, and Phase 9 prepares production deployment.
 
 ## Included in Phase 1
 
@@ -72,6 +72,21 @@ QAVELIX is being built in phases. Phase 1 created the secure technical foundatio
 - Robots policy that allows public pages and disallows API crawling
 - Footer navigation links to the SEO and legal-readiness pages
 
+## Included in Phase 8
+
+- Unit tests for locale routing, content page slugs, upload constraints, byte formatting, and MIME narrowing
+- Integration tests for localized routing, SEO surfaces, CSP behavior, and protected API validation
+- End-to-end tests for rendered pages, static CSS/JavaScript assets, metadata, theme controls, and structured FAQ data
+- Combined `npm run test` script for unit, integration, and end-to-end coverage
+
+## Included in Phase 9
+
+- Production environment validation for the canonical public app URL
+- Vercel deployment configuration with explicit cache headers for public metadata assets
+- Web manifest and favicon metadata wiring
+- GitHub Actions CI for lint, typecheck, build, and tests
+- Deployment documentation for Vercel, Cloudflare DNS, security headers, SEO verification, API verification, and worker deployment planning
+
 ## Explicitly excluded from current phases
 
 - Arbitrary media conversion settings outside the fixed presets
@@ -96,14 +111,25 @@ Copy `.env.example` to `.env.local` and update values as needed.
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
+Production deployments must set `NEXT_PUBLIC_APP_URL` explicitly to the canonical HTTPS origin, for example:
+
+```bash
+NEXT_PUBLIC_APP_URL=https://qavelix.com
+```
+
 ## Verification
 
 ```bash
+npm run test
 npm run lint
 npm run typecheck
 npm run format:check
 npm run build
 ```
+
+## Deployment
+
+See `docs/DEPLOYMENT.md` for Vercel setup, Cloudflare DNS, required environment variables, production security header checks, sitemap and robots verification, API checks, CI/CD, and the worker deployment guide.
 
 ## Docker
 

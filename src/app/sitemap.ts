@@ -5,6 +5,8 @@ import { siteConfig } from "@/config/site";
 import { locales } from "@/i18n/locales";
 import { buildLocalizedUrl } from "@/lib/metadata";
 
+export const revalidate = 3600;
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
   const localizedRoutes = locales.flatMap((locale) => [

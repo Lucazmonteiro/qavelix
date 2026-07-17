@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -7,6 +8,8 @@ import {
   formatBytes,
   isAcceptedMimeType,
   MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_REQUEST_BYTES,
+  UPLOAD_REQUEST_OVERHEAD_BYTES,
 } from "../../src/lib/upload-policy.ts";
 
 test("upload policy exposes the supported media constraints", () => {
@@ -22,6 +25,29 @@ test("upload policy exposes the supported media constraints", () => {
   ]);
   assert.ok(acceptedMimeTypes.includes("video/mp4"));
   assert.ok(acceptedMimeTypes.includes("video/webm"));
+});
+
+test("upload request body limit is derived from the upload policy", () => {
+  assert.equal(UPLOAD_REQUEST_OVERHEAD_BYTES, 2 * 1024 * 1024);
+  assert.equal(
+    MAX_UPLOAD_REQUEST_BYTES,
+    MAX_UPLOAD_BYTES + UPLOAD_REQUEST_OVERHEAD_BYTES,
+  );
+  assert.ok(MAX_UPLOAD_REQUEST_BYTES > 136 * 1024 * 1024);
+  assert.ok(MAX_UPLOAD_REQUEST_BYTES > MAX_UPLOAD_BYTES);
+});
+
+test("Next and API request limits use the shared upload request policy", async () => {
+  const [nextConfig, uploadRoute, compressionRoute] = await Promise.all([
+    readFile("next.config.ts", "utf8"),
+    readFile("src/app/api/upload/analyze/route.ts", "utf8"),
+    readFile("src/app/api/compression/jobs/route.ts", "utf8"),
+  ]);
+
+  assert.match(nextConfig, /proxyClientMaxBodySize:\s*MAX_UPLOAD_REQUEST_BYTES/);
+  assert.match(uploadRoute, /MAX_UPLOAD_REQUEST_BYTES/);
+  assert.match(compressionRoute, /MAX_UPLOAD_REQUEST_BYTES/);
+  assert.doesNotMatch(`${uploadRoute}\n${compressionRoute}`, /MAX_UPLOAD_BYTES\s*\+/);
 });
 
 test("formatBytes formats file sizes for user-facing validation messages", () => {

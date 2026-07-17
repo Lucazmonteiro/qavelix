@@ -33,7 +33,7 @@ export async function GET(_request: Request, { params }: JobRouteProps) {
     );
   }
 
-  const job = getCompressionJob(id);
+  const job = await getCompressionJob(id);
 
   if (!job) {
     return securityJson(

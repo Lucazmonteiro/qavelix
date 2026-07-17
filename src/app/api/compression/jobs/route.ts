@@ -6,7 +6,7 @@ import {
   rejectOversizedRequest,
   securityJson,
 } from "@/lib/server/security";
-import { MAX_UPLOAD_BYTES } from "@/lib/upload-policy";
+import { MAX_UPLOAD_REQUEST_BYTES } from "@/lib/upload-policy";
 
 export const runtime = "nodejs";
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
   const oversizedResponse = rejectOversizedRequest(
     request,
-    MAX_UPLOAD_BYTES + 2 * 1024 * 1024,
+    MAX_UPLOAD_REQUEST_BYTES,
     security.requestId,
   );
 

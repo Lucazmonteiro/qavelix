@@ -5,7 +5,6 @@ import { AppShell } from "@/components/app-shell";
 import { CompressionPanel } from "@/components/compression-panel";
 import { FoundationCard } from "@/components/foundation-card";
 import { SectionHeading } from "@/components/section-heading";
-import { UploadValidator } from "@/components/upload-validator";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale } from "@/i18n/locales";
 import { buildSeoMetadata } from "@/lib/metadata";
@@ -47,31 +46,35 @@ export default async function HomePage({ params }: HomePageProps) {
   return (
     <AppShell dictionary={dictionary} locale={locale}>
       <main className="page-shell" id="main-content">
-        <section className="hero-section" id="product">
-          <div className="hero-section__content">
+        <section className="hero-section hero-section--tool" id="product">
+          <div className="hero-section__content hero-section__content--tool">
             <p className="eyebrow">{dictionary.home.eyebrow}</p>
-            <h1>{dictionary.home.title}</h1>
             <p className="hero-section__description">{dictionary.home.description}</p>
-
-            <div className="hero-section__actions">
-              <a className="button button--primary" href={`/${locale}#upload-validation`}>
-                {dictionary.home.primaryAction}
-              </a>
-              <a className="button button--secondary" href={`/${locale}#readiness`}>
-                {dictionary.home.secondaryAction}
-              </a>
-            </div>
-
-            <dl className="stat-grid" aria-label={dictionary.home.statusLabel}>
-              {dictionary.home.stats.map((stat) => (
-                <div className="stat-grid__item" key={stat.label}>
-                  <dt>{stat.label}</dt>
-                  <dd>{stat.value}</dd>
-                </div>
-              ))}
-            </dl>
           </div>
 
+          <div className="homepage-tool" aria-label={dictionary.home.primaryAction}>
+            <CompressionPanel copy={dictionary.compression} />
+          </div>
+        </section>
+
+        <section className="workflow-summary" aria-label={dictionary.home.statusLabel}>
+          <div>
+            <p className="eyebrow">{dictionary.home.previewLabel}</p>
+            <h2>{dictionary.home.previewTitle}</h2>
+            <p>{dictionary.home.previewDescription}</p>
+          </div>
+
+          <dl className="stat-grid" aria-label={dictionary.home.statusLabel}>
+            {dictionary.home.stats.map((stat) => (
+              <div className="stat-grid__item" key={stat.label}>
+                <dt>{stat.label}</dt>
+                <dd>{stat.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <section className="supporting-preview">
           <aside className="product-preview" aria-labelledby="preview-title">
             <p className="product-preview__label">{dictionary.home.previewLabel}</p>
             <h2 id="preview-title">{dictionary.home.previewTitle}</h2>
@@ -87,10 +90,6 @@ export default async function HomePage({ params }: HomePageProps) {
             </div>
           </aside>
         </section>
-
-        <UploadValidator copy={dictionary.upload} />
-
-        <CompressionPanel copy={dictionary.compression} />
 
         <section className="card-grid" aria-label={dictionary.home.eyebrow}>
           {dictionary.home.principles.map((principle) => (
@@ -120,11 +119,13 @@ export default async function HomePage({ params }: HomePageProps) {
         </section>
 
         <section className="split-section" id="accessibility">
-          <SectionHeading
-            description={accessibility.description}
-            eyebrow={accessibility.eyebrow}
-            title={accessibility.title}
-          />
+          <div>
+            <SectionHeading
+              description={accessibility.description}
+              eyebrow={accessibility.eyebrow}
+              title={accessibility.title}
+            />
+          </div>
           <ul className="check-list">
             {accessibility.items.map((item) => (
               <li key={item}>{item}</li>
