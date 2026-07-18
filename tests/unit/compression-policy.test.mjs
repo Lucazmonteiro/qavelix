@@ -25,6 +25,11 @@ const h2641080pSource = {
   frameRate: 30,
 };
 
+const compressionQueueSource = await readFile(
+  "src/lib/server/compression-queue.ts",
+  "utf8",
+);
+
 function jobSnapshot(overrides = {}) {
   return {
     id: "11111111-1111-4111-8111-111111111111",
@@ -57,6 +62,24 @@ test("compression presets have distinct size and quality goals", () => {
   assert.ok(compressionPresets.small.crf > compressionPresets.balanced.crf);
   assert.ok(compressionPresets.balanced.crf > compressionPresets.high.crf);
   assert.ok(compressionPresets.small.maxHeight < compressionPresets.balanced.maxHeight);
+  assert.ok(compressionPresets.balanced.maxHeight < compressionPresets.high.maxHeight);
+  assert.ok(
+    compressionPresets.small.maxVideoBitrateKbps <
+      compressionPresets.balanced.maxVideoBitrateKbps,
+  );
+  assert.ok(
+    compressionPresets.balanced.maxVideoBitrateKbps <
+      compressionPresets.high.maxVideoBitrateKbps,
+  );
+  assert.ok(
+    compressionPresets.small.audioBitrateKbps <
+      compressionPresets.balanced.audioBitrateKbps,
+  );
+  assert.ok(
+    compressionPresets.balanced.audioBitrateKbps <
+      compressionPresets.high.audioBitrateKbps,
+  );
+  assert.equal(compressionPresets.high.encoderPreset, "slow");
 });
 
 test("localized compression lifecycle and success labels are present", async () => {
@@ -87,23 +110,46 @@ test("compression plans cap output bitrate below the source when reduction is li
   const small = createCompressionEncodingPlan(h2641080pSource, "small");
   const balanced = createCompressionEncodingPlan(h2641080pSource, "balanced");
   const high = createCompressionEncodingPlan(h2641080pSource, "high");
+  const highBitrateSource = {
+    ...h2641080pSource,
+    bitrate: 26_400_000,
+  };
+  const cappedSmall = createCompressionEncodingPlan(highBitrateSource, "small");
+  const cappedBalanced = createCompressionEncodingPlan(highBitrateSource, "balanced");
+  const cappedHigh = createCompressionEncodingPlan(highBitrateSource, "high");
 
   assert.equal(small.estimatedReductionLikely, true);
   assert.equal(balanced.estimatedReductionLikely, true);
   assert.equal(high.estimatedReductionLikely, true);
-  assert.equal(small.videoMaxrate, "1200k");
-  assert.equal(balanced.videoMaxrate, "2800k");
+  assert.equal(small.videoMaxrate, "2200k");
+  assert.equal(balanced.videoMaxrate, "5440k");
+  assert.equal(high.videoMaxrate, "7104k");
+  assert.equal(cappedSmall.videoMaxrate, "2200k");
+  assert.equal(cappedBalanced.videoMaxrate, "6500k");
+  assert.equal(cappedHigh.videoMaxrate, "14000k");
   assert.ok(
     Number.parseInt(high.videoMaxrate, 10) > Number.parseInt(balanced.videoMaxrate, 10),
   );
 });
 
-test("compression plans downscale only when the source exceeds the preset height", () => {
+test("compression plans keep H.264 dimensions divisible by two for every preset", () => {
   const small = createCompressionEncodingPlan(h2641080pSource, "small");
   const balanced = createCompressionEncodingPlan(h2641080pSource, "balanced");
+  const verticalSource = {
+    ...h2641080pSource,
+    width: 1080,
+    height: 1920,
+  };
 
   assert.match(small.scaleFilter ?? "", /720/);
-  assert.equal(balanced.scaleFilter, null);
+  assert.match(small.scaleFilter, /force_divisible_by=2/);
+  assert.match(balanced.scaleFilter, /trunc\(iw\/2\)\*2/);
+
+  for (const preset of Object.keys(compressionPresets)) {
+    const plan = createCompressionEncodingPlan(verticalSource, preset);
+
+    assert.match(plan.scaleFilter, /force_divisible_by=2|trunc\(iw\/2\)\*2/);
+  }
 });
 
 test("FFmpeg arguments use bounded H.264 MP4 settings", () => {
@@ -128,7 +174,50 @@ test("FFmpeg arguments use bounded H.264 MP4 settings", () => {
   assert.ok(args.includes("-bufsize"));
   assert.ok(args.includes("yuv420p"));
   assert.ok(args.includes("+faststart"));
+  assert.ok(args.includes("-progress"));
+  assert.ok(args.includes("pipe:1"));
+  assert.ok(!args.includes("pipe:2"));
   assert.equal(args.at(-1), "output.mp4");
+});
+
+test("compression worker logs complete FFmpeg diagnostics internally", () => {
+  assert.match(compressionQueueSource, /let ffmpegStderr = ""/);
+  assert.match(compressionQueueSource, /ffmpeg\.stdout\.on\("data"/);
+  assert.match(compressionQueueSource, /const progress = parseProgress/);
+  assert.match(compressionQueueSource, /ffmpeg\.stderr\.on\("data"/);
+  assert.match(compressionQueueSource, /ffmpegStderr \+= text/);
+  assert.match(compressionQueueSource, /message: text\.trim\(\)/);
+  assert.doesNotMatch(compressionQueueSource, /text\.trim\(\)\.slice/);
+  assert.match(compressionQueueSource, /command: ffmpegCommand/);
+  assert.match(compressionQueueSource, /exitCode: ffmpegExitCode/);
+  assert.match(compressionQueueSource, /stderr: ffmpegStderr/);
+  assert.match(compressionQueueSource, /stack: error instanceof Error/);
+  assert.match(compressionQueueSource, /await persistStatus\(job, "failed", "Compression failed\."\)/);
+});
+
+test("compression worker prevents duplicate execution of stale queued jobs", () => {
+  assert.match(compressionQueueSource, /const persistedJob = await readPersistedCompressionJob\(id\)/);
+  assert.match(
+    compressionQueueSource,
+    /!isPendingCompressionStatus\(persistedJob\.status\)/,
+  );
+  assert.match(
+    compressionQueueSource,
+    /persistedJob\.progress >= inMemoryJob\.progress/,
+  );
+  assert.match(compressionQueueSource, /const latestPersistedJob = await readPersistedCompressionJob\(job\.id\)/);
+  assert.match(
+    compressionQueueSource,
+    /if \(latestPersistedJob && !isPendingCompressionStatus\(latestPersistedJob\.status\)\)/,
+  );
+  assert.match(compressionQueueSource, /compression_worker_stale_job_skipped/);
+  assert.match(compressionQueueSource, /if \(job && job\.status === "queued"\)/);
+  const getCompressionJobSource = compressionQueueSource.slice(
+    compressionQueueSource.indexOf("export async function getCompressionJob"),
+    compressionQueueSource.indexOf("export async function cancelCompressionJob"),
+  );
+
+  assert.doesNotMatch(getCompressionJobSource, /isPendingCompressionStatus/);
 });
 
 test("compression statistics distinguish reductions from increases", () => {

@@ -19,11 +19,16 @@ test("e2e: localized home page renders the complete interactive shell", async ()
 
     assertStatus(response, 200, "English home page");
     assert.match(text, /QAVELIX/);
-    assert.match(text, /Upload validation/);
+    assert.match(text, /Design system/);
+    assert.match(text, /Accessibility/);
+    assert.match(text, /Readiness/);
+    assert.doesNotMatch(text, /Product<\/a>/);
+    assert.doesNotMatch(
+      text,
+      /<a class="primary-nav__link"[^>]*>Upload validation<\/a>/,
+    );
     assert.match(text, /Compression/);
     assert.match(text, /Drop one video for compression/);
-    assert.doesNotMatch(text, /Drop one video file here/);
-    assert.doesNotMatch(text, />Validate a file</);
     assert.equal(
       [...text.matchAll(/<label class="upload-dropzone/g)].length,
       1,
@@ -44,7 +49,7 @@ test("e2e: localized home page renders the complete interactive shell", async ()
     assert.match(text, /data-theme-option="light"/);
     assert.match(text, /data-theme-option="dark"/);
     assert.match(text, /qavelix-theme/);
-    assert.match(text, /document\.addEventListener\("click"/);
+    assert.match(text, /qavelix-theme-script/);
     assert.match(text, /data-navigation-origin="primary-navigation"/);
     assert.match(text, /id="footer-navigation"/);
   });

@@ -1,9 +1,12 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 import { AppFooter } from "@/components/app-footer";
 import { AppHeader } from "@/components/app-header";
 import { NavigationControls } from "@/components/navigation-controls";
 import type { getDictionary } from "@/i18n/dictionaries";
+import { LocaleProvider, useLocaleState } from "@/i18n/locale-context";
 import type { Locale } from "@/i18n/locales";
 
 type Dictionary = ReturnType<typeof getDictionary>;
@@ -14,7 +17,17 @@ type AppShellProps = {
   locale: Locale;
 };
 
-export function AppShell({ children, dictionary, locale }: AppShellProps) {
+export function AppShell({ children, locale }: AppShellProps) {
+  return (
+    <LocaleProvider initialLocale={locale}>
+      <AppShellContent>{children}</AppShellContent>
+    </LocaleProvider>
+  );
+}
+
+function AppShellContent({ children }: { children: ReactNode }) {
+  const { dictionary, locale } = useLocaleState();
+
   return (
     <>
       <a className="skip-link" href="#main-content">

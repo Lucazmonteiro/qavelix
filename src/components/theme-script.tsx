@@ -1,4 +1,4 @@
-const themeScript = `
+export const themeScript = `
 (() => {
   const storageKey = "qavelix-theme";
   const themes = ["light", "dark"];
@@ -84,7 +84,3 @@ const themeScript = `
   }
 })();
 `;
-
-export function ThemeScript() {
-  return <script dangerouslySetInnerHTML={{ __html: themeScript }} />;
-}

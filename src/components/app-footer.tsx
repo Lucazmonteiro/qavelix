@@ -11,18 +11,10 @@ type AppFooterProps = {
 };
 
 export function AppFooter({ locale, dictionary }: AppFooterProps) {
-  const links = [
-    { href: `/${locale}#product`, label: dictionary.navigation.product },
-    { href: `/${locale}#upload-validation`, label: dictionary.navigation.upload },
-    { href: `/${locale}#compression`, label: dictionary.navigation.compression },
-    { href: `/${locale}#design-system`, label: dictionary.navigation.design },
-    { href: `/${locale}#accessibility`, label: dictionary.navigation.accessibility },
-    { href: `/${locale}#readiness`, label: dictionary.navigation.readiness },
-    ...contentPageSlugs.map((slug) => ({
-      href: `/${locale}/${slug}`,
-      label: dictionary.pages[slug].label,
-    })),
-  ];
+  const links = contentPageSlugs.map((slug) => ({
+    href: `/${locale}/${slug}`,
+    label: dictionary.pages[slug].label,
+  }));
 
   return (
     <footer className="site-footer">

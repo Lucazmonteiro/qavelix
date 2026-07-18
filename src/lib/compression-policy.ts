@@ -1,30 +1,30 @@
 export const compressionPresets = {
   small: {
     label: "Smaller File",
-    crf: 33,
+    crf: 31,
     maxHeight: 720,
     audioBitrateKbps: 96,
     encoderPreset: "medium",
-    sourceBitrateRatio: 0.42,
-    maxVideoBitrateKbps: 1200,
+    sourceBitrateRatio: 0.45,
+    maxVideoBitrateKbps: 2200,
   },
   balanced: {
     label: "Balanced",
-    crf: 29,
-    maxHeight: 1080,
-    audioBitrateKbps: 128,
-    encoderPreset: "medium",
-    sourceBitrateRatio: 0.62,
-    maxVideoBitrateKbps: 2800,
-  },
-  high: {
-    label: "High Quality",
-    crf: 24,
+    crf: 26,
     maxHeight: 1080,
     audioBitrateKbps: 160,
     encoderPreset: "medium",
-    sourceBitrateRatio: 0.82,
-    maxVideoBitrateKbps: 5200,
+    sourceBitrateRatio: 0.7,
+    maxVideoBitrateKbps: 6500,
+  },
+  high: {
+    label: "High Quality",
+    crf: 20,
+    maxHeight: 1440,
+    audioBitrateKbps: 256,
+    encoderPreset: "slow",
+    sourceBitrateRatio: 0.92,
+    maxVideoBitrateKbps: 14000,
   },
 } as const;
 
@@ -194,8 +194,8 @@ export function createCompressionEncodingPlan(
   const shouldScale =
     typeof metadata.height === "number" && metadata.height > preset.maxHeight;
   const scaleFilter = shouldScale
-    ? `scale='min(iw,${preset.maxHeight * 2})':'min(ih,${preset.maxHeight})':force_original_aspect_ratio=decrease`
-    : null;
+    ? `scale='min(iw,${preset.maxHeight * 2})':'min(ih,${preset.maxHeight})':force_original_aspect_ratio=decrease:force_divisible_by=2`
+    : "scale='trunc(iw/2)*2':'trunc(ih/2)*2'";
 
   return {
     preset: presetId,
@@ -261,7 +261,7 @@ export function buildFfmpegCompressionArguments(
     "-f",
     "mp4",
     "-progress",
-    "pipe:2",
+    "pipe:1",
     outputPath,
   );
 

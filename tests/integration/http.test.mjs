@@ -49,6 +49,7 @@ const successfulCompressionStatuses = [
   "optimized",
   "compression_ineffective",
 ];
+let compressionTestFingerprintCounter = 10;
 
 async function pollCompressionJob(baseUrl, jobId) {
   const response = await fetch(`${baseUrl}/api/compression/jobs/${jobId}`);
@@ -57,7 +58,10 @@ async function pollCompressionJob(baseUrl, jobId) {
   return { response, payload };
 }
 
-async function createGeneratedMp4File(fileName) {
+async function createGeneratedMp4File(
+  fileName,
+  { durationSeconds = 2, size = "320x180" } = {},
+) {
   const filePath = path.join(os.tmpdir(), `${randomUUID()}.qavelix-test.mp4`);
 
   await execFileAsync(
@@ -70,13 +74,13 @@ async function createGeneratedMp4File(fileName) {
       "-f",
       "lavfi",
       "-i",
-      "testsrc=size=320x180:rate=24",
+      `testsrc=size=${size}:rate=24`,
       "-f",
       "lavfi",
       "-i",
       "sine=frequency=1000:sample_rate=44100",
       "-t",
-      "2",
+      String(durationSeconds),
       "-c:v",
       "libx264",
       "-pix_fmt",
@@ -102,6 +106,55 @@ async function createGeneratedMp4File(fileName) {
   } finally {
     await rm(filePath, { force: true });
   }
+}
+
+async function createCompressionJobAndWait(baseUrl, file, preset) {
+  compressionTestFingerprintCounter += 1;
+  const fingerprintIp = `203.0.113.${compressionTestFingerprintCounter}`;
+  const formData = new FormData();
+  formData.set("file", file);
+  formData.set("preset", preset);
+
+  const createResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
+    method: "POST",
+    headers: {
+      Origin: baseUrl,
+      "X-Forwarded-For": fingerprintIp,
+    },
+    body: formData,
+  });
+  const createPayload = await createResponse.json();
+
+  assertStatus(createResponse, 202, `${preset} compression job create`);
+  assert.equal(createPayload.ok, true);
+
+  let latestJob = createPayload.job;
+
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    const { response, payload } = await pollCompressionJob(baseUrl, latestJob.id);
+
+    assertStatus(response, 200, `${preset} compression job poll ${attempt}`);
+    assert.equal(payload.ok, true);
+    assert.equal(payload.job.id, latestJob.id);
+    assert.ok(knownCompressionStatuses.includes(payload.job.status));
+
+    latestJob = payload.job;
+
+    if (terminalCompressionStatuses.includes(latestJob.status)) {
+      break;
+    }
+
+    await delay(500);
+  }
+
+  assert.ok(
+    successfulCompressionStatuses.includes(latestJob.status),
+    `${preset} ended with ${JSON.stringify(latestJob)}`,
+  );
+  assert.equal(latestJob.progress, 100);
+  assert.ok((latestJob.outputSize ?? 0) > 0);
+
+  return latestJob;
 }
 
 test("integration: localized routes, SEO endpoints, headers, and protected APIs", async (t) => {
@@ -414,6 +467,36 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
 
         assertStatus(downloadResponse, 200, "real compression download");
         assert.match(downloadResponse.headers.get("content-type") ?? "", /video\/mp4/);
+      },
+    );
+
+    await t.test(
+      "compresses the same vertical source through every preset sequence",
+      async () => {
+        const sourceFile = await createGeneratedMp4File("vertical.mp4", {
+          durationSeconds: 1,
+          size: "540x960",
+        });
+        const sourceBytes = new Uint8Array(await sourceFile.arrayBuffer());
+        const sequences = [
+          ["high", "small", "balanced"],
+          ["balanced", "high", "small"],
+          ["small", "balanced", "high"],
+        ];
+
+        for (const sequence of sequences) {
+          for (const preset of sequence) {
+            const latestJob = await createCompressionJobAndWait(
+              baseUrl,
+              new File([sourceBytes], `vertical-${preset}.mp4`, {
+                type: "video/mp4",
+              }),
+              preset,
+            );
+
+            assert.equal(latestJob.preset, preset);
+          }
+        }
       },
     );
 

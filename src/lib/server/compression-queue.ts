@@ -169,18 +169,22 @@ async function readPersistedCompressionJob(id: string) {
 
 async function findCompressionJob(id: string) {
   const inMemoryJob = jobs.get(id);
-
-  if (inMemoryJob) {
-    return inMemoryJob;
-  }
-
   const persistedJob = await readPersistedCompressionJob(id);
 
-  if (persistedJob) {
-    jobs.set(id, persistedJob);
+  if (!persistedJob) {
+    return inMemoryJob ?? null;
   }
 
-  return persistedJob;
+  if (
+    !inMemoryJob ||
+    !isPendingCompressionStatus(persistedJob.status) ||
+    persistedJob.progress >= inMemoryJob.progress
+  ) {
+    jobs.set(id, persistedJob);
+    return persistedJob;
+  }
+
+  return inMemoryJob;
 }
 
 async function loadPendingCompressionJobs() {
@@ -366,6 +370,12 @@ function parseProgress(chunk: Buffer, durationSeconds: number | null) {
   return Math.min(99, Math.max(1, Math.round((currentSeconds / durationSeconds) * 100)));
 }
 
+function formatCommand(command: string, args: string[]) {
+  return [command, ...args]
+    .map((part) => (/\s/.test(part) ? JSON.stringify(part) : part))
+    .join(" ");
+}
+
 async function runJob(job: CompressionJob) {
   const lockAcquired = await acquireJobLock(job.id);
 
@@ -377,8 +387,30 @@ async function runJob(job: CompressionJob) {
     return;
   }
 
+  const latestPersistedJob = await readPersistedCompressionJob(job.id);
+
+  if (latestPersistedJob && !isPendingCompressionStatus(latestPersistedJob.status)) {
+    jobs.set(job.id, latestPersistedJob);
+    logCompressionStage("compression_worker_stale_job_skipped", {
+      jobId: job.id,
+      status: latestPersistedJob.status,
+    });
+    await releaseJobLock(job.id);
+    void processNextJob();
+    return;
+  }
+
+  if (latestPersistedJob) {
+    job = latestPersistedJob;
+    jobs.set(job.id, job);
+  }
+
   activeJobId = job.id;
   await persistStatus(job, "starting");
+  let ffmpegCommand: string | null = null;
+  let ffmpegExitCode: number | null = null;
+  let ffmpegStderr = "";
+
   logCompressionStage("compression_worker_picked_job", {
     jobId: job.id,
     preset: job.preset,
@@ -389,6 +421,30 @@ async function runJob(job: CompressionJob) {
       jobId: job.id,
       inputPath: job.inputPath,
     });
+    const inputStats = await stat(job.inputPath);
+
+    if (!inputStats.isFile()) {
+      throw new Error("Compression input path is not a file.");
+    }
+
+    if (inputStats.size !== job.inputSize) {
+      throw new Error(
+        `Compression input size mismatch: expected ${job.inputSize}, got ${inputStats.size}.`,
+      );
+    }
+
+    await stat(compressionDirectory);
+    await mkdir(path.dirname(job.outputPath), { recursive: true });
+    await rm(job.outputPath, { force: true });
+
+    logCompressionStage("compression_paths_verified", {
+      jobId: job.id,
+      inputPath: job.inputPath,
+      inputSize: inputStats.size,
+      outputPath: job.outputPath,
+      outputDirectory: path.dirname(job.outputPath),
+    });
+
     const metadata = await analyzeWithFfprobe(job.inputPath);
     logCompressionStage("compression_ffprobe_finished", {
       jobId: job.id,
@@ -404,9 +460,11 @@ async function runJob(job: CompressionJob) {
       metadata,
       job.preset,
     );
+    ffmpegCommand = formatCommand("ffmpeg", args);
     logCompressionStage("compression_ffmpeg_command_generated", {
       jobId: job.id,
       argumentCount: args.length,
+      command: ffmpegCommand,
       outputPath: job.outputPath,
     });
 
@@ -422,8 +480,7 @@ async function runJob(job: CompressionJob) {
       pid: ffmpeg.pid ?? null,
     });
 
-    ffmpeg.stderr.on("data", (chunk: Buffer) => {
-      const text = chunk.toString("utf8");
+    ffmpeg.stdout.on("data", (chunk: Buffer) => {
       const progress = parseProgress(chunk, metadata.durationSeconds);
 
       if (progress !== null) {
@@ -433,10 +490,18 @@ async function runJob(job: CompressionJob) {
           jobId: job.id,
           progress,
         });
-      } else if (text.trim()) {
+      }
+    });
+
+    ffmpeg.stderr.on("data", (chunk: Buffer) => {
+      const text = chunk.toString("utf8");
+
+      ffmpegStderr += text;
+
+      if (text.trim()) {
         logCompressionStage("compression_ffmpeg_stderr", {
           jobId: job.id,
-          message: text.trim().slice(0, 1000),
+          message: text.trim(),
         });
       }
     });
@@ -444,6 +509,8 @@ async function runJob(job: CompressionJob) {
     await new Promise<void>((resolve, reject) => {
       ffmpeg.on("error", reject);
       ffmpeg.on("close", (code) => {
+        ffmpegExitCode = code;
+
         if (job.status === "cancelled") {
           resolve();
           return;
@@ -498,13 +565,13 @@ async function runJob(job: CompressionJob) {
     if (job.status !== "cancelled") {
       logCompressionError("compression_job_failed", {
         jobId: job.id,
+        command: ffmpegCommand,
+        exitCode: ffmpegExitCode,
         message: error instanceof Error ? error.message : "Compression failed.",
+        stderr: ffmpegStderr,
+        stack: error instanceof Error ? (error.stack ?? null) : null,
       });
-      await persistStatus(
-        job,
-        "failed",
-        error instanceof Error ? error.message : "Compression failed.",
-      );
+      await persistStatus(job, "failed", "Compression failed.");
     }
   } finally {
     job.process = null;
@@ -642,7 +709,7 @@ export async function createCompressionJob(
 export async function getCompressionJob(id: string) {
   const job = await findCompressionJob(id);
 
-  if (job && isPendingCompressionStatus(job.status)) {
+  if (job && job.status === "queued") {
     enqueueJob(job.id);
     void ensureCompressionWorker();
   }

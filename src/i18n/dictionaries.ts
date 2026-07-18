@@ -123,11 +123,15 @@ type Dictionary = {
     dropTitle: string;
     dropDescription: string;
     browseLabel: string;
+    validationHelper: string;
     validatingLabel: string;
     validationSuccessLabel: string;
     validationFailedLabel: string;
+    uploadLimitExceededLabel: string;
     fileLabel: string;
     sizeLabel: string;
+    statusLabel: string;
+    maximumAllowedLabel: string;
     typeLabel: string;
     durationLabel: string;
     resolutionLabel: string;
@@ -169,6 +173,10 @@ type Dictionary = {
     deleteLabel: string;
     ineffectiveWarning: string;
     successMessage: string;
+    downloadStartedMessage: string;
+    reuseTipTitle: string;
+    reuseTipDescription: string;
+    reuseTipSecondary: string;
     presetNames: {
       balanced: string;
       small: string;
@@ -207,7 +215,9 @@ type Dictionary = {
       uploadFailed: string;
       jobFailed: string;
       cancelFailed: string;
+      sourceUnavailable: string;
     };
+    oversizedFileMessage: string;
   };
   footer: {
     description: string;
@@ -389,11 +399,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       dropDescription:
         "Compression uses secure FFmpeg execution with fixed argument arrays, random temporary paths, and no shell interpolation.",
       browseLabel: "Choose compression file",
+      validationHelper:
+        "Your file has been successfully validated. Review the file information below, choose the compression level that best fits your needs, then start compression.",
       validatingLabel: "Checking video",
-      validationSuccessLabel: "Video ready",
+      validationSuccessLabel: "File Information",
       validationFailedLabel: "Video cannot be compressed",
+      uploadLimitExceededLabel: "Upload limit exceeded",
       fileLabel: "File",
       sizeLabel: "Size",
+      statusLabel: "Status",
+      maximumAllowedLabel: "Maximum allowed",
       typeLabel: "MIME type",
       durationLabel: "Duration",
       resolutionLabel: "Resolution",
@@ -409,7 +424,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       expectedReductionLabel: "Expected reduction",
       useCasesLabel: "Ideal for",
       startLabel: "Start compression",
-      cancelLabel: "Cancel job",
+      cancelLabel: "Cancel",
       progressLabel: "Progress",
       waitingLabel: "Waiting for file",
       readyLabel: "Ready to compress",
@@ -436,6 +451,11 @@ const dictionaries: Record<Locale, Dictionary> = {
       ineffectiveWarning:
         "The selected preset could not reduce the file size. The resulting file is larger than the original. Try the Balanced or Smaller File preset to attempt a smaller output.",
       successMessage: "✔ Compression completed successfully",
+      downloadStartedMessage: "✔ Download started successfully",
+      reuseTipTitle: "Compare results",
+      reuseTipDescription:
+        "Choose another compression preset to generate a new version from this same uploaded video.",
+      reuseTipSecondary: "There is no need to upload the file again.",
       presetNames: {
         balanced: "Balanced",
         small: "Smaller File",
@@ -473,7 +493,11 @@ const dictionaries: Record<Locale, Dictionary> = {
         uploadFailed: "Compression could not be started.",
         jobFailed: "Compression failed. Try another supported video file.",
         cancelFailed: "The compression job could not be updated.",
+        sourceUnavailable:
+          "The original file is no longer available in this session. Upload it again to start a new compression.",
       },
+      oversizedFileMessage:
+        "The selected file is {fileSize}, which exceeds the maximum upload limit of {maxSize}. Please choose a smaller file to continue.",
     },
     footer: {
       description:
@@ -825,11 +849,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       dropDescription:
         "A compressão usa execução segura do FFmpeg com listas fixas de argumentos, caminhos temporários aleatórios e sem interpolação de shell.",
       browseLabel: "Escolher arquivo para compressão",
+      validationHelper:
+        "Seu arquivo foi validado com sucesso. Confira as informações do arquivo abaixo, escolha o nível de compressão ideal para sua necessidade e inicie a compressão.",
       validatingLabel: "Verificando vídeo",
-      validationSuccessLabel: "Vídeo pronto",
+      validationSuccessLabel: "Informações do arquivo",
       validationFailedLabel: "Este vídeo não pode ser comprimido",
+      uploadLimitExceededLabel: "Limite de upload excedido",
       fileLabel: "Arquivo",
       sizeLabel: "Tamanho",
+      statusLabel: "Status",
+      maximumAllowedLabel: "Máximo permitido",
       typeLabel: "Tipo MIME",
       durationLabel: "Duração",
       resolutionLabel: "Resolução",
@@ -845,7 +874,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       expectedReductionLabel: "Redução esperada",
       useCasesLabel: "Ideal para",
       startLabel: "Iniciar compressão",
-      cancelLabel: "Cancelar job",
+      cancelLabel: "Cancelar",
       progressLabel: "Progresso",
       waitingLabel: "Aguardando arquivo",
       readyLabel: "Pronto para comprimir",
@@ -872,6 +901,11 @@ const dictionaries: Record<Locale, Dictionary> = {
       ineffectiveWarning:
         "O preset selecionado não conseguiu reduzir o tamanho do arquivo. O arquivo resultante ficou maior que o original. Experimente o preset 'Equilibrada' ou 'Arquivo menor' para tentar reduzir o tamanho.",
       successMessage: "✔ Compressão concluída com sucesso",
+      downloadStartedMessage: "✔ Download iniciado com sucesso",
+      reuseTipTitle: "Compare os resultados",
+      reuseTipDescription:
+        "Escolha outro preset de compressão para gerar uma nova versão usando este mesmo vídeo.",
+      reuseTipSecondary: "Não é necessário enviar o arquivo novamente.",
       presetNames: {
         balanced: "Equilibrada",
         small: "Arquivo menor",
@@ -910,7 +944,11 @@ const dictionaries: Record<Locale, Dictionary> = {
         uploadFailed: "Não foi possível iniciar a compressão.",
         jobFailed: "A compressão falhou. Tente outro vídeo aceito.",
         cancelFailed: "Não foi possível atualizar o job de compressão.",
+        sourceUnavailable:
+          "O arquivo original não está mais disponível nesta sessão. Envie-o novamente para iniciar uma nova compressão.",
       },
+      oversizedFileMessage:
+        "O arquivo selecionado possui {fileSize} e excede o limite máximo de upload de {maxSize}. Escolha um arquivo menor para continuar.",
     },
     footer: {
       description:
@@ -1262,11 +1300,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       dropDescription:
         "La compresión usa una ejecución segura de FFmpeg con listas fijas de argumentos, rutas temporales aleatorias y sin interpolación de shell.",
       browseLabel: "Elegir archivo para compresión",
+      validationHelper:
+        "Tu archivo se ha validado correctamente. Revisa la información del archivo, elige el nivel de compresión que mejor se adapte a lo que necesitas e inicia la compresión.",
       validatingLabel: "Comprobando vídeo",
-      validationSuccessLabel: "Vídeo listo",
+      validationSuccessLabel: "Información del archivo",
       validationFailedLabel: "Este vídeo no se puede comprimir",
+      uploadLimitExceededLabel: "Límite de carga excedido",
       fileLabel: "Archivo",
       sizeLabel: "Tamaño",
+      statusLabel: "Estado",
+      maximumAllowedLabel: "Máximo permitido",
       typeLabel: "Tipo MIME",
       durationLabel: "Duración",
       resolutionLabel: "Resolución",
@@ -1282,7 +1325,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       expectedReductionLabel: "Reducción esperada",
       useCasesLabel: "Ideal para",
       startLabel: "Iniciar compresión",
-      cancelLabel: "Cancelar trabajo",
+      cancelLabel: "Cancelar",
       progressLabel: "Progreso",
       waitingLabel: "Esperando archivo",
       readyLabel: "Listo para comprimir",
@@ -1309,6 +1352,11 @@ const dictionaries: Record<Locale, Dictionary> = {
       ineffectiveWarning:
         "El ajuste seleccionado no pudo reducir el tamaño del archivo. El archivo resultante quedó más grande que el original. Prueba el ajuste Equilibrado o Archivo más pequeño para intentar reducir el tamaño.",
       successMessage: "✔ Compresión completada correctamente",
+      downloadStartedMessage: "✔ Descarga iniciada correctamente",
+      reuseTipTitle: "Compara los resultados",
+      reuseTipDescription:
+        "Elige otro ajuste de compresión para generar una nueva versión usando este mismo vídeo.",
+      reuseTipSecondary: "No es necesario volver a subir el archivo.",
       presetNames: {
         balanced: "Equilibrado",
         small: "Archivo más pequeño",
@@ -1348,7 +1396,11 @@ const dictionaries: Record<Locale, Dictionary> = {
         uploadFailed: "No se ha podido iniciar la compresión.",
         jobFailed: "La compresión ha fallado. Prueba con otro vídeo admitido.",
         cancelFailed: "No se ha podido actualizar el trabajo de compresión.",
+        sourceUnavailable:
+          "El archivo original ya no está disponible en esta sesión. Súbelo de nuevo para iniciar otra compresión.",
       },
+      oversizedFileMessage:
+        "El archivo seleccionado tiene un tamaño de {fileSize} y supera el límite máximo de carga de {maxSize}. Selecciona un archivo más pequeño para continuar.",
     },
     footer: {
       description:

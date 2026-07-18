@@ -1,3 +1,8 @@
+"use client";
+
+import type { MouseEvent } from "react";
+
+import { isLocalizedHomePath, useLocaleState } from "@/i18n/locale-context";
 import type { Locale } from "@/i18n/locales";
 import { localeLabels, locales } from "@/i18n/locales";
 
@@ -68,15 +73,28 @@ function FlagIcon({ locale }: { locale: Locale }) {
 }
 
 export function LanguageSelector({ currentLocale, label }: LanguageSelectorProps) {
+  const localeState = useLocaleState();
+  const activeLocale = localeState.locale ?? currentLocale;
+
+  function handleLocaleClick(event: MouseEvent<HTMLAnchorElement>, locale: Locale) {
+    if (!isLocalizedHomePath(window.location.pathname)) {
+      return;
+    }
+
+    event.preventDefault();
+    localeState.switchLocale(locale);
+  }
+
   return (
     <nav aria-label={label} className="language-selector">
       {locales.map((locale) => (
         <a
-          aria-current={locale === currentLocale ? "page" : undefined}
+          aria-current={locale === activeLocale ? "page" : undefined}
           aria-label={localeLabels[locale]}
           className="language-selector__link"
           href={`/${locale}`}
           key={locale}
+          onClick={(event) => handleLocaleClick(event, locale)}
           title={localeLabels[locale]}
         >
           <span aria-hidden="true" className="language-selector__flag">
