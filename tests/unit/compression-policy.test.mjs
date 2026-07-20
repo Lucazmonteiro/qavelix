@@ -61,8 +61,12 @@ test("compression presets have distinct size and quality goals", () => {
   );
   assert.ok(compressionPresets.small.crf > compressionPresets.balanced.crf);
   assert.ok(compressionPresets.balanced.crf > compressionPresets.high.crf);
-  assert.ok(compressionPresets.small.maxHeight < compressionPresets.balanced.maxHeight);
-  assert.ok(compressionPresets.balanced.maxHeight < compressionPresets.high.maxHeight);
+  assert.equal(compressionPresets.small.preservesResolution, false);
+  assert.equal(compressionPresets.balanced.preservesResolution, true);
+  assert.equal(compressionPresets.high.preservesResolution, true);
+  assert.equal(compressionPresets.small.maxHeight, 720);
+  assert.equal(compressionPresets.balanced.maxHeight, null);
+  assert.equal(compressionPresets.high.maxHeight, null);
   assert.ok(
     compressionPresets.small.maxVideoBitrateKbps <
       compressionPresets.balanced.maxVideoBitrateKbps,
@@ -132,24 +136,29 @@ test("compression plans cap output bitrate below the source when reduction is li
   );
 });
 
-test("compression plans keep H.264 dimensions divisible by two for every preset", () => {
+test("only the Smaller File preset is allowed to scale video dimensions", () => {
   const small = createCompressionEncodingPlan(h2641080pSource, "small");
   const balanced = createCompressionEncodingPlan(h2641080pSource, "balanced");
+  const high = createCompressionEncodingPlan(h2641080pSource, "high");
   const verticalSource = {
     ...h2641080pSource,
-    width: 1080,
-    height: 1920,
+    width: 2160,
+    height: 3840,
   };
+  const verticalSmall = createCompressionEncodingPlan(verticalSource, "small");
+  const verticalBalanced = createCompressionEncodingPlan(verticalSource, "balanced");
+  const verticalHigh = createCompressionEncodingPlan(verticalSource, "high");
 
   assert.match(small.scaleFilter ?? "", /720/);
   assert.match(small.scaleFilter, /force_divisible_by=2/);
-  assert.match(balanced.scaleFilter, /trunc\(iw\/2\)\*2/);
-
-  for (const preset of Object.keys(compressionPresets)) {
-    const plan = createCompressionEncodingPlan(verticalSource, preset);
-
-    assert.match(plan.scaleFilter, /force_divisible_by=2|trunc\(iw\/2\)\*2/);
-  }
+  assert.equal(balanced.scaleFilter, null);
+  assert.equal(high.scaleFilter, null);
+  assert.match(verticalSmall.scaleFilter ?? "", /720/);
+  assert.equal(verticalBalanced.scaleFilter, null);
+  assert.equal(verticalHigh.scaleFilter, null);
+  assert.equal(verticalSmall.preservesResolution, false);
+  assert.equal(verticalBalanced.preservesResolution, true);
+  assert.equal(verticalHigh.preservesResolution, true);
 });
 
 test("FFmpeg arguments use bounded H.264 MP4 settings", () => {
@@ -178,6 +187,28 @@ test("FFmpeg arguments use bounded H.264 MP4 settings", () => {
   assert.ok(args.includes("pipe:1"));
   assert.ok(!args.includes("pipe:2"));
   assert.equal(args.at(-1), "output.mp4");
+});
+
+test("Balanced and High Quality FFmpeg arguments preserve source resolution", () => {
+  const source4kVertical = {
+    ...h2641080pSource,
+    width: 2160,
+    height: 3840,
+    bitrate: 24_000_000,
+  };
+
+  for (const preset of ["balanced", "high"]) {
+    const { args, plan } = buildFfmpegCompressionArguments(
+      "input.mp4",
+      "output.mp4",
+      source4kVertical,
+      preset,
+    );
+
+    assert.equal(plan.preservesResolution, true);
+    assert.equal(plan.scaleFilter, null);
+    assert.equal(args.includes("-vf"), false);
+  }
 });
 
 test("compression worker logs complete FFmpeg diagnostics internally", () => {

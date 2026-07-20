@@ -3,6 +3,7 @@ export const compressionPresets = {
     label: "Smaller File",
     crf: 31,
     maxHeight: 720,
+    preservesResolution: false,
     audioBitrateKbps: 96,
     encoderPreset: "medium",
     sourceBitrateRatio: 0.45,
@@ -11,7 +12,8 @@ export const compressionPresets = {
   balanced: {
     label: "Balanced",
     crf: 26,
-    maxHeight: 1080,
+    maxHeight: null,
+    preservesResolution: true,
     audioBitrateKbps: 160,
     encoderPreset: "medium",
     sourceBitrateRatio: 0.7,
@@ -20,7 +22,8 @@ export const compressionPresets = {
   high: {
     label: "High Quality",
     crf: 20,
-    maxHeight: 1440,
+    maxHeight: null,
+    preservesResolution: true,
     audioBitrateKbps: 256,
     encoderPreset: "slow",
     sourceBitrateRatio: 0.92,
@@ -69,7 +72,8 @@ export type CompressionMediaMetadata = {
 export type CompressionEncodingPlan = {
   preset: CompressionPresetId;
   crf: number;
-  maxHeight: number;
+  maxHeight: number | null;
+  preservesResolution: boolean;
   audioBitrate: string;
   videoMaxrate: string;
   videoBufsize: string;
@@ -192,15 +196,21 @@ export function createCompressionEncodingPlan(
   const videoBitrateBps = Math.max(240_000, targetTotalBitrate - audioBitrateBps);
   const videoKbps = Math.max(240, Math.round(videoBitrateBps / 1000));
   const shouldScale =
-    typeof metadata.height === "number" && metadata.height > preset.maxHeight;
+    !preset.preservesResolution &&
+    typeof preset.maxHeight === "number" &&
+    typeof metadata.height === "number" &&
+    metadata.height > preset.maxHeight;
   const scaleFilter = shouldScale
     ? `scale='min(iw,${preset.maxHeight * 2})':'min(ih,${preset.maxHeight})':force_original_aspect_ratio=decrease:force_divisible_by=2`
-    : "scale='trunc(iw/2)*2':'trunc(ih/2)*2'";
+    : preset.preservesResolution
+      ? null
+      : "scale='trunc(iw/2)*2':'trunc(ih/2)*2'";
 
   return {
     preset: presetId,
     crf: preset.crf,
     maxHeight: preset.maxHeight,
+    preservesResolution: preset.preservesResolution,
     audioBitrate: `${preset.audioBitrateKbps}k`,
     videoMaxrate: `${videoKbps}k`,
     videoBufsize: `${videoKbps * 2}k`,

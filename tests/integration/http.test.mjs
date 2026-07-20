@@ -437,9 +437,11 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
 
         let latestJob = createPayload.job;
         const observedStatuses = new Set([latestJob.status]);
+        let pollAttempts = 0;
 
         for (let attempt = 0; attempt < 80; attempt += 1) {
           const { response, payload } = await pollCompressionJob(baseUrl, latestJob.id);
+          pollAttempts += 1;
 
           assertStatus(response, 200, `real compression job poll ${attempt}`);
           assert.equal(payload.ok, true);
@@ -456,7 +458,9 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
           await delay(500);
         }
 
-        assert.ok(observedStatuses.has("starting") || observedStatuses.has("running"));
+        assert.ok(pollAttempts > 0);
+        assert.ok(observedStatuses.has(latestJob.status));
+        assert.ok(terminalCompressionStatuses.includes(latestJob.status));
         assert.ok(successfulCompressionStatuses.includes(latestJob.status));
         assert.equal(latestJob.progress, 100);
         assert.ok((latestJob.outputSize ?? 0) > 0);
