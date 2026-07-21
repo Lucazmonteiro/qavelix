@@ -49,6 +49,7 @@ type CompressionCopy = {
   presetQuestionLabel: string;
   recommendedLabel: string;
   expectedReductionLabel: string;
+  presetFootnote: string;
   useCasesLabel: string;
   startLabel: string;
   cancelLabel: string;
@@ -71,12 +72,26 @@ type CompressionCopy = {
   increaseLabel: string;
   increasePercentLabel: string;
   reductionLabel: string;
+  originalBitrateLabel: string;
+  finalBitrateLabel: string;
+  originalResolutionLabel: string;
+  finalResolutionLabel: string;
+  originalCodecLabel: string;
+  finalCodecLabel: string;
   expiresLabel: string;
   downloadLabel: string;
   downloadAnywayLabel: string;
   deleteLabel: string;
   ineffectiveWarning: string;
+  ineffectiveRecommendationLabel: string;
   successMessage: string;
+  successMessages: {
+    excellent: string;
+    great: string;
+    moderate: string;
+    light: string;
+    noSavings: string;
+  };
   downloadStartedMessage: string;
   reuseTipTitle: string;
   reuseTipDescription: string;
@@ -84,8 +99,6 @@ type CompressionCopy = {
   presetNames: Record<CompressionPresetId, string>;
   presetDescriptions: Record<CompressionPresetId, string>;
   presetUseCases: Record<CompressionPresetId, string[]>;
-  presetReductionRanges: Record<CompressionPresetId, string>;
-  presetNotes: Partial<Record<CompressionPresetId, string>>;
   errors: {
     noFile: string;
     empty: string;
@@ -187,6 +200,14 @@ function formatBitrate(bitrate: number | null, unknownLabel: string) {
   return `${Math.round(bitrate / 1000).toLocaleString()} kbps`;
 }
 
+function formatResolution(
+  width: number | null,
+  height: number | null,
+  unknownLabel: string,
+) {
+  return width && height ? `${width} x ${height}` : unknownLabel;
+}
+
 function formatValue(value: number | string | null, unknownLabel: string) {
   return value === null || value === "" ? unknownLabel : String(value);
 }
@@ -244,6 +265,103 @@ function formatOversizedFileMessage(
   return copy.oversizedFileMessage
     .replace("{fileSize}", formatBytes(fileSize))
     .replace("{maxSize}", formatBytes(maxSize));
+}
+
+function forceEvenDimension(value: number) {
+  return Math.max(2, Math.round(value / 2) * 2);
+}
+
+function getFinalResolution(
+  analysis: UploadAnalysis | null,
+  presetId: CompressionPresetId,
+) {
+  const width = analysis?.media.width ?? null;
+  const height = analysis?.media.height ?? null;
+
+  if (!width || !height) {
+    return {
+      width: null,
+      height: null,
+    };
+  }
+
+  const presetConfig = compressionPresets[presetId];
+
+  if (presetConfig.preservesResolution || !presetConfig.maxHeight) {
+    return { width, height };
+  }
+
+  if (height <= presetConfig.maxHeight) {
+    return {
+      width: Math.max(2, Math.trunc(width / 2) * 2),
+      height: Math.max(2, Math.trunc(height / 2) * 2),
+    };
+  }
+
+  const maxWidth = presetConfig.maxHeight * 2;
+  const scaleRatio = Math.min(maxWidth / width, presetConfig.maxHeight / height);
+
+  return {
+    width: forceEvenDimension(width * scaleRatio),
+    height: forceEvenDimension(height * scaleRatio),
+  };
+}
+
+function getFinalBitrate(
+  compression: CompressionJobSnapshot["compression"],
+  analysis: UploadAnalysis | null,
+) {
+  const durationSeconds = analysis?.media.durationSeconds ?? null;
+
+  if (!compression || !durationSeconds || durationSeconds <= 0) {
+    return null;
+  }
+
+  return Math.round((compression.compressedSize * 8) / durationSeconds);
+}
+
+function getRecommendedPresetIds(currentPreset: CompressionPresetId) {
+  const recommendedOrder = {
+    small: ["balanced", "high"],
+    balanced: ["small", "high"],
+    high: ["balanced", "small"],
+  } satisfies Partial<Record<CompressionPresetId, CompressionPresetId[]>>;
+  const orderedRecommendations = (recommendedOrder[currentPreset] ?? []).filter(
+    (presetId) => presetIds.includes(presetId),
+  );
+  const futurePresetRecommendations = presetIds.filter(
+    (presetId) =>
+      presetId !== currentPreset && !orderedRecommendations.includes(presetId),
+  );
+
+  return [...orderedRecommendations, ...futurePresetRecommendations];
+}
+
+function getCompressionSuccessMessage(
+  copy: CompressionCopy,
+  compression: CompressionJobSnapshot["compression"],
+) {
+  if (!compression) {
+    return copy.successMessage;
+  }
+
+  if (compression.isIneffective) {
+    return copy.successMessages.noSavings;
+  }
+
+  if (compression.reductionPercent > 80) {
+    return copy.successMessages.excellent;
+  }
+
+  if (compression.reductionPercent >= 50) {
+    return copy.successMessages.great;
+  }
+
+  if (compression.reductionPercent >= 20) {
+    return copy.successMessages.moderate;
+  }
+
+  return copy.successMessages.light;
 }
 
 function getValidationErrorMessage(
@@ -456,7 +574,7 @@ export function CompressionPanel({
   }, [activeJobId, activeJobStatus]);
 
   useEffect(() => {
-    if (!job || !isSuccessfulCompressionStatus(job.status)) {
+    if (!job || !isDownloadableCompressionStatus(job.status)) {
       return;
     }
 
@@ -498,15 +616,18 @@ export function CompressionPanel({
 
     try {
       if ("Notification" in window) {
+        const notificationMessage = getCompressionSuccessMessage(copy, job.compression)
+          .replace(/^.\s/, "");
+
         if (Notification.permission === "granted") {
           new Notification("QAVELIX", {
-            body: copy.successMessage.replace(/^.\s/, ""),
+            body: notificationMessage,
           });
         } else if (Notification.permission === "default") {
           void Notification.requestPermission().then((permission) => {
             if (permission === "granted") {
               new Notification("QAVELIX", {
-                body: copy.successMessage.replace(/^.\s/, ""),
+                body: notificationMessage,
               });
             }
           });
@@ -515,7 +636,7 @@ export function CompressionPanel({
     } catch {
       // Notification permission or platform support must never affect compression state.
     }
-  }, [copy.successMessage, job]);
+  }, [copy, job]);
 
   function resetFileInput() {
     if (inputRef.current) {
@@ -832,8 +953,12 @@ export function CompressionPanel({
 
   const progress = job ? getCompressionDisplayProgress(job.status, job.progress) : 0;
   const compression = job?.compression ?? null;
+  const validatedAnalysis = validation.status === "valid" ? validation.analysis : null;
   const isPolling = canPoll(job);
   const isSuccessful = Boolean(job && isSuccessfulCompressionStatus(job.status));
+  const hasCompletedResult = Boolean(
+    job && isDownloadableCompressionStatus(job.status),
+  );
   const isDownloadable = canDownload(job);
   const hasValidatedFile = validation.status === "valid";
   const canStartCompression =
@@ -873,6 +998,11 @@ export function CompressionPanel({
       : `${compression.reductionPercent.toFixed(1)}%`
     : "-";
   const downloadUrl = isDownloadable ? job?.downloadUrl : null;
+  const activePreset = job?.preset ?? preset;
+  const recommendedPresetIds = getRecommendedPresetIds(activePreset);
+  const finalResolution = getFinalResolution(validatedAnalysis, activePreset);
+  const finalBitrate = getFinalBitrate(compression, validatedAnalysis);
+  const successFeedbackMessage = getCompressionSuccessMessage(copy, compression);
 
   useEffect(() => {
     onValidatedChange?.(hasValidatedFile);
@@ -1021,8 +1151,7 @@ export function CompressionPanel({
                     </span>
                     <span>{copy.presetDescriptions[presetId]}</span>
                     <span className="preset-card__meta">
-                      {copy.expectedReductionLabel}:{" "}
-                      <strong>{copy.presetReductionRanges[presetId]}</strong>
+                      {copy.expectedReductionLabel}
                     </span>
                     <span className="preset-card__use-cases">
                       <span className="preset-card__use-cases-label">
@@ -1036,14 +1165,10 @@ export function CompressionPanel({
                         ))}
                       </span>
                     </span>
-                    {copy.presetNotes[presetId] ? (
-                      <span className="preset-card__note">
-                        {copy.presetNotes[presetId]}
-                      </span>
-                    ) : null}
                   </button>
                 ))}
               </div>
+              <p className="preset-workflow__footnote">{copy.presetFootnote}</p>
             </div>
           ) : null}
         </div>
@@ -1075,7 +1200,7 @@ export function CompressionPanel({
                   <dl>
                     <div>
                       <dt>{copy.presetLabel}</dt>
-                      <dd>{copy.presetNames[preset]}</dd>
+                      <dd>{copy.presetNames[activePreset]}</dd>
                     </div>
                     <div>
                       <dt>{copy.originalSizeLabel}</dt>
@@ -1106,6 +1231,52 @@ export function CompressionPanel({
                       <dd>{reductionValue}</dd>
                     </div>
                     <div>
+                      <dt>{copy.originalBitrateLabel}</dt>
+                      <dd>
+                        {formatBitrate(
+                          validatedAnalysis?.media.bitrate ?? null,
+                          copy.unknownLabel,
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>{copy.finalBitrateLabel}</dt>
+                      <dd>{formatBitrate(finalBitrate, copy.unknownLabel)}</dd>
+                    </div>
+                    <div>
+                      <dt>{copy.originalResolutionLabel}</dt>
+                      <dd>
+                        {formatResolution(
+                          validatedAnalysis?.media.width ?? null,
+                          validatedAnalysis?.media.height ?? null,
+                          copy.unknownLabel,
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>{copy.finalResolutionLabel}</dt>
+                      <dd>
+                        {formatResolution(
+                          finalResolution.width,
+                          finalResolution.height,
+                          copy.unknownLabel,
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>{copy.originalCodecLabel}</dt>
+                      <dd>
+                        {formatValue(
+                          validatedAnalysis?.media.videoCodec ?? null,
+                          copy.unknownLabel,
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>{copy.finalCodecLabel}</dt>
+                      <dd>H.264</dd>
+                    </div>
+                    <div>
                       <dt>{copy.expiresLabel}</dt>
                       <dd>
                         {job?.expiresAt
@@ -1129,9 +1300,9 @@ export function CompressionPanel({
             </>
           ) : null}
 
-          {isSuccessful || downloadStarted ? (
+          {hasCompletedResult || downloadStarted ? (
             <p className="compression-status__success" role="status" aria-live="polite">
-              {downloadStarted ? copy.downloadStartedMessage : copy.successMessage}
+              {downloadStarted ? copy.downloadStartedMessage : successFeedbackMessage}
             </p>
           ) : null}
 
@@ -1143,7 +1314,15 @@ export function CompressionPanel({
             <p className="compression-status__error">{copy.errors.jobFailed}</p>
           ) : null}
           {job?.status === "compression_ineffective" ? (
-            <p className="compression-status__warning">{copy.ineffectiveWarning}</p>
+            <div className="compression-status__warning">
+              <p>{copy.ineffectiveWarning}</p>
+              <strong>{copy.ineffectiveRecommendationLabel}</strong>
+              <ul>
+                {recommendedPresetIds.map((presetId) => (
+                  <li key={presetId}>{copy.presetNames[presetId]}</li>
+                ))}
+              </ul>
+            </div>
           ) : null}
 
           <div className="compression-status__actions">

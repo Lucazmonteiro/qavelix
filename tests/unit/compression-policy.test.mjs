@@ -94,17 +94,17 @@ test("localized compression lifecycle and success labels are present", async () 
     'readyLabel: "Ready to compress"',
     'runningLabel: "Compressing"',
     'failedLabel: "Compression failed"',
-    'successMessage: "✔ Compression completed successfully"',
+    'excellent: "✔ Excellent space savings."',
     'waitingLabel: "Aguardando arquivo"',
     'readyLabel: "Pronto para comprimir"',
     'runningLabel: "Comprimindo"',
     'failedLabel: "Falha na compressão"',
-    'successMessage: "✔ Compressão concluída com sucesso"',
+    'excellent: "✔ Excelente economia de espaço."',
     'waitingLabel: "Esperando archivo"',
     'readyLabel: "Listo para comprimir"',
     'runningLabel: "Comprimiendo"',
     'failedLabel: "Error de compresión"',
-    'successMessage: "✔ Compresión completada correctamente"',
+    'excellent: "✔ Excelente ahorro de espacio."',
   ]) {
     assert.ok(dictionarySource.includes(expectedText), expectedText);
   }
@@ -355,9 +355,12 @@ test("localized ineffective compression warnings are present", async () => {
   const dictionarySource = await readFile("src/i18n/dictionaries.ts", "utf8");
 
   for (const expectedText of [
-    "The selected preset could not reduce the file size. The resulting file is larger than the original. Try the Balanced or Smaller File preset to attempt a smaller output.",
-    "O preset selecionado não conseguiu reduzir o tamanho do arquivo. O arquivo resultante ficou maior que o original. Experimente o preset 'Equilibrada' ou 'Arquivo menor' para tentar reduzir o tamanho.",
-    "El ajuste seleccionado no pudo reducir el tamaño del archivo. El archivo resultante quedó más grande que el original. Prueba el ajuste Equilibrado o Archivo más pequeño para intentar reducir el tamaño.",
+    "This video is already highly compressed. Using the selected preset, QAVELIX could not generate a file smaller than the original.",
+    "Este vídeo já está altamente comprimido. Com o preset selecionado, o QAVELIX não conseguiu gerar um arquivo menor que o original.",
+    "Este vídeo ya está muy comprimido. Con el ajuste seleccionado, QAVELIX no ha podido generar un archivo más pequeño que el original.",
+    "Recommended presets",
+    "Presets recomendados",
+    "Ajustes recomendados",
   ]) {
     assert.ok(dictionarySource.includes(expectedText), expectedText);
   }

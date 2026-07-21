@@ -145,6 +145,7 @@ type Dictionary = {
     presetQuestionLabel: string;
     recommendedLabel: string;
     expectedReductionLabel: string;
+    presetFootnote: string;
     useCasesLabel: string;
     startLabel: string;
     cancelLabel: string;
@@ -167,12 +168,26 @@ type Dictionary = {
     increaseLabel: string;
     increasePercentLabel: string;
     reductionLabel: string;
+    originalBitrateLabel: string;
+    finalBitrateLabel: string;
+    originalResolutionLabel: string;
+    finalResolutionLabel: string;
+    originalCodecLabel: string;
+    finalCodecLabel: string;
     expiresLabel: string;
     downloadLabel: string;
     downloadAnywayLabel: string;
     deleteLabel: string;
     ineffectiveWarning: string;
+    ineffectiveRecommendationLabel: string;
     successMessage: string;
+    successMessages: {
+      excellent: string;
+      great: string;
+      moderate: string;
+      light: string;
+      noSavings: string;
+    };
     downloadStartedMessage: string;
     reuseTipTitle: string;
     reuseTipDescription: string;
@@ -192,16 +207,6 @@ type Dictionary = {
       small: string[];
       high: string[];
     };
-    presetReductionRanges: {
-      balanced: string;
-      small: string;
-      high: string;
-    };
-    presetNotes: Partial<{
-      balanced: string;
-      small: string;
-      high: string;
-    }>;
     errors: {
       noFile: string;
       empty: string;
@@ -421,7 +426,9 @@ const dictionaries: Record<Locale, Dictionary> = {
       presetLabel: "Compression preset",
       presetQuestionLabel: "How do you want to compress this video?",
       recommendedLabel: "Recommended",
-      expectedReductionLabel: "Expected reduction",
+      expectedReductionLabel: "Typical Result*",
+      presetFootnote:
+        "*Actual compression results vary depending on the video's codec, bitrate, duration, resolution and existing compression level.",
       useCasesLabel: "Ideal for",
       startLabel: "Start compression",
       cancelLabel: "Cancel",
@@ -444,13 +451,27 @@ const dictionaries: Record<Locale, Dictionary> = {
       increaseLabel: "Increase",
       increasePercentLabel: "Increase percentage",
       reductionLabel: "Reduction",
+      originalBitrateLabel: "Original bitrate",
+      finalBitrateLabel: "Final bitrate",
+      originalResolutionLabel: "Original resolution",
+      finalResolutionLabel: "Final resolution",
+      originalCodecLabel: "Original codec",
+      finalCodecLabel: "Final codec",
       expiresLabel: "Expires",
       downloadLabel: "Download",
       downloadAnywayLabel: "Download anyway",
       deleteLabel: "Delete file",
       ineffectiveWarning:
-        "The selected preset could not reduce the file size. The resulting file is larger than the original. Try the Balanced or Smaller File preset to attempt a smaller output.",
+        "This video is already highly compressed. Using the selected preset, QAVELIX could not generate a file smaller than the original. Try one of the suggested presets below to prioritize a different compression strategy.",
+      ineffectiveRecommendationLabel: "Recommended presets",
       successMessage: "✔ Compression completed successfully",
+      successMessages: {
+        excellent: "✔ Excellent space savings.",
+        great: "✔ Great balance between quality and storage.",
+        moderate: "✔ Moderate compression completed successfully.",
+        light: "✔ Light compression completed.",
+        noSavings: "✔ Compression completed, but no space savings were achieved.",
+      },
       downloadStartedMessage: "✔ Download started successfully",
       reuseTipTitle: "Compare results",
       reuseTipDescription:
@@ -463,22 +484,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       presetDescriptions: {
         balanced:
-          "The best balance between visual quality and file size for everyday publishing.",
-        small: "The strongest size reduction for quick sharing and saving space.",
-        high: "Prioritizes visual quality when preserving detail matters most.",
+          "Provides the best balance between visual quality and file size. Preserves the original resolution whenever possible while reducing bitrate efficiently.",
+        small:
+          "Prioritizes maximum file size reduction. Best choice when storage space or sharing speed is more important than visual quality.",
+        high:
+          "Preserves the highest possible visual quality. Uses lighter compression while keeping more image detail.",
       },
       presetUseCases: {
-        balanced: ["YouTube", "Instagram", "TikTok"],
-        small: ["WhatsApp", "Email", "Saving space"],
-        high: ["Archiving", "Editing", "Master files"],
-      },
-      presetReductionRanges: {
-        balanced: "20-50%",
-        small: "40-70%",
-        high: "10-25%",
-      },
-      presetNotes: {
-        high: "Files that are already heavily compressed may not become smaller.",
+        balanced: ["YouTube", "Instagram", "TikTok", "Web Publishing"],
+        small: ["WhatsApp", "Telegram", "Email", "Storage Saving"],
+        high: ["Editing", "Archiving", "Backup", "Master Files"],
       },
       errors: {
         noFile: "Choose one supported video file before starting compression.",
@@ -871,7 +886,9 @@ const dictionaries: Record<Locale, Dictionary> = {
       presetLabel: "Predefinição de compressão",
       presetQuestionLabel: "Como você deseja comprimir este vídeo?",
       recommendedLabel: "Recomendado",
-      expectedReductionLabel: "Redução esperada",
+      expectedReductionLabel: "Resultado típico*",
+      presetFootnote:
+        "*Os resultados reais de compressão variam conforme codec, taxa de bits, duração, resolução e nível de compressão já existente no vídeo.",
       useCasesLabel: "Ideal para",
       startLabel: "Iniciar compressão",
       cancelLabel: "Cancelar",
@@ -894,13 +911,27 @@ const dictionaries: Record<Locale, Dictionary> = {
       increaseLabel: "Aumento",
       increasePercentLabel: "Percentual de aumento",
       reductionLabel: "Redução",
+      originalBitrateLabel: "Taxa de bits original",
+      finalBitrateLabel: "Taxa de bits final",
+      originalResolutionLabel: "Resolução original",
+      finalResolutionLabel: "Resolução final",
+      originalCodecLabel: "Codec original",
+      finalCodecLabel: "Codec final",
       expiresLabel: "Expira em",
       downloadLabel: "Baixar",
       downloadAnywayLabel: "Baixar mesmo assim",
       deleteLabel: "Excluir arquivo",
       ineffectiveWarning:
-        "O preset selecionado não conseguiu reduzir o tamanho do arquivo. O arquivo resultante ficou maior que o original. Experimente o preset 'Equilibrada' ou 'Arquivo menor' para tentar reduzir o tamanho.",
+        "Este vídeo já está altamente comprimido. Com o preset selecionado, o QAVELIX não conseguiu gerar um arquivo menor que o original. Experimente um dos presets sugeridos abaixo para priorizar uma estratégia de compressão diferente.",
+      ineffectiveRecommendationLabel: "Presets recomendados",
       successMessage: "✔ Compressão concluída com sucesso",
+      successMessages: {
+        excellent: "✔ Excelente economia de espaço.",
+        great: "✔ Ótimo equilíbrio entre qualidade e armazenamento.",
+        moderate: "✔ Compressão moderada concluída com sucesso.",
+        light: "✔ Compressão leve concluída.",
+        noSavings: "✔ Compressão concluída, mas não houve economia de espaço.",
+      },
       downloadStartedMessage: "✔ Download iniciado com sucesso",
       reuseTipTitle: "Compare os resultados",
       reuseTipDescription:
@@ -913,22 +944,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       presetDescriptions: {
         balanced:
-          "Melhor equilíbrio entre qualidade visual e tamanho para publicações do dia a dia.",
-        small: "Maior redução de tamanho para compartilhar rápido e economizar espaço.",
-        high: "Prioriza a qualidade visual quando preservar detalhes é o mais importante.",
+          "Oferece o melhor equilíbrio entre qualidade visual e tamanho do arquivo. Preserva a resolução original sempre que possível enquanto reduz a taxa de bits com eficiência.",
+        small:
+          "Prioriza a máxima redução do tamanho do arquivo. É a melhor escolha quando espaço de armazenamento ou velocidade de compartilhamento são mais importantes que qualidade visual.",
+        high:
+          "Preserva a maior qualidade visual possível. Usa compressão mais leve enquanto mantém mais detalhes da imagem.",
       },
       presetUseCases: {
-        balanced: ["YouTube", "Instagram", "TikTok"],
-        small: ["WhatsApp", "E-mail", "Economizar espaço"],
-        high: ["Arquivamento", "Edição", "Master files"],
-      },
-      presetReductionRanges: {
-        balanced: "20-50%",
-        small: "40-70%",
-        high: "10-25%",
-      },
-      presetNotes: {
-        high: "Arquivos que já estão muito comprimidos podem não reduzir de tamanho.",
+        balanced: ["YouTube", "Instagram", "TikTok", "Publicação web"],
+        small: ["WhatsApp", "Telegram", "E-mail", "Economia de armazenamento"],
+        high: ["Edição", "Arquivamento", "Backup", "Arquivos master"],
       },
       errors: {
         noFile: "Escolha um vídeo aceito antes de iniciar a compressão.",
@@ -1322,7 +1347,9 @@ const dictionaries: Record<Locale, Dictionary> = {
       presetLabel: "Ajuste de compresión",
       presetQuestionLabel: "¿Cómo quieres comprimir este vídeo?",
       recommendedLabel: "Recomendado",
-      expectedReductionLabel: "Reducción esperada",
+      expectedReductionLabel: "Resultado habitual*",
+      presetFootnote:
+        "*Los resultados reales de compresión varían según el códec, la tasa de bits, la duración, la resolución y el nivel de compresión previo del vídeo.",
       useCasesLabel: "Ideal para",
       startLabel: "Iniciar compresión",
       cancelLabel: "Cancelar",
@@ -1345,13 +1372,27 @@ const dictionaries: Record<Locale, Dictionary> = {
       increaseLabel: "Aumento",
       increasePercentLabel: "Porcentaje de aumento",
       reductionLabel: "Reducción",
+      originalBitrateLabel: "Tasa de bits original",
+      finalBitrateLabel: "Tasa de bits final",
+      originalResolutionLabel: "Resolución original",
+      finalResolutionLabel: "Resolución final",
+      originalCodecLabel: "Códec original",
+      finalCodecLabel: "Códec final",
       expiresLabel: "Caduca",
       downloadLabel: "Descargar",
       downloadAnywayLabel: "Descargar igualmente",
       deleteLabel: "Eliminar archivo",
       ineffectiveWarning:
-        "El ajuste seleccionado no pudo reducir el tamaño del archivo. El archivo resultante quedó más grande que el original. Prueba el ajuste Equilibrado o Archivo más pequeño para intentar reducir el tamaño.",
+        "Este vídeo ya está muy comprimido. Con el ajuste seleccionado, QAVELIX no ha podido generar un archivo más pequeño que el original. Prueba uno de los ajustes sugeridos para priorizar otra estrategia de compresión.",
+      ineffectiveRecommendationLabel: "Ajustes recomendados",
       successMessage: "✔ Compresión completada correctamente",
+      successMessages: {
+        excellent: "✔ Excelente ahorro de espacio.",
+        great: "✔ Gran equilibrio entre calidad y almacenamiento.",
+        moderate: "✔ Compresión moderada completada correctamente.",
+        light: "✔ Compresión ligera completada.",
+        noSavings: "✔ Compresión completada, pero no se ha conseguido ahorrar espacio.",
+      },
       downloadStartedMessage: "✔ Descarga iniciada correctamente",
       reuseTipTitle: "Compara los resultados",
       reuseTipDescription:
@@ -1364,22 +1405,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       presetDescriptions: {
         balanced:
-          "El mejor equilibrio entre calidad visual y tamaño para publicar a diario.",
-        small: "La mayor reducción de tamaño para compartir rápido y ahorrar espacio.",
-        high: "Prioriza la calidad visual cuando conservar el detalle es lo más importante.",
+          "Ofrece el mejor equilibrio entre calidad visual y tamaño de archivo. Conserva la resolución original siempre que es posible mientras reduce la tasa de bits de forma eficiente.",
+        small:
+          "Prioriza la máxima reducción del tamaño del archivo. Es la mejor opción cuando el espacio de almacenamiento o la velocidad al compartir importan más que la calidad visual.",
+        high:
+          "Conserva la mayor calidad visual posible. Usa una compresión más ligera mientras mantiene más detalle de imagen.",
       },
       presetUseCases: {
-        balanced: ["YouTube", "Instagram", "TikTok"],
-        small: ["WhatsApp", "Correo electrónico", "Ahorrar espacio"],
-        high: ["Archivado", "Edición", "Másteres"],
-      },
-      presetReductionRanges: {
-        balanced: "20-50%",
-        small: "40-70%",
-        high: "10-25%",
-      },
-      presetNotes: {
-        high: "Los archivos que ya están muy comprimidos pueden no reducir su tamaño.",
+        balanced: ["YouTube", "Instagram", "TikTok", "Publicación web"],
+        small: ["WhatsApp", "Telegram", "Correo electrónico", "Ahorro de almacenamiento"],
+        high: ["Edición", "Archivado", "Copia de seguridad", "Archivos máster"],
       },
       errors: {
         noFile: "Elige un vídeo admitido antes de iniciar la compresión.",

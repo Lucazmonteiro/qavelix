@@ -42,6 +42,14 @@ test("compression panel renders final job data and download action", () => {
   assert.match(source, /compression\.reductionPercent\.toFixed\(1\)/);
   assert.match(source, /formatBytes\(compression\.increasedBytes\)/);
   assert.match(source, /compression\.increasePercent\.toFixed\(1\)/);
+  assert.match(source, /copy\.originalBitrateLabel/);
+  assert.match(source, /copy\.finalBitrateLabel/);
+  assert.match(source, /copy\.originalResolutionLabel/);
+  assert.match(source, /copy\.finalResolutionLabel/);
+  assert.match(source, /copy\.originalCodecLabel/);
+  assert.match(source, /copy\.finalCodecLabel/);
+  assert.match(source, /getFinalBitrate\(compression, validatedAnalysis\)/);
+  assert.match(source, /getFinalResolution\(validatedAnalysis, activePreset\)/);
   assert.doesNotMatch(source, /\+\\$\{formatBytes\(compression\.increasedBytes\)\}/);
   assert.doesNotMatch(source, /\+\\$\{compression\.increasePercent\.toFixed\(1\)\}%/);
   assert.match(source, /copy\.downloadAnywayLabel/);
@@ -211,9 +219,18 @@ test("compression panel presents prominent preset decision cards after validatio
   assert.match(source, /preset-card--workflow/);
   assert.match(source, /copy\.recommendedLabel/);
   assert.match(source, /copy\.expectedReductionLabel/);
-  assert.match(source, /copy\.presetReductionRanges\[presetId\]/);
+  assert.match(source, /copy\.presetFootnote/);
   assert.match(source, /copy\.presetUseCases\[presetId\]\.map/);
-  assert.match(source, /copy\.presetNotes\[presetId\]/);
+  const obsoleteRangesKey = ["preset", "Reduction", "Ranges"].join("");
+  const obsoleteNotesKey = ["preset", "Notes"].join("");
+  assert.ok(!source.includes(`copy.${obsoleteRangesKey}[presetId]`));
+  assert.ok(!source.includes(`copy.${obsoleteNotesKey}[presetId]`));
+  assert.match(dictionarySource, /Typical Result\*/);
+  assert.match(dictionarySource, /Actual compression results vary/);
+  assert.match(cssSource, /\.preset-workflow__footnote/);
+  for (const obsoleteRange of [`${40}-${70}%`, `${20}-${50}%`, `${10}-${25}%`]) {
+    assert.ok(!dictionarySource.includes(obsoleteRange), obsoleteRange);
+  }
   assert.doesNotMatch(source, /estimated/i);
   assert.match(cssSource, /\.preset-workflow/);
   assert.match(cssSource, /\.preset-card__badge/);
@@ -301,9 +318,15 @@ test("compression result hierarchy has clearer titles and warning spacing", () =
 test("compression panel shows stable success UI only for successful terminal jobs", () => {
   assert.match(source, /isSuccessfulCompressionStatus/);
   assert.match(source, /status === "completed" \|\| status === "optimized"/);
+  assert.match(source, /function getCompressionSuccessMessage/);
+  assert.match(source, /compression\.reductionPercent > 80/);
+  assert.match(source, /compression\.reductionPercent >= 50/);
+  assert.match(source, /compression\.reductionPercent >= 20/);
   assert.match(source, /className="compression-status__success"/);
   assert.match(source, /role="status"/);
-  assert.match(source, /copy\.successMessage/);
+  assert.match(source, /successFeedbackMessage/);
+  assert.match(dictionarySource, /Excellent space savings/);
+  assert.match(dictionarySource, /Light compression completed/);
   assert.match(source, /alertedJobIdsRef/);
   assert.match(source, /alertedJobIdsRef\.current\.has\(job\.id\)/);
   assert.match(source, /alertedJobIdsRef\.current\.add\(job\.id\)/);
@@ -312,6 +335,21 @@ test("compression panel shows stable success UI only for successful terminal job
   assert.match(cssSource, /\.compression-status__success/);
   assert.match(cssSource, /var\(--success\)/);
   assert.match(cssSource, /var\(--success-soft\)/);
+});
+
+test("ineffective compression guidance recommends only other presets", () => {
+  assert.match(source, /function getRecommendedPresetIds\(currentPreset: CompressionPresetId\)/);
+  assert.match(source, /small: \["balanced", "high"\]/);
+  assert.match(source, /balanced: \["small", "high"\]/);
+  assert.match(source, /high: \["balanced", "small"\]/);
+  assert.match(source, /presetId !== currentPreset/);
+  assert.match(source, /futurePresetRecommendations/);
+  assert.match(source, /const activePreset = job\?\.preset \?\? preset/);
+  assert.match(source, /const recommendedPresetIds = getRecommendedPresetIds\(activePreset\)/);
+  assert.match(source, /copy\.ineffectiveRecommendationLabel/);
+  assert.match(source, /recommendedPresetIds\.map/);
+  assert.match(dictionarySource, /This video is already highly compressed/);
+  assert.match(dictionarySource, /Recommended presets/);
 });
 
 test("compression panel fully resets after delete and allows same file reselection", () => {

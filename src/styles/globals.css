@@ -1038,6 +1038,13 @@ textarea {
   padding: 0.7rem;
 }
 
+.preset-workflow__footnote {
+  margin: -0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
 .preset-card strong {
   font-size: 1rem;
 }
