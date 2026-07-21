@@ -78,6 +78,7 @@ type CompressionCopy = {
   finalResolutionLabel: string;
   originalCodecLabel: string;
   finalCodecLabel: string;
+  fullHdOptimizationNotice: string;
   expiresLabel: string;
   downloadLabel: string;
   downloadAnywayLabel: string;
@@ -269,14 +270,17 @@ function formatOversizedFileMessage(
     .replace("{maxSize}", formatBytes(maxSize));
 }
 
-function forceEvenDimension(value: number) {
-  return Math.max(2, Math.round(value / 2) * 2);
-}
-
 function getFinalResolution(
   analysis: UploadAnalysis | null,
-  presetId: CompressionPresetId,
+  compression: CompressionJobSnapshot["compression"],
 ) {
+  if (compression?.outputWidth && compression.outputHeight) {
+    return {
+      width: compression.outputWidth,
+      height: compression.outputHeight,
+    };
+  }
+
   const width = analysis?.media.width ?? null;
   const height = analysis?.media.height ?? null;
 
@@ -287,25 +291,9 @@ function getFinalResolution(
     };
   }
 
-  const presetConfig = compressionPresets[presetId];
-
-  if (presetConfig.preservesResolution || !presetConfig.maxHeight) {
-    return { width, height };
-  }
-
-  if (height <= presetConfig.maxHeight) {
-    return {
-      width: Math.max(2, Math.trunc(width / 2) * 2),
-      height: Math.max(2, Math.trunc(height / 2) * 2),
-    };
-  }
-
-  const maxWidth = presetConfig.maxHeight * 2;
-  const scaleRatio = Math.min(maxWidth / width, presetConfig.maxHeight / height);
-
   return {
-    width: forceEvenDimension(width * scaleRatio),
-    height: forceEvenDimension(height * scaleRatio),
+    width,
+    height,
   };
 }
 
@@ -1064,7 +1052,7 @@ export function CompressionPanel({
   const downloadUrl = isDownloadable ? job?.downloadUrl : null;
   const activePreset = job?.preset ?? preset;
   const recommendedPresetIds = getRecommendedPresetIds(activePreset);
-  const finalResolution = getFinalResolution(validatedAnalysis, activePreset);
+  const finalResolution = getFinalResolution(validatedAnalysis, compression);
   const finalBitrate = getFinalBitrate(compression, validatedAnalysis);
   const successFeedbackMessage = getCompressionSuccessMessage(copy, compression);
 
@@ -1359,6 +1347,12 @@ export function CompressionPanel({
                       {progress}%
                     </progress>
                   </div>
+
+                  {compression?.wasDownscaledToFullHd ? (
+                    <p className="compression-status__notice">
+                      {copy.fullHdOptimizationNotice}
+                    </p>
+                  ) : null}
                 </>
               )}
             </>

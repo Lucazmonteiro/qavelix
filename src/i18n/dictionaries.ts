@@ -174,6 +174,7 @@ type Dictionary = {
     finalResolutionLabel: string;
     originalCodecLabel: string;
     finalCodecLabel: string;
+    fullHdOptimizationNotice: string;
     expiresLabel: string;
     downloadLabel: string;
     downloadAnywayLabel: string;
@@ -457,6 +458,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       finalResolutionLabel: "Final resolution",
       originalCodecLabel: "Original codec",
       finalCodecLabel: "Final codec",
+      fullHdOptimizationNotice:
+        "This video was optimized to Full HD for faster processing and a smaller file.",
       expiresLabel: "Expires",
       downloadLabel: "Download",
       downloadAnywayLabel: "Download anyway",
@@ -917,6 +920,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       finalResolutionLabel: "Resolução final",
       originalCodecLabel: "Codec original",
       finalCodecLabel: "Codec final",
+      fullHdOptimizationNotice:
+        "Este vídeo foi otimizado em Full HD para processar mais rápido e gerar um arquivo menor.",
       expiresLabel: "Expira em",
       downloadLabel: "Baixar",
       downloadAnywayLabel: "Baixar mesmo assim",
@@ -1378,6 +1383,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       finalResolutionLabel: "Resolución final",
       originalCodecLabel: "Códec original",
       finalCodecLabel: "Códec final",
+      fullHdOptimizationNotice:
+        "Este vídeo se ha optimizado en Full HD para procesarlo más rápido y generar un archivo más pequeño.",
       expiresLabel: "Caduca",
       downloadLabel: "Descargar",
       downloadAnywayLabel: "Descargar igualmente",

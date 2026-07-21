@@ -177,6 +177,20 @@ async function streamRequestBodyToDisk(
         message: "Upload a single video file for validation.",
       });
     }
+
+    if (parsedContentLength > declaredSize) {
+      throw new UploadRouteError("upload_size_mismatch", {
+        code: "invalid_size",
+        message: "The uploaded file size does not match the declared size.",
+      });
+    }
+
+    if (parsedContentLength < declaredSize) {
+      throw new UploadRouteError("upload_truncated", {
+        code: "truncated_upload",
+        message: "The uploaded file ended before the declared file size was received.",
+      });
+    }
   }
 
   const reader = request.body.getReader();
@@ -191,6 +205,25 @@ async function streamRequestBodyToDisk(
     if (!streamClosed) {
       writable.destroy(error);
     }
+  }
+
+  async function waitForWritableClose() {
+    if (streamClosed) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(resolve, 250);
+
+      writable.once("close", () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+      writable.once("error", () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
   }
 
   request.signal.addEventListener("abort", () => {
@@ -256,6 +289,7 @@ async function streamRequestBodyToDisk(
     return receivedBytes;
   } catch (error) {
     destroyWritable(error instanceof Error ? error : undefined);
+    await waitForWritableClose();
     throw error;
   } finally {
     reader.releaseLock();

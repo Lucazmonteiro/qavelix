@@ -2,10 +2,10 @@ export const compressionPresets = {
   small: {
     label: "Smaller File",
     crf: 31,
-    maxHeight: 720,
+    maxHeight: null,
     preservesResolution: false,
     audioBitrateKbps: 96,
-    encoderPreset: "medium",
+    encoderPreset: "veryfast",
     sourceBitrateRatio: 0.45,
     maxVideoBitrateKbps: 2200,
   },
@@ -15,7 +15,7 @@ export const compressionPresets = {
     maxHeight: null,
     preservesResolution: true,
     audioBitrateKbps: 160,
-    encoderPreset: "medium",
+    encoderPreset: "veryfast",
     sourceBitrateRatio: 0.7,
     maxVideoBitrateKbps: 6500,
   },
@@ -25,7 +25,7 @@ export const compressionPresets = {
     maxHeight: null,
     preservesResolution: true,
     audioBitrateKbps: 256,
-    encoderPreset: "slow",
+    encoderPreset: "fast",
     sourceBitrateRatio: 0.92,
     maxVideoBitrateKbps: 14000,
   },
@@ -34,6 +34,12 @@ export const compressionPresets = {
 export type CompressionPresetId = keyof typeof compressionPresets;
 
 export const DOWNLOAD_TTL_MS = 30 * 60 * 1000;
+export const MAX_LANDSCAPE_OUTPUT_WIDTH = 1920;
+export const MAX_LANDSCAPE_OUTPUT_HEIGHT = 1080;
+export const MAX_PORTRAIT_OUTPUT_WIDTH = 1080;
+export const MAX_PORTRAIT_OUTPUT_HEIGHT = 1920;
+export const FFMPEG_ENCODER_THREADS = 2;
+export const FFMPEG_X264_LOOKAHEAD_THREADS = 1;
 
 export type CompressionJobStatus =
   | "queued"
@@ -56,6 +62,9 @@ export type CompressionStats = {
   reductionPercent: number;
   increasePercent: number;
   isIneffective: boolean;
+  outputWidth: number | null;
+  outputHeight: number | null;
+  wasDownscaledToFullHd: boolean;
 };
 
 export type CompressionMediaMetadata = {
@@ -78,6 +87,9 @@ export type CompressionEncodingPlan = {
   videoMaxrate: string;
   videoBufsize: string;
   scaleFilter: string | null;
+  outputWidth: number | null;
+  outputHeight: number | null;
+  wasDownscaledToFullHd: boolean;
   estimatedReductionLikely: boolean;
 };
 
@@ -159,6 +171,11 @@ export function mergePolledCompressionJob(
 export function calculateCompressionStats(
   originalSize: number,
   compressedSize: number,
+  outputMetadata: {
+    outputWidth?: number | null;
+    outputHeight?: number | null;
+    wasDownscaledToFullHd?: boolean;
+  } = {},
 ): CompressionStats {
   const deltaBytes = originalSize - compressedSize;
   const savedBytes = Math.max(0, deltaBytes);
@@ -174,6 +191,9 @@ export function calculateCompressionStats(
     reductionPercent: Number(((savedBytes / ratioBase) * 100).toFixed(1)),
     increasePercent: Number(((increasedBytes / ratioBase) * 100).toFixed(1)),
     isIneffective: compressedSize >= originalSize,
+    outputWidth: outputMetadata.outputWidth ?? null,
+    outputHeight: outputMetadata.outputHeight ?? null,
+    wasDownscaledToFullHd: outputMetadata.wasDownscaledToFullHd ?? false,
   };
 }
 
@@ -195,16 +215,14 @@ export function createCompressionEncodingPlan(
     : presetCeilingBps;
   const videoBitrateBps = Math.max(240_000, targetTotalBitrate - audioBitrateBps);
   const videoKbps = Math.max(240, Math.round(videoBitrateBps / 1000));
+  const outputDimensions = getBoundedOutputDimensions(metadata.width, metadata.height);
   const shouldScale =
-    !preset.preservesResolution &&
-    typeof preset.maxHeight === "number" &&
-    typeof metadata.height === "number" &&
-    metadata.height > preset.maxHeight;
+    outputDimensions.width !== null &&
+    outputDimensions.height !== null &&
+    (outputDimensions.width !== metadata.width || outputDimensions.height !== metadata.height);
   const scaleFilter = shouldScale
-    ? `scale='min(iw,${preset.maxHeight * 2})':'min(ih,${preset.maxHeight})':force_original_aspect_ratio=decrease:force_divisible_by=2`
-    : preset.preservesResolution
-      ? null
-      : "scale='trunc(iw/2)*2':'trunc(ih/2)*2'";
+    ? "scale='if(gte(iw,ih),min(iw,1920),min(iw,1080))':'if(gte(iw,ih),min(ih,1080),min(ih,1920))':force_original_aspect_ratio=decrease:force_divisible_by=2"
+    : null;
 
   return {
     preset: presetId,
@@ -215,8 +233,45 @@ export function createCompressionEncodingPlan(
     videoMaxrate: `${videoKbps}k`,
     videoBufsize: `${videoKbps * 2}k`,
     scaleFilter,
+    outputWidth: outputDimensions.width,
+    outputHeight: outputDimensions.height,
+    wasDownscaledToFullHd: outputDimensions.wasDownscaledToFullHd,
     estimatedReductionLikely:
       shouldScale || Boolean(sourceBitrate && targetTotalBitrate < sourceBitrate),
+  };
+}
+
+function evenFloor(value: number) {
+  return Math.max(2, Math.floor(value / 2) * 2);
+}
+
+export function getBoundedOutputDimensions(
+  width: number | null,
+  height: number | null,
+) {
+  if (!width || !height || width <= 0 || height <= 0) {
+    return {
+      width: null,
+      height: null,
+      wasDownscaledToFullHd: false,
+    };
+  }
+
+  const isLandscape = width >= height;
+  const maxWidth = isLandscape
+    ? MAX_LANDSCAPE_OUTPUT_WIDTH
+    : MAX_PORTRAIT_OUTPUT_WIDTH;
+  const maxHeight = isLandscape
+    ? MAX_LANDSCAPE_OUTPUT_HEIGHT
+    : MAX_PORTRAIT_OUTPUT_HEIGHT;
+  const scaleRatio = Math.min(1, maxWidth / width, maxHeight / height);
+  const outputWidth = evenFloor(width * scaleRatio);
+  const outputHeight = evenFloor(height * scaleRatio);
+
+  return {
+    width: outputWidth,
+    height: outputHeight,
+    wasDownscaledToFullHd: outputWidth < evenFloor(width) || outputHeight < evenFloor(height),
   };
 }
 
@@ -245,6 +300,10 @@ export function buildFfmpegCompressionArguments(
     "libx264",
     "-preset",
     preset.encoderPreset,
+    "-threads",
+    String(FFMPEG_ENCODER_THREADS),
+    "-x264-params",
+    `threads=${FFMPEG_ENCODER_THREADS}:lookahead-threads=${FFMPEG_X264_LOOKAHEAD_THREADS}`,
     "-crf",
     String(plan.crf),
     "-maxrate",

@@ -49,7 +49,11 @@ test("compression panel renders final job data and download action", () => {
   assert.match(source, /copy\.originalCodecLabel/);
   assert.match(source, /copy\.finalCodecLabel/);
   assert.match(source, /getFinalBitrate\(compression, validatedAnalysis\)/);
-  assert.match(source, /getFinalResolution\(validatedAnalysis, activePreset\)/);
+  assert.match(source, /getFinalResolution\(validatedAnalysis, compression\)/);
+  assert.match(source, /compression\?\.outputWidth/);
+  assert.match(source, /compression\?\.wasDownscaledToFullHd/);
+  assert.match(source, /copy\.fullHdOptimizationNotice/);
+  assert.match(cssSource, /\.compression-status__notice/);
   assert.doesNotMatch(source, /\+\\$\{formatBytes\(compression\.increasedBytes\)\}/);
   assert.doesNotMatch(source, /\+\\$\{compression\.increasePercent\.toFixed\(1\)\}%/);
   assert.match(source, /copy\.downloadAnywayLabel/);

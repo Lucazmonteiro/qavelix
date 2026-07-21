@@ -1,5 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { createReadStream, type ReadStream } from "node:fs";
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -52,6 +53,8 @@ const jobLockDirectory = path.join(compressionDirectory, "locks");
 const maxRetainedJobs = 50;
 const maxQueuedJobs = 10;
 const staleWorkerLockMs = 5 * 60 * 1000;
+const ffmpegTimeoutMs = 12 * 60 * 1000;
+const ffmpegStderrBufferLimitBytes = 64 * 1024;
 const signingSecret = randomBytes(32);
 const queue: string[] = [];
 const jobs = new Map<string, CompressionJob>();
@@ -96,6 +99,20 @@ function logCompressionError(
 
 function isPendingCompressionStatus(status: CompressionJobStatus) {
   return status === "queued" || status === "starting";
+}
+
+function isInterruptedProcessingStatus(status: CompressionJobStatus) {
+  return status === "starting" || status === "running";
+}
+
+function appendRollingStderr(current: string, next: string) {
+  const combined = current + next;
+
+  if (Buffer.byteLength(combined, "utf8") <= ffmpegStderrBufferLimitBytes) {
+    return combined;
+  }
+
+  return combined.slice(-ffmpegStderrBufferLimitBytes);
 }
 
 function serializableJob(job: CompressionJob) {
@@ -182,6 +199,20 @@ async function findCompressionJob(id: string) {
     return inMemoryJob ?? null;
   }
 
+  if (isInterruptedProcessingStatus(persistedJob.status)) {
+    if (inMemoryJob?.process || activeJobId === id) {
+      return inMemoryJob;
+    }
+
+    await persistStatus(persistedJob, "failed", "Compression interrupted.");
+    await cleanupJobFiles(persistedJob);
+    jobs.set(id, persistedJob);
+    logCompressionError("compression_orphaned_processing_job_failed", {
+      jobId: persistedJob.id,
+    });
+    return persistedJob;
+  }
+
   if (
     !inMemoryJob ||
     !isPendingCompressionStatus(persistedJob.status) ||
@@ -206,6 +237,16 @@ async function loadPendingCompressionJobs() {
 
       const id = path.basename(file, ".json");
       const job = await findCompressionJob(id);
+
+      if (job && isInterruptedProcessingStatus(job.status)) {
+        await persistStatus(job, "failed", "Compression interrupted.");
+        await cleanupJobFiles(job);
+        logCompressionError("compression_stale_processing_job_failed", {
+          jobId: job.id,
+          status: job.status,
+        });
+        continue;
+      }
 
       if (job && isPendingCompressionStatus(job.status)) {
         pendingJobs.push(job);
@@ -417,6 +458,8 @@ async function runJob(job: CompressionJob) {
   let ffmpegCommand: string | null = null;
   let ffmpegExitCode: number | null = null;
   let ffmpegStderr = "";
+  let ffmpegTimedOut = false;
+  let lastLoggedProgress = 0;
 
   logCompressionStage("compression_worker_picked_job", {
     jobId: job.id,
@@ -461,7 +504,7 @@ async function runJob(job: CompressionJob) {
       height: metadata.height,
       videoCodec: metadata.videoCodec,
     });
-    const { args } = buildFfmpegCompressionArguments(
+    const { args, plan } = buildFfmpegCompressionArguments(
       job.inputPath,
       job.outputPath,
       metadata,
@@ -479,6 +522,20 @@ async function runJob(job: CompressionJob) {
       shell: false,
       windowsHide: true,
     });
+    const ffmpegTimeout = setTimeout(() => {
+      ffmpegTimedOut = true;
+      logCompressionError("compression_ffmpeg_timeout", {
+        jobId: job.id,
+        timeoutMs: ffmpegTimeoutMs,
+      });
+      ffmpeg.kill("SIGTERM");
+      setTimeout(() => {
+        if (ffmpeg.exitCode === null && ffmpeg.signalCode === null) {
+          ffmpeg.kill("SIGKILL");
+        }
+      }, 5_000).unref();
+    }, ffmpegTimeoutMs);
+    ffmpegTimeout.unref();
 
     job.process = ffmpeg;
     await persistStatus(job, "running");
@@ -493,29 +550,27 @@ async function runJob(job: CompressionJob) {
       if (progress !== null) {
         job.progress = progress;
         void persistCompressionJob(job);
-        logCompressionStage("compression_progress_updated", {
-          jobId: job.id,
-          progress,
-        });
+
+        if (progress >= 99 || progress - lastLoggedProgress >= 10) {
+          lastLoggedProgress = progress;
+          logCompressionStage("compression_progress_updated", {
+            jobId: job.id,
+            progress,
+          });
+        }
       }
     });
 
     ffmpeg.stderr.on("data", (chunk: Buffer) => {
       const text = chunk.toString("utf8");
 
-      ffmpegStderr += text;
-
-      if (text.trim()) {
-        logCompressionStage("compression_ffmpeg_stderr", {
-          jobId: job.id,
-          message: text.trim(),
-        });
-      }
+      ffmpegStderr = appendRollingStderr(ffmpegStderr, text);
     });
 
     await new Promise<void>((resolve, reject) => {
       ffmpeg.on("error", reject);
       ffmpeg.on("close", (code) => {
+        clearTimeout(ffmpegTimeout);
         ffmpegExitCode = code;
 
         if (job.status === "cancelled") {
@@ -525,6 +580,11 @@ async function runJob(job: CompressionJob) {
 
         if (code === 0) {
           resolve();
+          return;
+        }
+
+        if (ffmpegTimedOut) {
+          reject(new Error("Compression timed out."));
           return;
         }
 
@@ -540,7 +600,12 @@ async function runJob(job: CompressionJob) {
       const outputStats = await stat(job.outputPath);
       const token = randomBytes(32).toString("base64url");
       const expiresAt = new Date(Date.now() + DOWNLOAD_TTL_MS).toISOString();
-      const compression = calculateCompressionStats(job.inputSize, outputStats.size);
+      const outputMetadata = await analyzeWithFfprobe(job.outputPath);
+      const compression = calculateCompressionStats(job.inputSize, outputStats.size, {
+        outputWidth: outputMetadata.width,
+        outputHeight: outputMetadata.height,
+        wasDownscaledToFullHd: plan.wasDownscaledToFullHd,
+      });
 
       job.outputSize = outputStats.size;
       job.compression = compression;
@@ -556,6 +621,9 @@ async function runJob(job: CompressionJob) {
         reductionPercent: compression.reductionPercent,
         increasePercent: compression.increasePercent,
         ineffective: compression.isIneffective,
+        outputWidth: compression.outputWidth,
+        outputHeight: compression.outputHeight,
+        wasDownscaledToFullHd: compression.wasDownscaledToFullHd,
       });
       logCompressionStage("compression_download_prepared", {
         jobId: job.id,
@@ -578,6 +646,7 @@ async function runJob(job: CompressionJob) {
         stderr: ffmpegStderr,
         stack: error instanceof Error ? (error.stack ?? null) : null,
       });
+      await rm(job.outputPath, { force: true });
       await persistStatus(job, "failed", "Compression failed.");
     }
   } finally {
@@ -838,6 +907,14 @@ export async function readCompressionDownload(
   return {
     fileName: `${path.parse(job.originalName).name}.qavelix-compressed.mp4`,
     contentType: "video/mp4",
-    bytes: await readFile(job.outputPath),
+    contentLength: (await stat(job.outputPath)).size,
+    stream: createReadStream(job.outputPath),
   };
 }
+
+export type CompressionDownload = {
+  fileName: string;
+  contentType: string;
+  contentLength: number;
+  stream: ReadStream;
+};

@@ -1,3 +1,5 @@
+import { Readable } from "node:stream";
+
 import { readCompressionDownload } from "@/lib/server/compression-queue";
 import {
   assertValidJobId,
@@ -64,9 +66,10 @@ export async function GET(request: Request, { params }: DownloadRouteProps) {
     jobId: id,
   });
 
-  return new Response(download.bytes, {
+  return new Response(Readable.toWeb(download.stream) as ReadableStream, {
     headers: {
       "Content-Type": download.contentType,
+      "Content-Length": String(download.contentLength),
       "Content-Disposition": `attachment; filename="${download.fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}"`,
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",

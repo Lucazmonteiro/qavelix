@@ -1104,7 +1104,8 @@ textarea {
 
 .compression-status__error,
 .compression-status__warning,
-.compression-status__success {
+.compression-status__success,
+.compression-status__notice {
   border-radius: 8px;
   color: var(--foreground);
   font-weight: 700;
@@ -1126,6 +1127,12 @@ textarea {
   margin: 0.9rem 0 0;
   border: 1px solid color-mix(in srgb, var(--success) 45%, var(--border));
   background: var(--success-soft);
+}
+
+.compression-status__notice {
+  margin: 1rem 0 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 44%, var(--surface));
 }
 
 .compression-status__actions {

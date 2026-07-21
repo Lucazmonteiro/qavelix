@@ -7,6 +7,7 @@ import {
   calculateCompressionStats,
   compressionPresets,
   createCompressionEncodingPlan,
+  getBoundedOutputDimensions,
   getCompressionDisplayProgress,
   getCompressionOutcomeStatus,
   isActiveCompressionStatus,
@@ -27,6 +28,10 @@ const h2641080pSource = {
 
 const compressionQueueSource = await readFile(
   "src/lib/server/compression-queue.ts",
+  "utf8",
+);
+const downloadRouteSource = await readFile(
+  "src/app/api/compression/jobs/[id]/download/route.ts",
   "utf8",
 );
 
@@ -64,7 +69,7 @@ test("compression presets have distinct size and quality goals", () => {
   assert.equal(compressionPresets.small.preservesResolution, false);
   assert.equal(compressionPresets.balanced.preservesResolution, true);
   assert.equal(compressionPresets.high.preservesResolution, true);
-  assert.equal(compressionPresets.small.maxHeight, 720);
+  assert.equal(compressionPresets.small.maxHeight, null);
   assert.equal(compressionPresets.balanced.maxHeight, null);
   assert.equal(compressionPresets.high.maxHeight, null);
   assert.ok(
@@ -83,7 +88,9 @@ test("compression presets have distinct size and quality goals", () => {
     compressionPresets.balanced.audioBitrateKbps <
       compressionPresets.high.audioBitrateKbps,
   );
-  assert.equal(compressionPresets.high.encoderPreset, "slow");
+  assert.equal(compressionPresets.small.encoderPreset, "veryfast");
+  assert.equal(compressionPresets.balanced.encoderPreset, "veryfast");
+  assert.equal(compressionPresets.high.encoderPreset, "fast");
 });
 
 test("localized compression lifecycle and success labels are present", async () => {
@@ -136,7 +143,7 @@ test("compression plans cap output bitrate below the source when reduction is li
   );
 });
 
-test("only the Smaller File preset is allowed to scale video dimensions", () => {
+test("compression plans cap large output dimensions and never upscale", () => {
   const small = createCompressionEncodingPlan(h2641080pSource, "small");
   const balanced = createCompressionEncodingPlan(h2641080pSource, "balanced");
   const high = createCompressionEncodingPlan(h2641080pSource, "high");
@@ -148,14 +155,29 @@ test("only the Smaller File preset is allowed to scale video dimensions", () => 
   const verticalSmall = createCompressionEncodingPlan(verticalSource, "small");
   const verticalBalanced = createCompressionEncodingPlan(verticalSource, "balanced");
   const verticalHigh = createCompressionEncodingPlan(verticalSource, "high");
+  const landscape4k = getBoundedOutputDimensions(3840, 2160);
+  const portrait4k = getBoundedOutputDimensions(2160, 3840);
+  const hd = getBoundedOutputDimensions(1280, 720);
+  const odd = getBoundedOutputDimensions(1279, 721);
 
-  assert.match(small.scaleFilter ?? "", /720/);
-  assert.match(small.scaleFilter, /force_divisible_by=2/);
+  assert.equal(small.scaleFilter, null);
   assert.equal(balanced.scaleFilter, null);
   assert.equal(high.scaleFilter, null);
-  assert.match(verticalSmall.scaleFilter ?? "", /720/);
-  assert.equal(verticalBalanced.scaleFilter, null);
-  assert.equal(verticalHigh.scaleFilter, null);
+  assert.match(verticalSmall.scaleFilter ?? "", /1080/);
+  assert.match(verticalSmall.scaleFilter ?? "", /1920/);
+  assert.equal(verticalBalanced.outputWidth, 1080);
+  assert.equal(verticalBalanced.outputHeight, 1920);
+  assert.equal(verticalHigh.outputWidth, 1080);
+  assert.equal(verticalHigh.outputHeight, 1920);
+  assert.equal(landscape4k.width, 1920);
+  assert.equal(landscape4k.height, 1080);
+  assert.equal(portrait4k.width, 1080);
+  assert.equal(portrait4k.height, 1920);
+  assert.equal(hd.width, 1280);
+  assert.equal(hd.height, 720);
+  assert.equal(hd.wasDownscaledToFullHd, false);
+  assert.equal(odd.width % 2, 0);
+  assert.equal(odd.height % 2, 0);
   assert.equal(verticalSmall.preservesResolution, false);
   assert.equal(verticalBalanced.preservesResolution, true);
   assert.equal(verticalHigh.preservesResolution, true);
@@ -178,6 +200,12 @@ test("FFmpeg arguments use bounded H.264 MP4 settings", () => {
     "-map",
   ]);
   assert.ok(args.includes("libx264"));
+  assert.equal(args[args.indexOf("-preset") + 1], "veryfast");
+  assert.equal(args[args.indexOf("-threads") + 1], "2");
+  assert.equal(
+    args[args.indexOf("-x264-params") + 1],
+    "threads=2:lookahead-threads=1",
+  );
   assert.ok(args.includes("-maxrate"));
   assert.ok(args.includes(plan.videoMaxrate));
   assert.ok(args.includes("-bufsize"));
@@ -189,7 +217,7 @@ test("FFmpeg arguments use bounded H.264 MP4 settings", () => {
   assert.equal(args.at(-1), "output.mp4");
 });
 
-test("Balanced and High Quality FFmpeg arguments preserve source resolution", () => {
+test("Balanced and High Quality FFmpeg arguments cap 4K sources to Full HD", () => {
   const source4kVertical = {
     ...h2641080pSource,
     width: 2160,
@@ -206,24 +234,42 @@ test("Balanced and High Quality FFmpeg arguments preserve source resolution", ()
     );
 
     assert.equal(plan.preservesResolution, true);
-    assert.equal(plan.scaleFilter, null);
-    assert.equal(args.includes("-vf"), false);
+    assert.equal(plan.outputWidth, 1080);
+    assert.equal(plan.outputHeight, 1920);
+    assert.equal(plan.wasDownscaledToFullHd, true);
+    assert.match(plan.scaleFilter ?? "", /force_divisible_by=2/);
+    assert.equal(args[args.indexOf("-vf") + 1], plan.scaleFilter);
   }
 });
 
-test("compression worker logs complete FFmpeg diagnostics internally", () => {
+test("compression worker bounds FFmpeg diagnostics and fails safely", () => {
   assert.match(compressionQueueSource, /let ffmpegStderr = ""/);
+  assert.match(compressionQueueSource, /const ffmpegStderrBufferLimitBytes = 64 \* 1024/);
+  assert.match(compressionQueueSource, /function appendRollingStderr/);
   assert.match(compressionQueueSource, /ffmpeg\.stdout\.on\("data"/);
   assert.match(compressionQueueSource, /const progress = parseProgress/);
   assert.match(compressionQueueSource, /ffmpeg\.stderr\.on\("data"/);
-  assert.match(compressionQueueSource, /ffmpegStderr \+= text/);
-  assert.match(compressionQueueSource, /message: text\.trim\(\)/);
-  assert.doesNotMatch(compressionQueueSource, /text\.trim\(\)\.slice/);
+  assert.match(compressionQueueSource, /appendRollingStderr\(ffmpegStderr, text\)/);
+  assert.doesNotMatch(compressionQueueSource, /message: text\.trim\(\)/);
   assert.match(compressionQueueSource, /command: ffmpegCommand/);
   assert.match(compressionQueueSource, /exitCode: ffmpegExitCode/);
   assert.match(compressionQueueSource, /stderr: ffmpegStderr/);
   assert.match(compressionQueueSource, /stack: error instanceof Error/);
+  assert.match(compressionQueueSource, /const ffmpegTimeoutMs = 12 \* 60 \* 1000/);
+  assert.match(compressionQueueSource, /compression_ffmpeg_timeout/);
+  assert.match(compressionQueueSource, /ffmpeg\.kill\("SIGTERM"\)/);
+  assert.match(compressionQueueSource, /ffmpeg\.kill\("SIGKILL"\)/);
+  assert.match(compressionQueueSource, /await rm\(job\.outputPath, \{ force: true \}\)/);
   assert.match(compressionQueueSource, /await persistStatus\(job, "failed", "Compression failed\."\)/);
+});
+
+test("compression downloads are streamed instead of fully buffered", () => {
+  assert.match(compressionQueueSource, /createReadStream\(job\.outputPath\)/);
+  assert.match(compressionQueueSource, /contentLength: \(await stat\(job\.outputPath\)\)\.size/);
+  assert.doesNotMatch(compressionQueueSource, /bytes: await readFile\(job\.outputPath\)/);
+  assert.match(downloadRouteSource, /Readable\.toWeb\(download\.stream\)/);
+  assert.match(downloadRouteSource, /"Content-Length": String\(download\.contentLength\)/);
+  assert.doesNotMatch(downloadRouteSource, /new Response\(download\.bytes/);
 });
 
 test("compression worker prevents duplicate execution of stale queued jobs", () => {
@@ -232,6 +278,9 @@ test("compression worker prevents duplicate execution of stale queued jobs", () 
     compressionQueueSource,
     /!isPendingCompressionStatus\(persistedJob\.status\)/,
   );
+  assert.match(compressionQueueSource, /isInterruptedProcessingStatus\(persistedJob\.status\)/);
+  assert.match(compressionQueueSource, /inMemoryJob\?\.process \|\| activeJobId === id/);
+  assert.match(compressionQueueSource, /compression_orphaned_processing_job_failed/);
   assert.match(
     compressionQueueSource,
     /persistedJob\.progress >= inMemoryJob\.progress/,
