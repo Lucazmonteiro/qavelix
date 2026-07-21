@@ -7,6 +7,10 @@ import { once } from "node:events";
 
 import { analyzeWithFfprobe } from "@/lib/server/ffprobe";
 import {
+  createAnalyzedUploadRecord,
+  deleteAnalyzedUploadReference,
+} from "@/lib/server/analyzed-upload-registry";
+import {
   enforceApiSecurity,
   logSecurityEvent,
   securityJson,
@@ -353,6 +357,16 @@ export async function POST(request: Request) {
       mimeType: metadata.fileType,
     });
 
+    const uploadReference = await createAnalyzedUploadRecord({
+      inputPath: temporaryPath,
+      originalName: metadata.fileName,
+      mimeType: metadata.fileType,
+      extension: metadata.extension,
+      size: receivedBytes,
+      media,
+    });
+    temporaryPath = null;
+
     return securityJson(
       {
         ok: true,
@@ -364,6 +378,10 @@ export async function POST(request: Request) {
             extension: metadata.extension,
           },
           media,
+          uploadReference: {
+            value: uploadReference.reference,
+            expiresAt: uploadReference.expiresAt,
+          },
         } satisfies UploadAnalysis,
       },
       { requestId: security.requestId },
@@ -400,5 +418,35 @@ export async function POST(request: Request) {
         });
       }
     }
+  }
+}
+
+export async function DELETE(request: Request) {
+  const security = enforceApiSecurity(request, {
+    route: "upload.discard",
+    limit: 30,
+    windowMs: 60_000,
+    requireSameOrigin: true,
+  });
+
+  if (!security.ok) {
+    return security.response;
+  }
+
+  try {
+    const payload = (await request.json()) as { uploadReference?: unknown };
+    const discarded = await deleteAnalyzedUploadReference(
+      typeof payload.uploadReference === "string" ? payload.uploadReference : null,
+    );
+
+    logSecurityEvent("info", "upload_reference_discarded", {
+      requestId: security.requestId,
+      fingerprint: security.fingerprint,
+      discarded,
+    });
+
+    return securityJson({ ok: true }, { requestId: security.requestId });
+  } catch {
+    return securityJson({ ok: true }, { requestId: security.requestId });
   }
 }

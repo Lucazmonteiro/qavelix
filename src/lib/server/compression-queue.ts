@@ -1,6 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -14,8 +14,8 @@ import {
   type CompressionJobStatus,
   type CompressionPresetId,
 } from "@/lib/compression-policy";
+import type { ConsumedAnalyzedUpload } from "@/lib/server/analyzed-upload-registry";
 import { analyzeWithFfprobe } from "@/lib/server/ffprobe";
-import { validateFileIdentity } from "@/lib/server/upload-validation";
 import type { UploadValidationError } from "@/lib/upload-policy";
 
 type CompressionJob = CompressionJobSnapshot & {
@@ -36,7 +36,14 @@ type CreateJobResult =
       ok: false;
       error:
         | UploadValidationError
-        | { code: "invalid_preset" | "queue_full"; message: string };
+        | {
+            code:
+              | "invalid_preset"
+              | "queue_full"
+              | "missing_file"
+              | "metadata_mismatch";
+            message: string;
+          };
     };
 
 const compressionDirectory = path.join(os.tmpdir(), "qavelix-compression");
@@ -627,8 +634,8 @@ function pruneTerminalJobs() {
   }
 }
 
-export async function createCompressionJob(
-  file: File,
+export async function createCompressionJobFromAnalyzedUpload(
+  upload: ConsumedAnalyzedUpload,
   preset: CompressionPresetId,
 ): Promise<CreateJobResult> {
   pruneTerminalJobs();
@@ -643,67 +650,94 @@ export async function createCompressionJob(
     };
   }
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const validationError = validateFileIdentity(file, bytes.slice(0, 16));
+  let sourceStats;
 
-  if (validationError) {
+  try {
+    sourceStats = await stat(upload.inputPath);
+  } catch {
     return {
       ok: false,
-      error: validationError,
+      error: {
+        code: "missing_file",
+        message: "The analyzed upload is no longer available.",
+      },
+    };
+  }
+
+  if (!sourceStats.isFile() || sourceStats.size !== upload.size) {
+    await rm(upload.inputPath, { force: true });
+    return {
+      ok: false,
+      error: {
+        code: "metadata_mismatch",
+        message: "The analyzed upload metadata no longer matches the stored file.",
+      },
     };
   }
 
   await mkdir(jobMetadataDirectory, { recursive: true });
+  await mkdir(compressionDirectory, { recursive: true });
 
   const id = randomUUID();
   const inputPath = path.join(
     compressionDirectory,
-    `${id}${sanitizeExtension(file.name)}`,
+    `${id}${sanitizeExtension(upload.originalName)}`,
   );
   const outputPath = path.join(compressionDirectory, `${id}.compressed.mp4`);
+  let ownsInputPath = false;
 
-  await writeFile(inputPath, bytes, {
-    flag: "wx",
-    mode: 0o600,
-  });
+  try {
+    await rename(upload.inputPath, inputPath);
+    ownsInputPath = true;
 
-  const job: CompressionJob = {
-    id,
-    status: "queued",
-    preset,
-    originalName: file.name,
-    inputSize: file.size,
-    outputSize: null,
-    compression: null,
-    progress: 0,
-    createdAt: new Date().toISOString(),
-    startedAt: null,
-    completedAt: null,
-    expiresAt: null,
-    downloadUrl: null,
-    error: null,
-    inputPath,
-    outputPath,
-    process: null,
-    downloadToken: null,
-    downloadSignature: null,
-    cleanupTimer: null,
-  };
+    const job: CompressionJob = {
+      id,
+      status: "queued",
+      preset,
+      originalName: upload.originalName,
+      inputSize: upload.size,
+      outputSize: null,
+      compression: null,
+      progress: 0,
+      createdAt: new Date().toISOString(),
+      startedAt: null,
+      completedAt: null,
+      expiresAt: null,
+      downloadUrl: null,
+      error: null,
+      inputPath,
+      outputPath,
+      process: null,
+      downloadToken: null,
+      downloadSignature: null,
+      cleanupTimer: null,
+    };
 
-  jobs.set(id, job);
-  await persistCompressionJob(job);
-  logCompressionStage("compression_job_created", {
-    jobId: id,
-    preset,
-    inputSize: file.size,
-  });
-  enqueueJob(id);
-  void ensureCompressionWorker();
+    jobs.set(id, job);
+    await persistCompressionJob(job);
+    logCompressionStage("compression_job_created", {
+      jobId: id,
+      preset,
+      inputSize: upload.size,
+    });
+    enqueueJob(id);
+    void ensureCompressionWorker();
 
-  return {
-    ok: true,
-    job: snapshot(job),
-  };
+    return {
+      ok: true,
+      job: snapshot(job),
+    };
+  } catch {
+    await rm(ownsInputPath ? inputPath : upload.inputPath, { force: true });
+    await rm(outputPath, { force: true });
+    return {
+      ok: false,
+      error: {
+        code: "missing_file",
+        message: "The analyzed upload could not be prepared for compression.",
+      },
+    };
+  }
 }
 
 export async function getCompressionJob(id: string) {

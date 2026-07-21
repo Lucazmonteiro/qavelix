@@ -53,6 +53,16 @@ const uploadLimitBytes = 250 * 1024 * 1024;
 let uploadTestFingerprintCounter = 150;
 let compressionTestFingerprintCounter = 10;
 
+function compressionRequestHeaders(baseUrl) {
+  compressionTestFingerprintCounter += 1;
+
+  return {
+    Origin: baseUrl,
+    "X-Forwarded-For": `203.0.113.${compressionTestFingerprintCounter}`,
+    "Content-Type": "application/json",
+  };
+}
+
 async function pollCompressionJob(baseUrl, jobId) {
   const response = await fetch(`${baseUrl}/api/compression/jobs/${jobId}`);
   const payload = await response.json();
@@ -198,20 +208,56 @@ async function postRawUpload(
   return fetch(`${baseUrl}/api/upload/analyze`, init);
 }
 
+async function createAnalyzedUploadReference(baseUrl, file, name = file.name) {
+  const response = await postRawUpload(baseUrl, {
+    body: file.stream(),
+    name,
+    size: file.size,
+    type: file.type,
+  });
+  const payload = await response.json();
+
+  assertStatus(response, 200, "analyzed upload reference create");
+  assert.equal(payload.ok, true);
+  assert.ok(payload.analysis.uploadReference?.value);
+  assert.ok(payload.analysis.uploadReference?.expiresAt);
+  assert.doesNotMatch(JSON.stringify(payload), /qavelix-upload-analysis/i);
+
+  return payload.analysis.uploadReference.value;
+}
+
+async function deleteAnalyzedUpload(baseUrl, uploadReference) {
+  const response = await fetch(`${baseUrl}/api/upload/analyze`, {
+    method: "DELETE",
+    headers: {
+      Origin: baseUrl,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ uploadReference }),
+  });
+
+  assertStatus(response, 200, "delete analyzed upload reference");
+}
+
+async function createCompressionJobFromReference(baseUrl, file, preset) {
+  const uploadReference = await createAnalyzedUploadReference(baseUrl, file);
+  const response = await fetch(`${baseUrl}/api/compression/jobs`, {
+    method: "POST",
+    headers: compressionRequestHeaders(baseUrl),
+    body: JSON.stringify({ uploadReference, preset }),
+  });
+  const payload = await response.json();
+
+  return { response, payload, uploadReference };
+}
+
 async function createCompressionJobAndWait(baseUrl, file, preset) {
-  compressionTestFingerprintCounter += 1;
-  const fingerprintIp = `203.0.113.${compressionTestFingerprintCounter}`;
-  const formData = new FormData();
-  formData.set("file", file);
-  formData.set("preset", preset);
+  const uploadReference = await createAnalyzedUploadReference(baseUrl, file);
 
   const createResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
     method: "POST",
-    headers: {
-      Origin: baseUrl,
-      "X-Forwarded-For": fingerprintIp,
-    },
-    body: formData,
+    headers: compressionRequestHeaders(baseUrl),
+    body: JSON.stringify({ uploadReference, preset }),
   });
   const createPayload = await createResponse.json();
 
@@ -349,8 +395,12 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
         assert.equal(payload.analysis.file.size, file.size);
         assert.equal(payload.analysis.file.mimeType, "video/mp4");
         assert.equal(payload.analysis.file.extension, ".mp4");
+        assert.ok(payload.analysis.uploadReference?.value);
         assert.ok(payload.analysis.media.durationSeconds > 0);
-        assert.deepEqual(afterFiles, beforeFiles);
+        await deleteAnalyzedUpload(baseUrl, payload.analysis.uploadReference.value);
+        const cleanupFiles = await listUploadTempFiles();
+        assert.notDeepEqual(afterFiles, beforeFiles);
+        assert.deepEqual(cleanupFiles, beforeFiles);
       },
     );
 
@@ -533,42 +583,127 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
     });
 
     await t.test(
-      "rejects compression creation without a same-origin file upload",
+      "rejects compression creation without a validated upload reference",
       async () => {
-        const formData = new FormData();
         const response = await fetch(`${baseUrl}/api/compression/jobs`, {
           method: "POST",
-          headers: {
-            Origin: baseUrl,
-          },
-          body: formData,
+          headers: compressionRequestHeaders(baseUrl),
+          body: JSON.stringify({ preset: "balanced" }),
         });
         const payload = await response.json();
 
-        assertStatus(response, 400, "compression missing file");
+        assertStatus(response, 400, "compression missing reference");
         assert.equal(payload.ok, false);
-        assert.match(payload.error.message, /Upload a single video file/);
+        assert.equal(payload.error.code, "missing_reference");
       },
     );
 
-    await t.test("creates a compression job that is immediately pollable", async () => {
+    await t.test("rejects multipart compression creation after single-upload flow", async () => {
       const formData = new FormData();
       formData.set(
         "file",
-        new File([mp4Header], "queued.mp4", {
+        new File([mp4Header], "legacy.mp4", {
           type: "video/mp4",
         }),
       );
       formData.set("preset", "balanced");
 
-      const createResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
+        const response = await fetch(`${baseUrl}/api/compression/jobs`, {
+          method: "POST",
+          headers: {
+            Origin: baseUrl,
+            "X-Forwarded-For": `203.0.113.${++compressionTestFingerprintCounter}`,
+          },
+          body: formData,
+        });
+      const payload = await response.json();
+
+      assertStatus(response, 400, "compression rejects multipart");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "invalid_request");
+    });
+
+    await t.test("rejects malformed and tampered upload references", async () => {
+      for (const uploadReference of [
+        "not-a-reference",
+        `${randomUUID()}.tampered`,
+      ]) {
+        const response = await fetch(`${baseUrl}/api/compression/jobs`, {
+          method: "POST",
+          headers: compressionRequestHeaders(baseUrl),
+          body: JSON.stringify({ uploadReference, preset: "balanced" }),
+        });
+        const payload = await response.json();
+
+        assertStatus(response, 400, `compression rejects ${uploadReference}`);
+        assert.equal(payload.ok, false);
+        assert.ok(["malformed_reference", "invalid_reference"].includes(payload.error.code));
+      }
+    });
+
+    await t.test("rejects duplicate compression requests for the same upload reference", async () => {
+      const file = await createGeneratedMp4File("duplicate.mp4", {
+        durationSeconds: 1,
+      });
+      const uploadReference = await createAnalyzedUploadReference(baseUrl, file);
+
+      const firstResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
         method: "POST",
+        headers: compressionRequestHeaders(baseUrl),
+        body: JSON.stringify({ uploadReference, preset: "balanced" }),
+      });
+      const firstPayload = await firstResponse.json();
+
+      assertStatus(firstResponse, 202, "first compression from reference");
+      assert.equal(firstPayload.ok, true);
+
+      const secondResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
+        method: "POST",
+        headers: compressionRequestHeaders(baseUrl),
+        body: JSON.stringify({ uploadReference, preset: "balanced" }),
+      });
+      const secondPayload = await secondResponse.json();
+
+      assertStatus(secondResponse, 400, "duplicate compression from reference");
+      assert.equal(secondPayload.ok, false);
+      assert.equal(secondPayload.error.code, "consumed_reference");
+    });
+
+    await t.test("discards an analyzed upload reference on request", async () => {
+      const file = await createGeneratedMp4File("discarded.mp4", {
+        durationSeconds: 1,
+      });
+      const uploadReference = await createAnalyzedUploadReference(baseUrl, file);
+
+      const discardResponse = await fetch(`${baseUrl}/api/upload/analyze`, {
+        method: "DELETE",
         headers: {
           Origin: baseUrl,
+          "Content-Type": "application/json",
         },
-        body: formData,
+        body: JSON.stringify({ uploadReference }),
       });
-      const createPayload = await createResponse.json();
+      const discardPayload = await discardResponse.json();
+
+      assertStatus(discardResponse, 200, "discard analyzed upload");
+      assert.equal(discardPayload.ok, true);
+
+      const compressionResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
+        method: "POST",
+        headers: compressionRequestHeaders(baseUrl),
+        body: JSON.stringify({ uploadReference, preset: "balanced" }),
+      });
+      const compressionPayload = await compressionResponse.json();
+
+      assertStatus(compressionResponse, 400, "discarded reference cannot compress");
+      assert.equal(compressionPayload.ok, false);
+      assert.equal(compressionPayload.error.code, "invalid_reference");
+    });
+
+    await t.test("creates a compression job that is immediately pollable", async () => {
+      const file = await createGeneratedMp4File("queued.mp4", { durationSeconds: 1 });
+      const { response: createResponse, payload: createPayload } =
+        await createCompressionJobFromReference(baseUrl, file, "balanced");
 
       assertStatus(createResponse, 202, "compression job create");
       assert.equal(createPayload.ok, true);
@@ -586,23 +721,9 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
     });
 
     await t.test("polls an API-created job through terminal status", async () => {
-      const formData = new FormData();
-      formData.set(
-        "file",
-        new File([mp4Header], "tracked.mp4", {
-          type: "video/mp4",
-        }),
-      );
-      formData.set("preset", "small");
-
-      const createResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
-        method: "POST",
-        headers: {
-          Origin: baseUrl,
-        },
-        body: formData,
-      });
-      const createPayload = await createResponse.json();
+      const file = await createGeneratedMp4File("tracked.mp4", { durationSeconds: 1 });
+      const { response: createResponse, payload: createPayload } =
+        await createCompressionJobFromReference(baseUrl, file, "small");
 
       assertStatus(createResponse, 202, "tracked compression job create");
 
@@ -632,18 +753,9 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
     await t.test(
       "executes FFmpeg and completes a real compression job with a download",
       async () => {
-        const formData = new FormData();
-        formData.set("file", await createGeneratedMp4File("generated.mp4"));
-        formData.set("preset", "balanced");
-
-        const createResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
-          method: "POST",
-          headers: {
-            Origin: baseUrl,
-          },
-          body: formData,
-        });
-        const createPayload = await createResponse.json();
+        const file = await createGeneratedMp4File("generated.mp4");
+        const { response: createResponse, payload: createPayload } =
+          await createCompressionJobFromReference(baseUrl, file, "balanced");
 
         assertStatus(createResponse, 202, "real compression job create");
 
@@ -719,23 +831,11 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
     await t.test(
       "cancels a retrievable compression job without returning 404",
       async () => {
-        const formData = new FormData();
-        formData.set(
-          "file",
-          new File([mp4Header], "cancelled.mp4", {
-            type: "video/mp4",
-          }),
-        );
-        formData.set("preset", "high");
-
-        const createResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
-          method: "POST",
-          headers: {
-            Origin: baseUrl,
-          },
-          body: formData,
+        const file = await createGeneratedMp4File("cancelled.mp4", {
+          durationSeconds: 1,
         });
-        const createPayload = await createResponse.json();
+        const { response: createResponse, payload: createPayload } =
+          await createCompressionJobFromReference(baseUrl, file, "high");
 
         assertStatus(createResponse, 202, "cancel compression job create");
 

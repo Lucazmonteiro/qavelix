@@ -148,6 +148,8 @@ type UploadResponse =
       };
     };
 
+type UploadReference = NonNullable<UploadAnalysis["uploadReference"]>;
+
 type ValidationState =
   | {
       status: "idle";
@@ -457,6 +459,7 @@ export function CompressionPanel({
   const [job, setJob] = useState<CompressionJobSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [downloadStarted, setDownloadStarted] = useState(false);
+  const [uploadReference, setUploadReference] = useState<UploadReference | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [validation, setValidation] = useState<ValidationState>({ status: "idle" });
@@ -471,6 +474,20 @@ export function CompressionPanel({
   useEffect(() => {
     jobFailedMessageRef.current = copy.errors.jobFailed;
   }, [copy.errors.jobFailed]);
+
+  useEffect(() => {
+    if (!uploadReference) {
+      return;
+    }
+
+    const delay = new Date(uploadReference.expiresAt).getTime() - Date.now();
+
+    const timeoutId = window.setTimeout(() => {
+      setUploadReference(null);
+    }, Math.max(0, delay));
+
+    return () => window.clearTimeout(timeoutId);
+  }, [uploadReference]);
 
   useEffect(() => {
     if (!file || (validation.status !== "valid" && validation.status !== "invalid")) {
@@ -652,10 +669,15 @@ export function CompressionPanel({
   }
 
   function resetCompressionWorkflow() {
+    if (uploadReference) {
+      void discardUploadReference(uploadReference.value);
+    }
+
     resetCompressionResult();
     validationSequenceRef.current += 1;
     setValidation({ status: "idle" });
     setFile(null);
+    setUploadReference(null);
     setPreset("balanced");
     setIsDragging(false);
     resetFileInput();
@@ -705,6 +727,11 @@ export function CompressionPanel({
 
   function selectFiles(files: FileList | File[]) {
     const selectedFile = Array.from(files)[0];
+
+    if (uploadReference) {
+      void discardUploadReference(uploadReference.value);
+      setUploadReference(null);
+    }
 
     if (!selectedFile) {
       setError(copy.errors.noFile);
@@ -809,6 +836,15 @@ export function CompressionPanel({
         return;
       }
 
+      if (!payload.analysis.uploadReference) {
+        setValidation({
+          status: "invalid",
+          message: copy.errors.analysisFailed,
+        });
+        return;
+      }
+
+      setUploadReference(payload.analysis.uploadReference);
       setValidation({ status: "valid", analysis: payload.analysis });
     } catch {
       if (validationSequenceRef.current !== validationSequence) {
@@ -834,9 +870,10 @@ export function CompressionPanel({
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("preset", preset);
+    if (!uploadReference) {
+      setError(copy.errors.sourceUnavailable);
+      return;
+    }
 
     setError(null);
     setDownloadStarted(false);
@@ -844,7 +881,13 @@ export function CompressionPanel({
     try {
       const response = await fetch("/api/compression/jobs", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          uploadReference: uploadReference.value,
+          preset,
+        }),
       });
       const payload = (await response.json()) as JobResponse;
 
@@ -853,6 +896,7 @@ export function CompressionPanel({
         return;
       }
 
+      setUploadReference(null);
       setJob(payload.job);
     } catch {
       setError(copy.errors.uploadFailed);
@@ -913,11 +957,29 @@ export function CompressionPanel({
         }
       }
 
+      if (uploadReference) {
+        await discardUploadReference(uploadReference.value);
+      }
+
       resetToInitialState();
     } catch {
       setError(copy.errors.cancelFailed);
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function discardUploadReference(reference: string) {
+    try {
+      await fetch("/api/upload/analyze", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uploadReference: reference }),
+      });
+    } catch {
+      // Expired or already cleaned references should not block the UI.
     }
   }
 

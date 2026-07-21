@@ -56,6 +56,10 @@ export type UploadAnalysis = {
     audioCodec: string | null;
     frameRate: number | null;
   };
+  uploadReference?: {
+    value: string;
+    expiresAt: string;
+  };
 };
 
 export function formatBytes(bytes: number) {

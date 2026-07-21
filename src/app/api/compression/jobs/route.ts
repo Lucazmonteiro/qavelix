@@ -1,17 +1,32 @@
 import { isCompressionPresetId } from "@/lib/compression-policy";
-import { createCompressionJob } from "@/lib/server/compression-queue";
+import { consumeAnalyzedUploadReference } from "@/lib/server/analyzed-upload-registry";
+import { createCompressionJobFromAnalyzedUpload } from "@/lib/server/compression-queue";
 import {
   enforceApiSecurity,
   logSecurityEvent,
-  rejectOversizedRequest,
   securityJson,
 } from "@/lib/server/security";
-import { MAX_UPLOAD_REQUEST_BYTES } from "@/lib/upload-policy";
 
 export const runtime = "nodejs";
 
-function jsonError(message: string, status = 400, requestId?: string) {
-  return securityJson({ ok: false, error: { message } }, { status, requestId });
+type CreateCompressionPayload = {
+  preset?: unknown;
+  uploadReference?: unknown;
+};
+
+function jsonError(message: string, status = 400, requestId?: string, code?: string) {
+  return securityJson(
+    { ok: false, error: { code, message } },
+    { status, requestId },
+  );
+}
+
+async function readJsonPayload(request: Request) {
+  try {
+    return (await request.json()) as CreateCompressionPayload;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(request: Request) {
@@ -26,33 +41,50 @@ export async function POST(request: Request) {
     return security.response;
   }
 
-  const oversizedResponse = rejectOversizedRequest(
-    request,
-    MAX_UPLOAD_REQUEST_BYTES,
-    security.requestId,
-  );
+  const payload = await readJsonPayload(request);
 
-  if (oversizedResponse) {
-    return oversizedResponse;
-  }
-
-  const formData = await request.formData();
-  const file = formData.get("file");
-  const preset = formData.get("preset");
-
-  if (!(file instanceof File)) {
+  if (!payload) {
     return jsonError(
-      "Upload a single video file for compression.",
+      "A validated upload reference and compression preset are required.",
       400,
       security.requestId,
+      "invalid_request",
     );
   }
 
+  const { preset, uploadReference } = payload;
+
   if (typeof preset !== "string" || !isCompressionPresetId(preset)) {
-    return jsonError("Choose a supported compression preset.", 400, security.requestId);
+    return jsonError(
+      "Choose a supported compression preset.",
+      400,
+      security.requestId,
+      "invalid_preset",
+    );
   }
 
-  const result = await createCompressionJob(file, preset);
+  const consumedUpload = await consumeAnalyzedUploadReference(
+    typeof uploadReference === "string" ? uploadReference : null,
+  );
+
+  if (!consumedUpload.ok) {
+    logSecurityEvent("warn", "compression_upload_reference_rejected", {
+      requestId: security.requestId,
+      fingerprint: security.fingerprint,
+      code: consumedUpload.code,
+    });
+    return jsonError(
+      consumedUpload.message,
+      400,
+      security.requestId,
+      consumedUpload.code,
+    );
+  }
+
+  const result = await createCompressionJobFromAnalyzedUpload(
+    consumedUpload.upload,
+    preset,
+  );
 
   if (!result.ok) {
     logSecurityEvent("warn", "compression_validation_rejected", {
@@ -71,7 +103,7 @@ export async function POST(request: Request) {
     fingerprint: security.fingerprint,
     jobId: result.job.id,
     preset,
-    size: file.size,
+    size: result.job.inputSize,
   });
 
   return securityJson(

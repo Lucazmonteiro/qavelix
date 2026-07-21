@@ -136,6 +136,20 @@ function getUploadErrorMessage(copy: UploadCopy, error: UploadError) {
   }
 }
 
+async function discardUploadReference(reference: string) {
+  try {
+    await fetch("/api/upload/analyze", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ uploadReference: reference }),
+    });
+  } catch {
+    // Metadata-only validation should not fail because cleanup was already handled.
+  }
+}
+
 export function UploadValidator({ copy }: UploadValidatorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -206,6 +220,10 @@ export function UploadValidator({ copy }: UploadValidatorProps) {
           message: getUploadErrorMessage(copy, payload.error),
         });
         return;
+      }
+
+      if (payload.analysis.uploadReference) {
+        void discardUploadReference(payload.analysis.uploadReference.value);
       }
 
       setState({ status: "success", analysis: payload.analysis });

@@ -47,7 +47,8 @@ test("Next and API request limits use the shared upload request policy", async (
   assert.match(nextConfig, /proxyClientMaxBodySize:\s*MAX_UPLOAD_REQUEST_BYTES/);
   assert.match(uploadRoute, /MAX_UPLOAD_BYTES/);
   assert.doesNotMatch(uploadRoute, /MAX_UPLOAD_REQUEST_BYTES/);
-  assert.match(compressionRoute, /MAX_UPLOAD_REQUEST_BYTES/);
+  assert.match(compressionRoute, /request\.json\(\)/);
+  assert.doesNotMatch(compressionRoute, /MAX_UPLOAD_REQUEST_BYTES/);
   assert.doesNotMatch(compressionRoute, /MAX_UPLOAD_BYTES\s*\+/);
 });
 
@@ -63,6 +64,27 @@ test("upload analysis route streams raw request bodies instead of buffering file
   assert.match(uploadRoute, /receivedBytes > MAX_UPLOAD_BYTES/);
   assert.match(uploadRoute, /receivedBytes > declaredSize/);
   assert.match(uploadRoute, /receivedBytes !== declaredSize/);
+});
+
+test("compression creation route uses JSON upload references instead of file uploads", async () => {
+  const compressionRoute = await readFile(
+    "src/app/api/compression/jobs/route.ts",
+    "utf8",
+  );
+  const compressionQueue = await readFile(
+    "src/lib/server/compression-queue.ts",
+    "utf8",
+  );
+
+  assert.doesNotMatch(compressionRoute, /request\.formData/);
+  assert.doesNotMatch(compressionRoute, /File/);
+  assert.doesNotMatch(compressionRoute, /\.arrayBuffer/);
+  assert.doesNotMatch(compressionRoute, /Buffer\.concat/);
+  assert.match(compressionRoute, /request\.json\(\)/);
+  assert.match(compressionRoute, /consumeAnalyzedUploadReference/);
+  assert.match(compressionQueue, /createCompressionJobFromAnalyzedUpload/);
+  assert.match(compressionQueue, /rename\(upload\.inputPath, inputPath\)/);
+  assert.doesNotMatch(compressionQueue, /file\.arrayBuffer/);
 });
 
 test("formatBytes formats file sizes for user-facing validation messages", () => {
