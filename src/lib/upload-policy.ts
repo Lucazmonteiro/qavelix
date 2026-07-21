@@ -26,9 +26,11 @@ export type UploadValidationErrorCode =
   | "missing_file"
   | "empty_file"
   | "file_too_large"
+  | "invalid_size"
   | "invalid_extension"
   | "invalid_mime"
   | "invalid_signature"
+  | "truncated_upload"
   | "ffprobe_unavailable"
   | "ffprobe_failed";
 

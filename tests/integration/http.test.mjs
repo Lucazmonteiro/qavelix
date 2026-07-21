@@ -49,6 +49,8 @@ const successfulCompressionStatuses = [
   "optimized",
   "compression_ineffective",
 ];
+const uploadLimitBytes = 250 * 1024 * 1024;
+let uploadTestFingerprintCounter = 150;
 let compressionTestFingerprintCounter = 10;
 
 async function pollCompressionJob(baseUrl, jobId) {
@@ -106,6 +108,94 @@ async function createGeneratedMp4File(
   } finally {
     await rm(filePath, { force: true });
   }
+}
+
+function createGeneratedByteStream(totalBytes, { prefix = new Uint8Array() } = {}) {
+  let sentBytes = 0;
+
+  return new ReadableStream({
+    pull(controller) {
+      if (sentBytes >= totalBytes) {
+        controller.close();
+        return;
+      }
+
+      if (sentBytes === 0 && prefix.byteLength > 0) {
+        const prefixedBytes = prefix.slice(0, Math.min(prefix.byteLength, totalBytes));
+        sentBytes += prefixedBytes.byteLength;
+        controller.enqueue(prefixedBytes);
+        return;
+      }
+
+      const nextSize = Math.min(64 * 1024, totalBytes - sentBytes);
+      sentBytes += nextSize;
+      controller.enqueue(new Uint8Array(nextSize));
+    },
+  });
+}
+
+function createFailingUploadStream() {
+  let pulled = false;
+
+  return new ReadableStream({
+    pull(controller) {
+      if (!pulled) {
+        pulled = true;
+        controller.enqueue(mp4Header);
+        return;
+      }
+
+      controller.error(new Error("simulated upload abort"));
+    },
+  });
+}
+
+async function postRawUpload(
+  baseUrl,
+  {
+    body,
+    name = "sample.mp4",
+    size,
+    type = "video/mp4",
+    origin = baseUrl,
+    extraHeaders = {},
+  } = {},
+) {
+  uploadTestFingerprintCounter += 1;
+  const headers = {
+    Origin: origin,
+    "X-Forwarded-For": `198.51.100.${uploadTestFingerprintCounter}`,
+    ...extraHeaders,
+  };
+
+  if (name !== null) {
+    headers["x-qavelix-file-name"] = encodeURIComponent(name);
+  }
+
+  if (size !== null) {
+    headers["x-qavelix-file-size"] = String(
+      size ?? (body && "byteLength" in body ? body.byteLength : 0),
+    );
+  }
+
+  if (type !== null) {
+    headers["x-qavelix-file-type"] = type;
+  }
+
+  const init = {
+    method: "POST",
+    headers,
+  };
+
+  if (body !== undefined) {
+    init.body = body;
+
+    if (body instanceof ReadableStream) {
+      init.duplex = "half";
+    }
+  }
+
+  return fetch(`${baseUrl}/api/upload/analyze`, init);
 }
 
 async function createCompressionJobAndWait(baseUrl, file, preset) {
@@ -226,13 +316,9 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
     await t.test(
       "rejects upload analysis without a same-origin file upload",
       async () => {
-        const formData = new FormData();
-        const response = await fetch(`${baseUrl}/api/upload/analyze`, {
-          method: "POST",
-          headers: {
-            Origin: baseUrl,
-          },
-          body: formData,
+        const response = await postRawUpload(baseUrl, {
+          body: undefined,
+          size: 16,
         });
         const payload = await response.json();
 
@@ -243,49 +329,36 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
     );
 
     await t.test(
-      "accepts same-origin multipart upload before media analysis",
+      "accepts same-origin raw streamed upload before media analysis",
       async () => {
         const beforeFiles = await listUploadTempFiles();
-        const formData = new FormData();
-        formData.set(
-          "file",
-          new File([mp4Header], "sample.mp4", {
-            type: "video/mp4",
-          }),
-        );
-
-        const response = await fetch(`${baseUrl}/api/upload/analyze`, {
-          method: "POST",
-          headers: {
-            Origin: baseUrl,
-          },
-          body: formData,
+        const file = await createGeneratedMp4File("sample.mp4", {
+          durationSeconds: 1,
+        });
+        const response = await postRawUpload(baseUrl, {
+          body: file.stream(),
+          size: file.size,
         });
         const payload = await response.json();
         const afterFiles = await listUploadTempFiles();
 
         assert.notEqual(response.status, 403);
-        assert.equal(payload.ok, false);
-        assert.ok(["ffprobe_failed", "ffprobe_unavailable"].includes(payload.error.code));
+        assertStatus(response, 200, "upload analyze streamed valid mp4");
+        assert.equal(payload.ok, true);
+        assert.equal(payload.analysis.file.name, "sample.mp4");
+        assert.equal(payload.analysis.file.size, file.size);
+        assert.equal(payload.analysis.file.mimeType, "video/mp4");
+        assert.equal(payload.analysis.file.extension, ".mp4");
+        assert.ok(payload.analysis.media.durationSeconds > 0);
         assert.deepEqual(afterFiles, beforeFiles);
       },
     );
 
-    await t.test("rejects cross-origin multipart upload analysis", async () => {
-      const formData = new FormData();
-      formData.set(
-        "file",
-        new File([mp4Header], "sample.mp4", {
-          type: "video/mp4",
-        }),
-      );
-
-      const response = await fetch(`${baseUrl}/api/upload/analyze`, {
-        method: "POST",
-        headers: {
-          Origin: "https://attacker.example",
-        },
-        body: formData,
+    await t.test("rejects cross-origin raw upload analysis", async () => {
+      const response = await postRawUpload(baseUrl, {
+        body: mp4Header,
+        size: mp4Header.byteLength,
+        origin: "https://attacker.example",
       });
       const payload = await response.json();
 
@@ -297,20 +370,10 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
     await t.test(
       "rejects same-origin upload analysis with invalid extension",
       async () => {
-        const formData = new FormData();
-        formData.set(
-          "file",
-          new File([mp4Header], "sample.txt", {
-            type: "video/mp4",
-          }),
-        );
-
-        const response = await fetch(`${baseUrl}/api/upload/analyze`, {
-          method: "POST",
-          headers: {
-            Origin: baseUrl,
-          },
-          body: formData,
+        const response = await postRawUpload(baseUrl, {
+          body: mp4Header,
+          name: "sample.txt",
+          size: mp4Header.byteLength,
         });
         const payload = await response.json();
 
@@ -319,6 +382,155 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
         assert.equal(payload.error.code, "invalid_extension");
       },
     );
+
+    await t.test("rejects raw upload analysis with missing file name metadata", async () => {
+      const response = await postRawUpload(baseUrl, {
+        body: mp4Header,
+        name: null,
+        size: mp4Header.byteLength,
+      });
+      const payload = await response.json();
+
+      assertStatus(response, 400, "upload analyze missing name header");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "missing_file");
+    });
+
+    await t.test("rejects raw upload analysis with missing size metadata", async () => {
+      const response = await postRawUpload(baseUrl, {
+        body: mp4Header,
+        size: null,
+      });
+      const payload = await response.json();
+
+      assertStatus(response, 400, "upload analyze missing size header");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "invalid_size");
+    });
+
+    await t.test("rejects raw upload analysis with invalid size metadata", async () => {
+      const response = await postRawUpload(baseUrl, {
+        body: mp4Header,
+        size: "-1",
+      });
+      const payload = await response.json();
+
+      assertStatus(response, 400, "upload analyze invalid size header");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "invalid_size");
+    });
+
+    await t.test("rejects raw upload analysis with zero-byte size metadata", async () => {
+      const response = await postRawUpload(baseUrl, {
+        body: new Uint8Array(),
+        size: 0,
+      });
+      const payload = await response.json();
+
+      assertStatus(response, 400, "upload analyze zero size header");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "empty_file");
+    });
+
+    await t.test("rejects declared raw upload sizes over the upload limit", async () => {
+      const response = await postRawUpload(baseUrl, {
+        body: undefined,
+        size: uploadLimitBytes + 1,
+      });
+      const payload = await response.json();
+
+      assertStatus(response, 400, "upload analyze declared too large");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "file_too_large");
+    });
+
+    await t.test("rejects raw upload bytes that exceed the declared size", async () => {
+      const beforeFiles = await listUploadTempFiles();
+      const response = await postRawUpload(baseUrl, {
+        body: mp4Header,
+        size: mp4Header.byteLength - 1,
+      });
+      const payload = await response.json();
+      const afterFiles = await listUploadTempFiles();
+
+      assertStatus(response, 400, "upload analyze real bytes exceed declared");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "invalid_size");
+      assert.deepEqual(afterFiles, beforeFiles);
+    });
+
+    await t.test("rejects truncated raw uploads and removes partial files", async () => {
+      const beforeFiles = await listUploadTempFiles();
+      const response = await postRawUpload(baseUrl, {
+        body: mp4Header,
+        size: mp4Header.byteLength + 1,
+      });
+      const payload = await response.json();
+      const afterFiles = await listUploadTempFiles();
+
+      assertStatus(response, 400, "upload analyze truncated");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "truncated_upload");
+      assert.deepEqual(afterFiles, beforeFiles);
+    });
+
+    await t.test("rejects raw upload analysis with invalid MIME type", async () => {
+      const response = await postRawUpload(baseUrl, {
+        body: mp4Header,
+        size: mp4Header.byteLength,
+        type: "image/png",
+      });
+      const payload = await response.json();
+
+      assertStatus(response, 400, "upload analyze invalid mime");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "invalid_mime");
+    });
+
+    await t.test("rejects raw upload analysis with spoofed binary signature", async () => {
+      const beforeFiles = await listUploadTempFiles();
+      const response = await postRawUpload(baseUrl, {
+        body: new TextEncoder().encode("not an mp4 video"),
+        size: 16,
+      });
+      const payload = await response.json();
+      const afterFiles = await listUploadTempFiles();
+
+      assertStatus(response, 400, "upload analyze spoofed signature");
+      assert.equal(payload.ok, false);
+      assert.equal(payload.error.code, "invalid_signature");
+      assert.deepEqual(afterFiles, beforeFiles);
+    });
+
+    await t.test("rejects raw upload analysis when FFprobe cannot parse media", async () => {
+      const beforeFiles = await listUploadTempFiles();
+      const response = await postRawUpload(baseUrl, {
+        body: createGeneratedByteStream(1024, { prefix: mp4Header }),
+        size: 1024,
+      });
+      const payload = await response.json();
+      const afterFiles = await listUploadTempFiles();
+
+      assert.notEqual(response.status, 403);
+      assert.equal(payload.ok, false);
+      assert.ok(["ffprobe_failed", "ffprobe_unavailable"].includes(payload.error.code));
+      assert.deepEqual(afterFiles, beforeFiles);
+    });
+
+    await t.test("cleans up partial files after an aborted raw upload stream", async () => {
+      const beforeFiles = await listUploadTempFiles();
+
+      await assert.rejects(
+        postRawUpload(baseUrl, {
+          body: createFailingUploadStream(),
+          size: 1024,
+        }),
+      );
+      await delay(250);
+
+      const afterFiles = await listUploadTempFiles();
+      assert.deepEqual(afterFiles, beforeFiles);
+    });
 
     await t.test(
       "rejects compression creation without a same-origin file upload",

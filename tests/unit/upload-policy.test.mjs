@@ -45,9 +45,24 @@ test("Next and API request limits use the shared upload request policy", async (
   ]);
 
   assert.match(nextConfig, /proxyClientMaxBodySize:\s*MAX_UPLOAD_REQUEST_BYTES/);
-  assert.match(uploadRoute, /MAX_UPLOAD_REQUEST_BYTES/);
+  assert.match(uploadRoute, /MAX_UPLOAD_BYTES/);
+  assert.doesNotMatch(uploadRoute, /MAX_UPLOAD_REQUEST_BYTES/);
   assert.match(compressionRoute, /MAX_UPLOAD_REQUEST_BYTES/);
-  assert.doesNotMatch(`${uploadRoute}\n${compressionRoute}`, /MAX_UPLOAD_BYTES\s*\+/);
+  assert.doesNotMatch(compressionRoute, /MAX_UPLOAD_BYTES\s*\+/);
+});
+
+test("upload analysis route streams raw request bodies instead of buffering files", async () => {
+  const uploadRoute = await readFile("src/app/api/upload/analyze/route.ts", "utf8");
+
+  assert.doesNotMatch(uploadRoute, /request\.formData/);
+  assert.doesNotMatch(uploadRoute, /\.arrayBuffer/);
+  assert.doesNotMatch(uploadRoute, /Buffer\.concat/);
+  assert.doesNotMatch(uploadRoute, /readFile\(/);
+  assert.match(uploadRoute, /request\.body\.getReader\(\)/);
+  assert.match(uploadRoute, /createWriteStream/);
+  assert.match(uploadRoute, /receivedBytes > MAX_UPLOAD_BYTES/);
+  assert.match(uploadRoute, /receivedBytes > declaredSize/);
+  assert.match(uploadRoute, /receivedBytes !== declaredSize/);
 });
 
 test("formatBytes formats file sizes for user-facing validation messages", () => {

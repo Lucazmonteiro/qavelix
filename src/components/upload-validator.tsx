@@ -188,13 +188,15 @@ export function UploadValidator({ copy }: UploadValidatorProps) {
 
     setState({ status: "analyzing", fileName: file.name });
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
       const response = await fetch("/api/upload/analyze", {
         method: "POST",
-        body: formData,
+        headers: {
+          "x-qavelix-file-name": encodeURIComponent(file.name),
+          "x-qavelix-file-size": String(file.size),
+          "x-qavelix-file-type": file.type,
+        },
+        body: file,
       });
       const payload = (await response.json()) as UploadResponse;
 

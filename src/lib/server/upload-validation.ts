@@ -16,6 +16,8 @@ type SignatureValidationResult =
       error: UploadValidationError;
     };
 
+type UploadIdentity = Pick<File, "name" | "size" | "type">;
+
 function hasAsciiSignature(bytes: Uint8Array, offset: number, signature: string) {
   return [...signature].every(
     (character, index) => bytes[offset + index] === character.charCodeAt(0),
@@ -42,7 +44,7 @@ function hasMpegSignature(bytes: Uint8Array) {
 }
 
 export function validateFileIdentity(
-  file: File,
+  file: UploadIdentity,
   firstBytes: Uint8Array,
 ): UploadValidationError | null {
   if (file.size === 0) {

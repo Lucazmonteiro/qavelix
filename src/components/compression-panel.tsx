@@ -779,13 +779,15 @@ export function CompressionPanel({
 
     setValidation({ status: "validating", fileName: selectedFile.name });
 
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-
     try {
       const response = await fetch("/api/upload/analyze", {
         method: "POST",
-        body: formData,
+        headers: {
+          "x-qavelix-file-name": encodeURIComponent(selectedFile.name),
+          "x-qavelix-file-size": String(selectedFile.size),
+          "x-qavelix-file-type": selectedFile.type,
+        },
+        body: selectedFile,
       });
       const payload = (await response.json()) as UploadResponse;
 
