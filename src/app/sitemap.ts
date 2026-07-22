@@ -7,14 +7,19 @@ import { buildLocalizedUrl } from "@/lib/metadata";
 
 export const revalidate = 3600;
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
-  const buildAlternates = (pathname = "") => ({
+type SitemapEntry = MetadataRoute.Sitemap[number];
+
+function buildAlternates(pathname = ""): SitemapEntry["alternates"] {
+  return {
     languages: Object.fromEntries(
       locales.map((locale) => [locale, buildLocalizedUrl(locale, pathname)]),
     ),
-  });
-  const localizedRoutes = locales.flatMap((locale) => [
+  };
+}
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const now = new Date();
+  const localizedRoutes: MetadataRoute.Sitemap = locales.flatMap((locale) => [
     {
       url: buildLocalizedUrl(locale),
       lastModified: now,

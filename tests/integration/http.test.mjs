@@ -369,9 +369,19 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
       );
 
       assertStatus(sitemap.response, 200, "sitemap.xml");
+      assert.match(sitemap.response.headers.get("content-type") ?? "", /application\/xml/);
+      assert.match(sitemap.text, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
+      assert.match(sitemap.text, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9"/);
+      assert.match(sitemap.text, /xmlns:xhtml="http:\/\/www\.w3\.org\/1999\/xhtml"/);
       assert.match(sitemap.text, /<loc>https?:\/\/.+\/en\/about<\/loc>/);
       assert.match(sitemap.text, /<loc>https?:\/\/.+\/pt-BR\/privacy-policy<\/loc>/);
       assert.match(sitemap.text, /<loc>https?:\/\/.+\/es\/cookie-policy<\/loc>/);
+      assert.match(sitemap.text, /<xhtml:link rel="alternate" hreflang="en" href="https?:\/\/.+\/en" \/>/);
+      assert.match(sitemap.text, /<lastmod>[^<]+<\/lastmod>/);
+      assert.match(sitemap.text, /<changefreq>weekly<\/changefreq>/);
+      assert.match(sitemap.text, /<changefreq>monthly<\/changefreq>/);
+      assert.match(sitemap.text, /<priority>1<\/priority>/);
+      assert.match(sitemap.text, /<priority>0\.65<\/priority>/);
       assert.doesNotMatch(sitemap.text, /design-system|readiness/);
       assert.match(
         sitemap.response.headers.get("cache-control") ?? "",
