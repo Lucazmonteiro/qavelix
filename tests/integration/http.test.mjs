@@ -339,6 +339,23 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
       }
     });
 
+    await t.test("renders Google Search Console verification on public home pages", async () => {
+      const verificationToken = "mwcIi8xSvEKz7P_4baNDZxKBlFP2ZwGM1T7fNjtq45U";
+      const pages = ["/", "/en", "/pt-BR", "/es"];
+
+      for (const page of pages) {
+        const { response, text } = await fetchText(`${baseUrl}${page}`);
+
+        assertStatus(response, 200, page);
+        assert.match(
+          text,
+          new RegExp(
+            `<meta name="google-site-verification" content="${verificationToken}"\\/?\\s*>`,
+          ),
+        );
+      }
+    });
+
     await t.test("serves sitemap and robots for public SEO surfaces", async () => {
       const robots = await fetchText(`${baseUrl}/robots.txt`);
       const sitemap = await fetchText(`${baseUrl}/sitemap.xml`);

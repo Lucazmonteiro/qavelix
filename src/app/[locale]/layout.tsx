@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Script from "next/script";
 import type { ReactNode } from "react";
 
+import { siteConfig } from "@/config/site";
 import { env } from "@/env/server";
 import { isLocale, locales } from "@/i18n/locales";
 import { buildLocalizedAlternates } from "@/lib/metadata";
@@ -25,6 +26,9 @@ export const metadata: Metadata = {
     shortcut: "/favicon.svg",
   },
   manifest: "/site.webmanifest",
+  verification: {
+    google: siteConfig.googleSiteVerification,
+  },
 };
 
 export function generateStaticParams() {
