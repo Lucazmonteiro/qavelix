@@ -266,59 +266,59 @@ const dictionaries: Record<Locale, Dictionary> = {
       secondaryAction: "Review safeguards",
       statusLabel: "Active capabilities",
       statusValue:
-        "Validation, metadata analysis, queued compression, signed downloads, and security controls are active. Payments, ads, and accounts are intentionally excluded.",
+        "Validation, media metadata analysis, queued compression, protected downloads, and security controls are fully enabled. User accounts, payments, and advertising are intentionally outside the scope of this version.",
       previewLabel: "Workflow preview",
-      previewTitle: "Validation runs automatically",
+      previewTitle: "Automatic validation",
       previewDescription:
-        "Every selected file is checked for size, extension, MIME type, binary signature, and media metadata before compression starts.",
+        "Before compression begins, we automatically verify the file size, extension, MIME type, binary signature, and media metadata.",
       previewItems: [
-        "Drag-and-drop upload",
-        "Server-side validation",
-        "Temporary file cleanup",
+        "Drag and drop files",
+        "Secure server-side validation",
+        "Automatic temporary file cleanup",
       ],
       principles: [
         {
-          title: "Secure intake",
+          title: "Secure file handling",
           description:
-            "Validation runs before media analysis, and temporary files are removed after inspection or processing.",
+            "Every file is validated before media analysis begins. Temporary files are removed automatically after inspection or processing.",
         },
         {
-          title: "Clear recovery",
+          title: "Clear error guidance",
           description:
-            "Errors identify the rule that failed so users can fix the file selection without guesswork.",
+            "Error messages clearly explain which validation rule failed, making it easy to correct the issue without guesswork.",
         },
         {
-          title: "Production posture",
+          title: "Production ready",
           description:
-            "Security headers, deployment readiness, localization, themes, accessibility, and API safeguards are preserved as the workflow grows.",
+            "Security, localization, accessibility, theming, and API safeguards remain consistent as the platform continues to evolve.",
         },
       ],
       stats: [
-        { value: "250 MB", label: "Upload limit" },
-        { value: "5", label: "Formats" },
-        { value: "FFmpeg", label: "Processing" },
+        { value: "250 MB", label: "Maximum file size" },
+        { value: "5", label: "Supported formats" },
+        { value: "FFmpeg", label: "Compression engine" },
       ],
       sections: {
         designSystem: {
           eyebrow: "Design system",
           title: "A complete visual foundation",
           description:
-            "QAVELIX keeps consistent tokens, components, content structure, and page composition while adding validation, compression, and download states.",
+            "QAVELIX maintains a consistent design system while supporting validation, compression, downloads, and future platform growth.",
           items: [
             {
               title: "Color tokens",
               description:
-                "Semantic variables define surfaces, text, borders, accents, focus states, and status colors for both themes.",
+                "Semantic design tokens define surfaces, text, borders, highlights, focus states, and status colors across both light and dark themes.",
             },
             {
               title: "Layout primitives",
               description:
-                "A responsive shell, constrained content widths, section spacing, and card rhythm keep pages consistent.",
+                "Responsive layouts, controlled content widths, and consistent spacing create a cohesive experience across every page.",
             },
             {
               title: "Interaction states",
               description:
-                "Buttons, links, selector controls, upload states, compression presets, and focus rings include hover, active, current, and keyboard states.",
+                "Buttons, links, selectors, upload controls, and compression settings provide consistent interaction, focus, and keyboard navigation states.",
             },
           ],
         },
@@ -326,34 +326,34 @@ const dictionaries: Record<Locale, Dictionary> = {
           eyebrow: "Accessibility basics",
           title: "Built for keyboard and screen-reader use",
           description:
-            "The interface keeps semantic landmarks, localized labels, live status messages, visible focus states, contrast-aware theme tokens, and reduced-motion handling.",
+            "The interface includes semantic landmarks, localized labels, visible focus indicators, live status updates, and reduced-motion support to improve accessibility.",
           items: [
-            "The skip link targets the main content.",
-            "Upload and compression controls have explicit labels and instructions.",
-            "Validation and compression status use polite live announcements.",
-            "Motion is restrained for users who request reduced motion.",
+            "The Skip to Content link takes users directly to the main content area.",
+            "Upload and compression controls include clear labels and straightforward instructions.",
+            "Validation and compression updates are announced discreetly for assistive technologies.",
+            "Animations are automatically reduced for users who prefer less motion.",
           ],
         },
         readiness: {
           eyebrow: "Readiness",
           title: "Ready to extend without rewriting",
           description:
-            "The media workflow is intentionally bounded to fixed validation rules, fixed compression presets, queued execution, signed downloads, and cleanup controls.",
+            "The media workflow follows well-defined validation rules, compression presets, queued processing, protected downloads, and automatic temporary file cleanup.",
           items: [
             {
-              title: "Localized product surface",
+              title: "Language support",
               description:
-                "English, Brazilian Portuguese, and European Spanish share the same product meaning with locale-specific wording.",
+                "English, Brazilian Portuguese, and European Spanish provide the same experience using natural language tailored to each locale.",
             },
             {
-              title: "Validation and compression APIs",
+              title: "Validation and compression",
               description:
-                "Server checks cover MIME type, extension, binary signature, upload size, FFprobe metadata, and safe FFmpeg execution.",
+                "The server validates MIME type, extension, binary signature, file size, FFprobe metadata, and executes FFmpeg securely.",
             },
             {
-              title: "Temporary file lifecycle",
+              title: "Temporary files",
               description:
-                "Files use random temporary paths, signed download URLs, automatic expiration, and manual cleanup after processing.",
+                "Temporary files use randomized storage paths, protected downloads, automatic expiration, and are removed after processing.",
             },
           ],
         },
@@ -519,8 +519,8 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
     footer: {
       description:
-        "QAVELIX is a secure media workflow built in deliberate phases with validation, compression, download cleanup, and localization foundations.",
-      phase: "Secure media workflow foundation",
+        "QAVELIX is a secure media processing platform built in stages with a strong foundation in validation, compression, security, and localization.",
+      phase: "Secure and reliable media processing.",
       linksLabel: "Footer navigation",
     },
     pages: {
@@ -728,15 +728,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       secondaryAction: "Ver salvaguardas",
       statusLabel: "Recursos ativos",
       statusValue:
-        "Validação, análise de metadados, compressão em fila, downloads assinados e controles de segurança estão ativos. Pagamentos, anúncios e contas continuam fora do escopo.",
+        "Validação, análise de metadados, compressão em fila, downloads protegidos e controles de segurança estão ativos. Recursos como contas, pagamentos e anúncios permanecem fora do escopo desta versão.",
       previewLabel: "Prévia do fluxo",
-      previewTitle: "A validação acontece automaticamente",
+      previewTitle: "Validação automática",
       previewDescription:
-        "Cada arquivo selecionado é verificado por tamanho, extensão, tipo MIME, assinatura binária e metadados de mídia antes da compressão.",
+        "Antes da compressão, verificamos automaticamente o tamanho, a extensão, o tipo MIME, a assinatura binária e os metadados do vídeo.",
       previewItems: [
-        "Upload com arrastar e soltar",
-        "Validação no servidor",
-        "Limpeza de arquivos temporários",
+        "Arraste e solte arquivos",
+        "Validação segura no servidor",
+        "Remoção automática de arquivos temporários",
       ],
       principles: [
         {
@@ -745,20 +745,20 @@ const dictionaries: Record<Locale, Dictionary> = {
             "A validação acontece antes da análise de mídia, e os arquivos temporários são removidos depois da inspeção ou do processamento.",
         },
         {
-          title: "Correção sem atrito",
+          title: "Correção intuitiva",
           description:
-            "Os erros identificam a regra que falhou para que o usuário corrija a seleção sem precisar adivinhar.",
+            "As mensagens de erro indicam exatamente qual regra falhou, facilitando a correção sem tentativa e erro.",
         },
         {
-          title: "Postura de produção",
+          title: "Pronto para produção",
           description:
-            "Cabeçalhos de segurança, prontidão para deploy, localização, temas, acessibilidade e proteções de API são preservados conforme o fluxo evolui.",
+            "Segurança, localização, acessibilidade, temas e proteções da API são mantidos para garantir um fluxo consistente à medida que o produto evolui.",
         },
       ],
       stats: [
-        { value: "250 MB", label: "Limite de upload" },
-        { value: "5", label: "Formatos" },
-        { value: "FFmpeg", label: "Processamento" },
+        { value: "250 MB", label: "Tamanho máximo" },
+        { value: "5", label: "Formatos aceitos" },
+        { value: "FFmpeg", label: "Motor de compressão" },
       ],
       sections: {
         designSystem: {
@@ -770,17 +770,17 @@ const dictionaries: Record<Locale, Dictionary> = {
             {
               title: "Tokens de cor",
               description:
-                "Variáveis semânticas definem superfícies, texto, bordas, destaques, foco e cores de status para os dois temas.",
+                "Variáveis semânticas definem superfícies, textos, bordas, destaques, foco e cores de status para os temas claro e escuro.",
             },
             {
               title: "Primitivos de layout",
               description:
-                "Shell responsivo, larguras controladas, espaçamento de seções e ritmo de cards mantêm as páginas consistentes.",
+                "Layout responsivo, larguras controladas e espaçamento consistente garantem uma experiência uniforme em todas as páginas.",
             },
             {
               title: "Estados de interação",
               description:
-                "Botões, links, seletores, estados de upload, predefinições de compressão e foco por teclado incluem estados de hover, ativo e atual.",
+                "Botões, links, seletores, upload e controles de compressão oferecem estados consistentes de foco, interação e navegação por teclado.",
             },
           ],
         },
@@ -788,34 +788,34 @@ const dictionaries: Record<Locale, Dictionary> = {
           eyebrow: "Acessibilidade básica",
           title: "Criado para teclado e leitores de tela",
           description:
-            "A interface mantém landmarks semânticos, rótulos localizados, mensagens de status ao vivo, foco visível, tokens com contraste adequado e suporte a movimento reduzido.",
+            "A interface utiliza landmarks semânticos, rótulos localizados, foco visível, mensagens de status e suporte a movimento reduzido para oferecer uma experiência acessível.",
           items: [
-            "O link de pular navegação aponta para o conteúdo principal.",
-            "Os controles de upload e compressão têm rótulos e instruções explícitas.",
-            "Os status de validação e compressão usam anúncios ao vivo discretos.",
-            "O movimento é contido para usuários que preferem movimento reduzido.",
+            'O link "Pular para o conteúdo" leva diretamente ao conteúdo principal.',
+            "Os controles de upload e compressão possuem rótulos claros e instruções objetivas.",
+            "Os status de validação e compressão utilizam atualizações discretas para tecnologias assistivas.",
+            "As animações são reduzidas automaticamente para usuários que preferem menos movimento.",
           ],
         },
         readiness: {
           eyebrow: "Prontidão",
           title: "Pronto para evoluir sem reescrever",
           description:
-            "O fluxo de mídia é intencionalmente limitado a regras fixas de validação, predefinições fixas de compressão, execução em fila, downloads assinados e controles de limpeza.",
+            "O fluxo de mídia segue regras fixas de validação, compressão, execução em fila, downloads protegidos e limpeza automática de arquivos temporários.",
           items: [
             {
-              title: "Superfície localizada",
+              title: "Suporte a idiomas",
               description:
-                "Inglês, português do Brasil e espanhol europeu mantêm o mesmo sentido do produto com linguagem própria de cada localidade.",
+                "Português do Brasil, inglês e espanhol europeu oferecem a mesma experiência com linguagem adaptada para cada idioma.",
             },
             {
-              title: "APIs de validação e compressão",
+              title: "Validação e compressão",
               description:
-                "As verificações no servidor cobrem tipo MIME, extensão, assinatura binária, tamanho do upload, metadados do FFprobe e execução segura do FFmpeg.",
+                "O servidor verifica tipo MIME, extensão, assinatura binária, tamanho do arquivo, metadados do FFprobe e executa o FFmpeg de forma segura.",
             },
             {
-              title: "Ciclo de vida temporário",
+              title: "Arquivos temporários",
               description:
-                "Os arquivos usam caminhos temporários aleatórios, URLs de download assinadas, expiração automática e limpeza manual após o processamento.",
+                "Os arquivos utilizam caminhos temporários aleatórios, downloads protegidos, expiração automática e remoção após o processamento.",
             },
           ],
         },
@@ -982,8 +982,8 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
     footer: {
       description:
-        "O QAVELIX é um fluxo seguro de mídia construído em fases, com bases de validação, compressão, limpeza de downloads e localização.",
-      phase: "Base segura para fluxo de mídia",
+        "O QAVELIX é uma plataforma segura para processamento de mídia, desenvolvida em etapas com foco em validação, compressão, segurança e localização.",
+      phase: "Processamento de mídia com segurança e desempenho.",
       linksLabel: "Navegação do rodapé",
     },
     pages: {
@@ -1191,59 +1191,59 @@ const dictionaries: Record<Locale, Dictionary> = {
       secondaryAction: "Revisar medidas",
       statusLabel: "Funciones activas",
       statusValue:
-        "La validación, el análisis de metadatos, la compresión en cola, las descargas firmadas y los controles de seguridad están activos. Los pagos, los anuncios y las cuentas quedan fuera del alcance.",
+        "La validación, el análisis de metadatos, la compresión en cola, las descargas protegidas y los controles de seguridad están plenamente activos. Las cuentas de usuario, los pagos y la publicidad quedan fuera del alcance de esta versión.",
       previewLabel: "Vista previa del flujo",
-      previewTitle: "La validación se ejecuta automáticamente",
+      previewTitle: "Validación automática",
       previewDescription:
-        "Cada archivo seleccionado se comprueba por tamaño, extensión, tipo MIME, firma binaria y metadatos multimedia antes de iniciar la compresión.",
+        "Antes de iniciar la compresión, verificamos automáticamente el tamaño, la extensión, el tipo MIME, la firma binaria y los metadatos del archivo.",
       previewItems: [
-        "Carga mediante arrastrar y soltar",
-        "Validación en el servidor",
-        "Limpieza de archivos temporales",
+        "Arrastra y suelta archivos",
+        "Validación segura en el servidor",
+        "Eliminación automática de archivos temporales",
       ],
       principles: [
         {
-          title: "Entrada segura",
+          title: "Gestión segura de archivos",
           description:
-            "La validación se ejecuta antes del análisis multimedia, y los archivos temporales se eliminan después de la inspección o el procesamiento.",
+            "Cada archivo se valida antes de comenzar el análisis multimedia. Los archivos temporales se eliminan automáticamente después de la inspección o el procesamiento.",
         },
         {
-          title: "Corrección clara",
+          title: "Corrección guiada",
           description:
-            "Los errores identifican la regla que ha fallado para que el usuario pueda corregir la selección sin hacer pruebas a ciegas.",
+            "Los mensajes de error indican claramente qué regla ha fallado para que puedas corregir el problema sin tener que adivinar.",
         },
         {
-          title: "Preparación para producción",
+          title: "Listo para producción",
           description:
-            "Las cabeceras de seguridad, la preparación para despliegue, la localización, los temas, la accesibilidad y las protecciones de API se mantienen a medida que crece el flujo.",
+            "La seguridad, la localización, la accesibilidad, los temas y las protecciones de la API se mantienen de forma coherente a medida que evoluciona la plataforma.",
         },
       ],
       stats: [
-        { value: "250 MB", label: "Límite de carga" },
-        { value: "5", label: "Formatos" },
-        { value: "FFmpeg", label: "Procesamiento" },
+        { value: "250 MB", label: "Tamaño máximo" },
+        { value: "5", label: "Formatos compatibles" },
+        { value: "FFmpeg", label: "Motor de compresión" },
       ],
       sections: {
         designSystem: {
           eyebrow: "Sistema de diseño",
           title: "Una base visual completa",
           description:
-            "QAVELIX mantiene tokens, componentes, estructura de contenido y composición de páginas coherentes al añadir validación, compresión y estados de descarga.",
+            "QAVELIX mantiene un sistema de diseño coherente mientras incorpora validación, compresión, descargas y futuras funcionalidades de la plataforma.",
           items: [
             {
               title: "Tokens de color",
               description:
-                "Las variables semánticas definen superficies, texto, bordes, acentos, foco y colores de estado para ambos temas.",
+                "Los tokens semánticos definen superficies, texto, bordes, resaltados, estados de foco y colores de estado para los temas claro y oscuro.",
             },
             {
               title: "Primitivas de diseño",
               description:
-                "Una estructura adaptable, anchos controlados, espaciado de secciones y ritmo de tarjetas mantienen la coherencia de las páginas.",
+                "Un diseño adaptable, anchos controlados y un espaciado uniforme garantizan una experiencia coherente en todas las páginas.",
             },
             {
               title: "Estados de interacción",
               description:
-                "Botones, enlaces, selectores, estados de carga, ajustes de compresión y foco por teclado incluyen estados hover, activo y actual.",
+                "Los botones, enlaces, selectores, controles de carga y opciones de compresión ofrecen estados coherentes de interacción, foco y navegación mediante teclado.",
             },
           ],
         },
@@ -1251,34 +1251,34 @@ const dictionaries: Record<Locale, Dictionary> = {
           eyebrow: "Accesibilidad básica",
           title: "Diseñado para teclado y lectores de pantalla",
           description:
-            "La interfaz mantiene landmarks semánticos, etiquetas localizadas, mensajes de estado en directo, foco visible, tokens con contraste adecuado y soporte para movimiento reducido.",
+            "La interfaz incorpora landmarks semánticos, etiquetas localizadas, indicadores visibles de foco, mensajes de estado y compatibilidad con movimiento reducido para ofrecer una experiencia más accesible.",
           items: [
-            "El enlace de salto apunta al contenido principal.",
-            "Los controles de carga y compresión tienen etiquetas e instrucciones explícitas.",
-            "Los estados de validación y compresión usan avisos en directo no intrusivos.",
-            "El movimiento se limita para quienes prefieren movimiento reducido.",
+            "El enlace «Saltar al contenido» lleva directamente al contenido principal.",
+            "Los controles de carga y compresión incluyen etiquetas claras e instrucciones fáciles de seguir.",
+            "Las actualizaciones de validación y compresión se anuncian de forma discreta para las tecnologías de asistencia.",
+            "Las animaciones se reducen automáticamente para quienes prefieren menos movimiento.",
           ],
         },
         readiness: {
           eyebrow: "Preparación",
           title: "Listo para ampliarse sin reescribir",
           description:
-            "El flujo multimedia se mantiene acotado a reglas fijas de validación, ajustes fijos de compresión, ejecución en cola, descargas firmadas y controles de limpieza.",
+            "El flujo multimedia sigue reglas definidas de validación, ajustes de compresión, procesamiento en cola, descargas protegidas y eliminación automática de archivos temporales.",
           items: [
             {
-              title: "Superficie localizada",
+              title: "Compatibilidad con idiomas",
               description:
-                "Inglés, portugués de Brasil y español europeo conservan el mismo sentido del producto con lenguaje propio de cada región.",
+                "El inglés, el portugués de Brasil y el español de España ofrecen la misma experiencia con un lenguaje adaptado a cada idioma.",
             },
             {
-              title: "API de validación y compresión",
+              title: "Validación y compresión",
               description:
-                "Las comprobaciones del servidor cubren tipo MIME, extensión, firma binaria, tamaño de carga, metadatos de FFprobe y ejecución segura de FFmpeg.",
+                "El servidor verifica el tipo MIME, la extensión, la firma binaria, el tamaño del archivo, los metadatos de FFprobe y ejecuta FFmpeg de forma segura.",
             },
             {
-              title: "Ciclo de vida temporal",
+              title: "Archivos temporales",
               description:
-                "Los archivos usan rutas temporales aleatorias, URL de descarga firmadas, caducidad automática y limpieza manual después del procesamiento.",
+                "Los archivos utilizan rutas temporales aleatorias, descargas protegidas, caducidad automática y se eliminan tras finalizar el procesamiento.",
             },
           ],
         },
@@ -1446,8 +1446,8 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
     footer: {
       description:
-        "QAVELIX es un flujo multimedia seguro construido por fases, con bases de validación, compresión, limpieza de descargas y localización.",
-      phase: "Base segura para el flujo multimedia",
+        "QAVELIX es una plataforma segura para el procesamiento de archivos multimedia, desarrollada por fases con una sólida base de validación, compresión, seguridad y localización.",
+      phase: "Procesamiento multimedia seguro y fiable.",
       linksLabel: "Navegación del pie de página",
     },
     pages: {
