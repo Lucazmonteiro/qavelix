@@ -29,6 +29,12 @@ type CompressionCopy = {
   browseLabel: string;
   validationHelper: string;
   validatingLabel: string;
+  validationStages: {
+    preparing: string;
+    validating: string;
+    readingMetadata: string;
+    complete: string;
+  };
   validationSuccessLabel: string;
   validationFailedLabel: string;
   uploadLimitExceededLabel: string;
@@ -64,6 +70,7 @@ type CompressionCopy = {
   ineffectiveLabel: string;
   failedLabel: string;
   cancelledLabel: string;
+  cancelledMessage: string;
   expiredLabel: string;
   deletedLabel: string;
   originalSizeLabel: string;
@@ -158,6 +165,7 @@ type ValidationState =
   | {
       status: "validating";
       fileName: string;
+      stage: keyof CompressionCopy["validationStages"];
     }
   | {
       status: "valid";
@@ -226,7 +234,7 @@ function getStatusLabel(
 ) {
   if (!job) {
     if (validation.status === "validating") {
-      return `${copy.validatingLabel}: ${validation.fileName}`;
+      return copy.validatingLabel;
     }
 
     if (validation.status === "valid") {
@@ -395,8 +403,10 @@ function getCompressionErrorMessage(
   error: { code?: string; message?: string },
 ) {
   switch (error.code) {
+    case "missing_reference":
     case "missing_file":
-      return copy.errors.noFile;
+    case "metadata_mismatch":
+      return copy.errors.sourceUnavailable;
     case "empty_file":
       return copy.errors.empty;
     case "file_too_large":
@@ -792,7 +802,30 @@ export function CompressionPanel({
       return;
     }
 
-    setValidation({ status: "validating", fileName: selectedFile.name });
+    setValidation({
+      status: "validating",
+      fileName: selectedFile.name,
+      stage: "preparing",
+    });
+
+    const validatingTimeoutId = window.setTimeout(() => {
+      if (validationSequenceRef.current === validationSequence) {
+        setValidation({
+          status: "validating",
+          fileName: selectedFile.name,
+          stage: "validating",
+        });
+      }
+    }, 120);
+    const metadataTimeoutId = window.setTimeout(() => {
+      if (validationSequenceRef.current === validationSequence) {
+        setValidation({
+          status: "validating",
+          fileName: selectedFile.name,
+          stage: "readingMetadata",
+        });
+      }
+    }, 900);
 
     try {
       const response = await fetch("/api/upload/analyze", {
@@ -807,10 +840,14 @@ export function CompressionPanel({
       const payload = (await response.json()) as UploadResponse;
 
       if (validationSequenceRef.current !== validationSequence) {
+        window.clearTimeout(validatingTimeoutId);
+        window.clearTimeout(metadataTimeoutId);
         return;
       }
 
       if (!payload.ok) {
+        window.clearTimeout(validatingTimeoutId);
+        window.clearTimeout(metadataTimeoutId);
         setValidation({
           status: "invalid",
           message:
@@ -825,6 +862,8 @@ export function CompressionPanel({
       }
 
       if (!payload.analysis.uploadReference) {
+        window.clearTimeout(validatingTimeoutId);
+        window.clearTimeout(metadataTimeoutId);
         setValidation({
           status: "invalid",
           message: copy.errors.analysisFailed,
@@ -833,8 +872,23 @@ export function CompressionPanel({
       }
 
       setUploadReference(payload.analysis.uploadReference);
+      window.clearTimeout(validatingTimeoutId);
+      window.clearTimeout(metadataTimeoutId);
+      setValidation({
+        status: "validating",
+        fileName: selectedFile.name,
+        stage: "complete",
+      });
+      await new Promise((resolve) => window.setTimeout(resolve, 180));
+
+      if (validationSequenceRef.current !== validationSequence) {
+        return;
+      }
+
       setValidation({ status: "valid", analysis: payload.analysis });
     } catch {
+      window.clearTimeout(validatingTimeoutId);
+      window.clearTimeout(metadataTimeoutId);
       if (validationSequenceRef.current !== validationSequence) {
         return;
       }
@@ -859,6 +913,7 @@ export function CompressionPanel({
     }
 
     if (!uploadReference) {
+      setDownloadStarted(false);
       setError(copy.errors.sourceUnavailable);
       return;
     }
@@ -880,7 +935,18 @@ export function CompressionPanel({
       const payload = (await response.json()) as JobResponse;
 
       if (!payload.ok) {
-        setError(getCompressionErrorMessage(copy, payload.error));
+        const message = getCompressionErrorMessage(copy, payload.error);
+
+        if (
+          payload.error.code === "missing_reference" ||
+          payload.error.code === "missing_file" ||
+          payload.error.code === "metadata_mismatch"
+        ) {
+          setUploadReference(null);
+          setDownloadStarted(false);
+        }
+
+        setError(message);
         return;
       }
 
@@ -910,7 +976,14 @@ export function CompressionPanel({
         return;
       }
 
+      pollingSequenceRef.current += 1;
       setJob(payload.job);
+
+      if (payload.job.status === "cancelled") {
+        setDownloadStarted(false);
+        setUploadReference(null);
+        setError(copy.errors.sourceUnavailable);
+      }
     } catch {
       setError(copy.errors.cancelFailed);
     } finally {
@@ -982,7 +1055,7 @@ export function CompressionPanel({
       return;
     }
 
-    if (isPolling || isCancelling || isDeleting) {
+    if (arePresetButtonsDisabled) {
       return;
     }
 
@@ -1013,16 +1086,22 @@ export function CompressionPanel({
   );
   const isDownloadable = canDownload(job);
   const hasValidatedFile = validation.status === "valid";
+  const isCancelled = job?.status === "cancelled";
+  const isSourceUnavailable =
+    hasValidatedFile && !uploadReference && !isDownloadable && !isPolling;
   const canStartCompression =
     Boolean(file) &&
+    Boolean(uploadReference) &&
     hasValidatedFile &&
     !isPolling &&
     !isDownloadable &&
+    !isSourceUnavailable &&
     !isCancelling &&
     !isDeleting;
   const canCancelCompression = isPolling && !isCancelling && !isDeleting;
   const canDeleteCompression = Boolean(file || job) && !isPolling && !isCancelling && !isDeleting;
-  const arePresetButtonsDisabled = isPolling || isCancelling || isDeleting;
+  const arePresetButtonsDisabled =
+    isSourceUnavailable || isPolling || isCancelling || isDeleting;
   const hasSelectedFileOrJob = Boolean(file || job);
   const shouldShowUploadDropzone = !hasValidatedFile;
   const shouldShowPresets = hasValidatedFile || Boolean(job);
@@ -1055,6 +1134,13 @@ export function CompressionPanel({
   const finalResolution = getFinalResolution(validatedAnalysis, compression);
   const finalBitrate = getFinalBitrate(compression, validatedAnalysis);
   const successFeedbackMessage = getCompressionSuccessMessage(copy, compression);
+  const validationStageMessage =
+    validation.status === "validating"
+      ? copy.validationStages[validation.stage]
+      : null;
+  const isCurrentValidationComplete =
+    validation.status === "validating" && validation.stage === "complete";
+  const shouldShowValidationComplete = validation.status === "valid" && !job;
 
   useEffect(() => {
     onValidatedChange?.(hasValidatedFile);
@@ -1077,7 +1163,9 @@ export function CompressionPanel({
         <div className="compression-panel__main">
           {shouldShowUploadDropzone ? (
             <label
-              className={`upload-dropzone${isDragging ? " upload-dropzone--active" : ""}`}
+              className={`upload-dropzone${isDragging ? " upload-dropzone--active" : ""}${
+                validation.status === "validating" ? " upload-dropzone--validating" : ""
+              }`}
               onDragEnter={(event) => {
                 event.preventDefault();
                 setIsDragging(true);
@@ -1107,8 +1195,24 @@ export function CompressionPanel({
               </span>
               <span className="upload-dropzone__title">{copy.dropTitle}</span>
               <span className="upload-dropzone__description">
-                {copy.dropDescription}
+                {validation.status === "validating"
+                  ? copy.validationStages[validation.stage]
+                  : copy.dropDescription}
               </span>
+              {validation.status === "validating" ? (
+                <>
+                  {validation.stage === "complete" ? (
+                    <span className="validation-complete-mark" aria-hidden="true">
+                      ✓
+                    </span>
+                  ) : (
+                    <span className="validation-loader" aria-hidden="true" />
+                  )}
+                  <span className="validation-file-name" title={validation.fileName}>
+                    {validation.fileName}
+                  </span>
+                </>
+              ) : null}
               <span className="button button--primary">{copy.browseLabel}</span>
             </label>
           ) : null}
@@ -1119,7 +1223,9 @@ export function CompressionPanel({
               <dl>
                 <div>
                   <dt>{copy.fileLabel}</dt>
-                  <dd>{validation.analysis.file.name}</dd>
+                  <dd className="bounded-file-name" title={validation.analysis.file.name}>
+                    {validation.analysis.file.name}
+                  </dd>
                 </div>
                 <div>
                   <dt>{copy.sizeLabel}</dt>
@@ -1186,7 +1292,8 @@ export function CompressionPanel({
               <div className="preset-group preset-group--workflow">
                 {presetIds.map((presetId) => (
                   <button
-                    aria-pressed={preset === presetId}
+                    aria-disabled={arePresetButtonsDisabled}
+                    aria-pressed={arePresetButtonsDisabled ? false : preset === presetId}
                     className="preset-card preset-card--workflow"
                     disabled={arePresetButtonsDisabled}
                     key={presetId}
@@ -1234,6 +1341,39 @@ export function CompressionPanel({
           aria-live="polite"
         >
           <h3>{getStatusLabel(copy, validation, job)}</h3>
+          {validation.status === "validating" ? (
+            <div
+              className={`compression-status__validation${
+                isCurrentValidationComplete
+                  ? " compression-status__validation--complete"
+                  : ""
+              }`}
+              role="status"
+            >
+              <p>{validationStageMessage}</p>
+              <span className="validation-file-name" title={validation.fileName}>
+                {validation.fileName}
+              </span>
+              {validation.stage === "complete" ? (
+                <span className="validation-complete-mark" aria-hidden="true">
+                  ✓
+                </span>
+              ) : (
+                <span className="validation-loader" aria-hidden="true" />
+              )}
+            </div>
+          ) : null}
+          {shouldShowValidationComplete ? (
+            <div
+              className="compression-status__validation compression-status__validation--complete"
+              role="status"
+            >
+              <p>
+                <span aria-hidden="true">✓</span>
+                {copy.validationStages.complete}
+              </p>
+            </div>
+          ) : null}
           {hasSelectedFileOrJob ? (
             <>
               {isOversizedFile ? (
@@ -1265,24 +1405,6 @@ export function CompressionPanel({
                       </dd>
                     </div>
                     <div>
-                      <dt>{copy.compressedSizeLabel}</dt>
-                      <dd>
-                        {compression
-                          ? formatBytes(compression.compressedSize)
-                          : job?.outputSize
-                            ? formatBytes(job.outputSize)
-                            : "-"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>{savedOrIncreasedLabel}</dt>
-                      <dd>{savedOrIncreasedValue}</dd>
-                    </div>
-                    <div>
-                      <dt>{reductionOrIncreasePercentLabel}</dt>
-                      <dd>{reductionValue}</dd>
-                    </div>
-                    <div>
                       <dt>{copy.originalBitrateLabel}</dt>
                       <dd>
                         {formatBitrate(
@@ -1292,25 +1414,11 @@ export function CompressionPanel({
                       </dd>
                     </div>
                     <div>
-                      <dt>{copy.finalBitrateLabel}</dt>
-                      <dd>{formatBitrate(finalBitrate, copy.unknownLabel)}</dd>
-                    </div>
-                    <div>
                       <dt>{copy.originalResolutionLabel}</dt>
                       <dd>
                         {formatResolution(
                           validatedAnalysis?.media.width ?? null,
                           validatedAnalysis?.media.height ?? null,
-                          copy.unknownLabel,
-                        )}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>{copy.finalResolutionLabel}</dt>
-                      <dd>
-                        {formatResolution(
-                          finalResolution.width,
-                          finalResolution.height,
                           copy.unknownLabel,
                         )}
                       </dd>
@@ -1324,21 +1432,52 @@ export function CompressionPanel({
                         )}
                       </dd>
                     </div>
-                    <div>
-                      <dt>{copy.finalCodecLabel}</dt>
-                      <dd>H.264</dd>
-                    </div>
-                    <div>
-                      <dt>{copy.expiresLabel}</dt>
-                      <dd>
-                        {job?.expiresAt
-                          ? new Date(job.expiresAt).toLocaleString()
-                          : "-"}
-                      </dd>
-                    </div>
+                    {compression ? (
+                      <>
+                        <div>
+                          <dt>{copy.compressedSizeLabel}</dt>
+                          <dd>{formatBytes(compression.compressedSize)}</dd>
+                        </div>
+                        <div>
+                          <dt>{savedOrIncreasedLabel}</dt>
+                          <dd>{savedOrIncreasedValue}</dd>
+                        </div>
+                        <div>
+                          <dt>{reductionOrIncreasePercentLabel}</dt>
+                          <dd>{reductionValue}</dd>
+                        </div>
+                        <div>
+                          <dt>{copy.finalBitrateLabel}</dt>
+                          <dd>{formatBitrate(finalBitrate, copy.unknownLabel)}</dd>
+                        </div>
+                        <div>
+                          <dt>{copy.finalResolutionLabel}</dt>
+                          <dd>
+                            {formatResolution(
+                              finalResolution.width,
+                              finalResolution.height,
+                              copy.unknownLabel,
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>{copy.finalCodecLabel}</dt>
+                          <dd>H.264</dd>
+                        </div>
+                        <div>
+                          <dt>{copy.expiresLabel}</dt>
+                          <dd>
+                            {job?.expiresAt
+                              ? new Date(job.expiresAt).toLocaleString()
+                              : "-"}
+                          </dd>
+                        </div>
+                      </>
+                    ) : null}
                   </dl>
 
-                  <div className="progress-block">
+                  {job ? (
+                    <div className="progress-block">
                     <div className="progress-block__label">
                       <span>{copy.progressLabel}</span>
                       <strong>{progress}%</strong>
@@ -1346,7 +1485,8 @@ export function CompressionPanel({
                     <progress max={100} value={progress}>
                       {progress}%
                     </progress>
-                  </div>
+                    </div>
+                  ) : null}
 
                   {compression?.wasDownscaledToFullHd ? (
                     <p className="compression-status__notice">
@@ -1361,6 +1501,12 @@ export function CompressionPanel({
           {hasCompletedResult || downloadStarted ? (
             <p className="compression-status__success" role="status" aria-live="polite">
               {downloadStarted ? copy.downloadStartedMessage : successFeedbackMessage}
+            </p>
+          ) : null}
+
+          {isCancelled ? (
+            <p className="compression-status__notice" role="status" aria-live="polite">
+              {copy.cancelledMessage}
             </p>
           ) : null}
 

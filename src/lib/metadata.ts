@@ -4,6 +4,12 @@ import { siteConfig } from "@/config/site";
 import type { Locale } from "@/i18n/locales";
 import { locales } from "@/i18n/locales";
 
+const openGraphLocales: Record<Locale, string> = {
+  en: "en_US",
+  "pt-BR": "pt_BR",
+  es: "es_ES",
+};
+
 export function normalizePathname(pathname = "") {
   if (!pathname || pathname === "/") {
     return "";
@@ -57,8 +63,10 @@ export function buildSeoMetadata({
       description,
       url,
       siteName: siteConfig.name,
-      locale,
-      alternateLocale: locales.filter((availableLocale) => availableLocale !== locale),
+      locale: openGraphLocales[locale],
+      alternateLocale: locales
+        .filter((availableLocale) => availableLocale !== locale)
+        .map((availableLocale) => openGraphLocales[availableLocale]),
       type: "website",
     },
     twitter: {

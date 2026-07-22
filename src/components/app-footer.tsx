@@ -11,6 +11,7 @@ type AppFooterProps = {
 };
 
 export function AppFooter({ locale, dictionary }: AppFooterProps) {
+  const currentYear = new Date().getFullYear();
   const links = contentPageSlugs.map((slug) => ({
     href: `/${locale}/${slug}`,
     label: dictionary.pages[slug].label,
@@ -47,7 +48,9 @@ export function AppFooter({ locale, dictionary }: AppFooterProps) {
           ))}
         </nav>
 
-        <p className="site-footer__phase">{dictionary.footer.phase}</p>
+        <p className="site-footer__phase">
+          © {currentYear} QAVELIX. {dictionary.footer.phase}
+        </p>
       </div>
     </footer>
   );

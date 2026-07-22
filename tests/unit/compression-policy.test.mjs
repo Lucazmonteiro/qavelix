@@ -340,6 +340,7 @@ test("downloadable final states display completed progress", () => {
   assert.equal(getCompressionDisplayProgress("compression_ineffective", 99), 100);
   assert.equal(getCompressionDisplayProgress("completed", 25), 100);
   assert.equal(getCompressionDisplayProgress("failed", 41), 41);
+  assert.equal(getCompressionDisplayProgress("cancelled", 37), 0);
   assert.equal(getCompressionDisplayProgress("running", 67.4), 67);
   assert.equal(getCompressionDisplayProgress("running", Number.NaN), 0);
 });
@@ -398,6 +399,22 @@ test("polled compression jobs do not overwrite terminal state", () => {
   const staleRunning = jobSnapshot({ status: "running", progress: 99 });
 
   assert.equal(mergePolledCompressionJob(optimized, staleRunning), optimized);
+});
+
+test("cancelled compression jobs reset progress and ignore late polling", () => {
+  const running = jobSnapshot({ status: "running", progress: 37 });
+  const cancelled = jobSnapshot({ status: "cancelled", progress: 37 });
+  const merged = mergePolledCompressionJob(running, cancelled);
+
+  assert.equal(merged?.status, "cancelled");
+  assert.equal(merged?.progress, 0);
+  assert.equal(merged?.compression, null);
+  assert.equal(merged?.outputSize, null);
+  assert.equal(merged?.downloadUrl, null);
+  assert.equal(
+    mergePolledCompressionJob(merged, jobSnapshot({ status: "optimized", progress: 100 })),
+    merged,
+  );
 });
 
 test("localized ineffective compression warnings are present", async () => {

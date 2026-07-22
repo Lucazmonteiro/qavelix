@@ -15,16 +15,18 @@ Set these variables in Vercel for Production, Preview, and Development as approp
 
 ```bash
 NEXT_PUBLIC_APP_URL=https://qavelix.com
+NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com
 ```
 
 Rules:
 
 - `NEXT_PUBLIC_APP_URL` is required when `NODE_ENV=production`.
+- `NEXT_PUBLIC_SUPPORT_EMAIL` is required for public production deployments and must currently be `qavelixhq@gmail.com`.
 - Production public URLs must use HTTPS.
 - `http://localhost` and `http://127.0.0.1` are allowed only for local production verification.
 - The value must be the canonical public origin with no trailing slash.
 
-This URL is used for metadata, canonical links, language alternates, `sitemap.xml`, and `robots.txt`.
+The app URL is used for metadata, canonical links, language alternates, `sitemap.xml`, and `robots.txt`. The support email is rendered on public contact, privacy, and terms pages as the official MVP contact channel.
 
 ## Vercel configuration
 
@@ -43,7 +45,18 @@ Recommended Vercel project settings:
 - Build command: keep `npm run build`.
 - Install command: keep `npm ci`.
 - Output directory: leave empty and let Vercel detect Next.js.
-- Environment variable: set `NEXT_PUBLIC_APP_URL` to the final HTTPS production origin.
+- Environment variables: set `NEXT_PUBLIC_APP_URL` to the final HTTPS production origin and `NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com`.
+
+## Render configuration
+
+If deploying on Render, set these environment variables manually in the Render service dashboard before the public production deploy:
+
+```bash
+NEXT_PUBLIC_APP_URL=https://qavelix.com
+NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com
+```
+
+Do not create separate departmental contact variables or aliases for the current MVP. The public contact page, privacy requests, security reports, legal notices, and accessibility feedback all use `qavelixhq@gmail.com`.
 
 ## Cloudflare DNS
 
@@ -168,6 +181,7 @@ Before the first production deployment:
 
 1. Create the Vercel project from the repository.
 2. Set `NEXT_PUBLIC_APP_URL` to the final HTTPS production origin.
+3. Set `NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com`.
 3. Connect the production domain in Vercel.
 4. Configure Cloudflare DNS to point to Vercel.
 5. Verify Vercel has issued a valid certificate.

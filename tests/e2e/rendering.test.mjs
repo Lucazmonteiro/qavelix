@@ -19,24 +19,28 @@ test("e2e: localized home page renders the complete interactive shell", async ()
 
     assertStatus(response, 200, "English home page");
     assert.match(text, /QAVELIX/);
-    assert.match(text, /Design system/);
-    assert.match(text, /Accessibility/);
-    assert.match(text, /Readiness/);
+    assert.match(text, /Compress video/);
+    assert.match(text, /About/);
+    assert.match(text, /FAQ/);
+    assert.match(text, /Contact/);
+    assert.doesNotMatch(text, /href="\/en#design-system"/);
+    assert.doesNotMatch(text, /href="\/en#accessibility"/);
+    assert.doesNotMatch(text, /href="\/en#readiness"/);
     assert.doesNotMatch(text, /Product<\/a>/);
     assert.doesNotMatch(
       text,
       /<a class="primary-nav__link"[^>]*>Upload validation<\/a>/,
     );
     assert.match(text, /Compression/);
-    assert.match(text, /Drop one video for compression/);
+    assert.match(text, /Drop a video to get started/);
     assert.equal(
       [...text.matchAll(/<label class="upload-dropzone/g)].length,
       1,
       "home page renders one unified upload surface",
     );
     assert.ok(
-      text.indexOf("Drop one video for compression") <
-        text.indexOf("Validation runs automatically"),
+      text.indexOf("Drop a video to get started") <
+        text.indexOf("Simple video compression"),
       "upload tool renders before supporting preview content",
     );
     assert.match(text, /aria-label="English"/);
@@ -121,7 +125,8 @@ test("e2e: SEO and legal pages expose metadata and localized content", async () 
     const { response, text } = await fetchText(`${baseUrl}/es/terms`);
 
     assertStatus(response, 200, "Spanish terms page");
-    assert.match(text, /Términos/);
+    assert.match(text, /Términos de Servicio/);
+    assert.match(text, /Última actualización/);
     assert.match(text, /rel="canonical"/);
     assert.match(text, /hrefLang="en"/);
     assert.match(text, /hrefLang="pt-BR"/);
@@ -130,25 +135,19 @@ test("e2e: SEO and legal pages expose metadata and localized content", async () 
   });
 });
 
-test("e2e: initial pages do not render static contextual Back buttons", async () => {
+test("e2e: public pages use deterministic back-to-compressor links", async () => {
   await withNextServer(async ({ baseUrl }) => {
     const pages = [
-      "/en",
-      "/en#compression",
-      "/pt-BR",
-      "/pt-BR/contact",
-      "/es",
-      "/es/privacy-policy",
+      { path: "/pt-BR/contact", label: "Voltar ao compressor", href: "/pt-BR" },
+      { path: "/es/privacy-policy", label: "Volver al compresor", href: "/es" },
     ];
 
     for (const page of pages) {
-      const { response, text } = await fetchText(`${baseUrl}${page}`);
+      const { response, text } = await fetchText(`${baseUrl}${page.path}`);
 
-      assertStatus(response, 200, page);
-      assert.doesNotMatch(text, /context-back-button/);
-      assert.doesNotMatch(text, />Back</);
-      assert.doesNotMatch(text, />Voltar</);
-      assert.doesNotMatch(text, />Volver</);
+      assertStatus(response, 200, page.path);
+      assert.match(text, new RegExp(`href="${page.href}"`));
+      assert.match(text, new RegExp(page.label));
     }
   });
 });
@@ -160,6 +159,6 @@ test("e2e: FAQ page includes structured data for search engines", async () => {
     assertStatus(response, 200, "English FAQ page");
     assert.match(text, /application\/ld\+json/);
     assert.match(text, /FAQPage/);
-    assert.match(text, /Does QAVELIX store uploaded files/);
+    assert.match(text, /What does QAVELIX do/);
   });
 });

@@ -109,12 +109,14 @@ Copy `.env.example` to `.env.local` and update values as needed.
 
 ```bash
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com
 ```
 
 Production deployments must set `NEXT_PUBLIC_APP_URL` explicitly to the canonical HTTPS origin, for example:
 
 ```bash
 NEXT_PUBLIC_APP_URL=https://qavelix.com
+NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com
 ```
 
 ## Verification

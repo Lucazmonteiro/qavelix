@@ -138,6 +138,10 @@ export function getCompressionDisplayProgress(
     return 100;
   }
 
+  if (status === "cancelled") {
+    return 0;
+  }
+
   if (!Number.isFinite(progress)) {
     return 0;
   }
@@ -155,6 +159,17 @@ export function mergePolledCompressionJob(
 
   if (isTerminalCompressionStatus(currentJob.status)) {
     return currentJob;
+  }
+
+  if (nextJob.status === "cancelled") {
+    return {
+      ...nextJob,
+      outputSize: null,
+      compression: null,
+      progress: 0,
+      expiresAt: null,
+      downloadUrl: null,
+    } satisfies CompressionJobSnapshot;
   }
 
   const progress = Math.max(

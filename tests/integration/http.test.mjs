@@ -302,10 +302,10 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
       assert.equal(response.headers.get("location"), "/en");
     });
 
-    await t.test("renders localized legal placeholder pages", async () => {
+    await t.test("renders localized public pages without unfinished release language", async () => {
       const pages = [
-        { path: "/en/about", expected: "Secure media workflows" },
-        { path: "/pt-BR/privacy-policy", expected: "Política de Privacidade" },
+        { path: "/en/about", expected: "Simple, secure video compression" },
+        { path: "/pt-BR/privacy-policy", expected: "Última atualização" },
         { path: "/es/faq", expected: "Preguntas frecuentes" },
       ];
 
@@ -314,6 +314,28 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
 
         assertStatus(response, 200, page.path);
         assert.match(text, new RegExp(page.expected));
+        assert.doesNotMatch(text, /placeholder|provisional|Phase 7|Fase 7/i);
+      }
+    });
+
+    await t.test("renders the configured support email on public contact and legal pages", async () => {
+      const pages = [
+        "/en/contact",
+        "/pt-BR/contact",
+        "/es/contact",
+        "/en/privacy-policy",
+        "/pt-BR/terms",
+        "/es/terms",
+      ];
+
+      for (const page of pages) {
+        const { response, text } = await fetchText(`${baseUrl}${page}`);
+
+        assertStatus(response, 200, page);
+        assert.match(text, /qavelixhq@gmail\.com/);
+        assert.match(text, /mailto:qavelixhq@gmail\.com/);
+        assert.doesNotMatch(text, /Support email is not configured/);
+        assert.doesNotMatch(text, /support@qavelix|privacy@qavelix|security@qavelix|legal@qavelix/i);
       }
     });
 
@@ -333,6 +355,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
       assert.match(sitemap.text, /<loc>https?:\/\/.+\/en\/about<\/loc>/);
       assert.match(sitemap.text, /<loc>https?:\/\/.+\/pt-BR\/privacy-policy<\/loc>/);
       assert.match(sitemap.text, /<loc>https?:\/\/.+\/es\/cookie-policy<\/loc>/);
+      assert.doesNotMatch(sitemap.text, /design-system|readiness/);
       assert.match(
         sitemap.response.headers.get("cache-control") ?? "",
         /stale-while-revalidate=86400/,

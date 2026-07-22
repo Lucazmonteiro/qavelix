@@ -7,8 +7,9 @@ import {
   isContentPageSlug,
   type ContentPageSlug,
 } from "@/config/content-pages";
+import { siteConfig } from "@/config/site";
 import { getDictionary } from "@/i18n/dictionaries";
-import { isLocale, locales } from "@/i18n/locales";
+import { isLocale, locales, type Locale } from "@/i18n/locales";
 import { buildSeoMetadata } from "@/lib/metadata";
 
 type ContentPageProps = {
@@ -31,6 +32,42 @@ function getPageCopy(locale: string, slug: string) {
     locale,
     slug,
   };
+}
+
+function getMissingSupportEmailMessage(locale: Locale) {
+  const messages: Record<Locale, string> = {
+    en: "Support email is not configured in this local environment.",
+    "pt-BR": "O email de suporte não está configurado neste ambiente local.",
+    es: "El correo de soporte no está configurado en este entorno local.",
+  };
+
+  return messages[locale];
+}
+
+function renderParagraph(paragraph: string, locale: Locale) {
+  if (!paragraph.includes("{supportEmail}")) {
+    return paragraph;
+  }
+
+  const [before, after] = paragraph.split("{supportEmail}");
+
+  if (!siteConfig.supportEmail) {
+    return (
+      <>
+        {before}
+        {getMissingSupportEmailMessage(locale)}
+        {after}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {before}
+      <a href={`mailto:${siteConfig.supportEmail}`}>{siteConfig.supportEmail}</a>
+      {after}
+    </>
+  );
 }
 
 export function generateStaticParams() {
@@ -89,6 +126,11 @@ export default async function ContentPage({ params }: ContentPageProps) {
           />
         ) : null}
 
+        <a className="content-page__back-link" href={`/${validLocale}`}>
+          <span aria-hidden="true">←</span>
+          <span>{dictionary.navigation.backToCompressor}</span>
+        </a>
+
         <section className="content-page__hero">
           <p className="eyebrow">{page.eyebrow}</p>
           <h1>{page.title}</h1>
@@ -100,7 +142,7 @@ export default async function ContentPage({ params }: ContentPageProps) {
             <section className="content-page__section" key={section.title}>
               <h2>{section.title}</h2>
               {section.body.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
+                <p key={paragraph}>{renderParagraph(paragraph, validLocale)}</p>
               ))}
             </section>
           ))}

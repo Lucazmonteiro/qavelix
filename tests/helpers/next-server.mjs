@@ -84,6 +84,8 @@ export async function withNextServer(run) {
         ...process.env,
         NEXT_TELEMETRY_DISABLED: "1",
         NEXT_PUBLIC_APP_URL: baseUrl,
+        NEXT_PUBLIC_SUPPORT_EMAIL:
+          process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "qavelixhq@gmail.com",
       },
       stdio: ["ignore", "pipe", "pipe"],
     },

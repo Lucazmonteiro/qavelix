@@ -3,9 +3,13 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const source = await readFile("src/components/compression-panel.tsx", "utf8");
+const headerSource = await readFile("src/components/app-header.tsx", "utf8");
 const footerSource = await readFile("src/components/app-footer.tsx", "utf8");
 const homepageSource = await readFile("src/components/homepage-compressor.tsx", "utf8");
+const localizedHomeSource = await readFile("src/app/[locale]/page.tsx", "utf8");
+const contentPageSource = await readFile("src/app/[locale]/[slug]/page.tsx", "utf8");
 const dictionarySource = await readFile("src/i18n/dictionaries.ts", "utf8");
+const envSource = await readFile("src/env/server.ts", "utf8");
 const themeScriptSource = await readFile("src/components/theme-script.tsx", "utf8");
 const localeLayoutSource = await readFile("src/app/[locale]/layout.tsx", "utf8");
 const cssSource = await readFile("src/styles/globals.css", "utf8");
@@ -50,6 +54,8 @@ test("compression panel renders final job data and download action", () => {
   assert.match(source, /copy\.finalCodecLabel/);
   assert.match(source, /getFinalBitrate\(compression, validatedAnalysis\)/);
   assert.match(source, /getFinalResolution\(validatedAnalysis, compression\)/);
+  assert.match(source, /\{compression \? \(/);
+  assert.match(source, /\{job \? \(/);
   assert.match(source, /compression\?\.outputWidth/);
   assert.match(source, /compression\?\.wasDownscaledToFullHd/);
   assert.match(source, /copy\.fullHdOptimizationNotice/);
@@ -75,8 +81,9 @@ test("compression panel separates waiting and ready states before job submission
 test("compression panel derives button states from lifecycle rules", () => {
   assert.match(
     source,
-    /Boolean\(file\) &&\s*hasValidatedFile &&\s*!isPolling &&\s*!isDownloadable &&\s*!isCancelling &&\s*!isDeleting/,
+    /Boolean\(file\) &&\s*Boolean\(uploadReference\) &&\s*hasValidatedFile &&\s*!isPolling &&\s*!isDownloadable &&\s*!isSourceUnavailable &&\s*!isCancelling &&\s*!isDeleting/,
   );
+  assert.match(source, /const isSourceUnavailable =\s*hasValidatedFile && !uploadReference && !isDownloadable && !isPolling/);
   assert.match(source, /const canCancelCompression = isPolling && !isCancelling && !isDeleting/);
   assert.match(source, /const canDeleteCompression = Boolean\(file \|\| job\) && !isPolling && !isCancelling && !isDeleting/);
   assert.match(source, /disabled=\{!canStartCompression\}/);
@@ -86,6 +93,59 @@ test("compression panel derives button states from lifecycle rules", () => {
     source,
     /<button className="button button--primary" disabled type="button">/,
   );
+});
+
+test("compression panel renders a terminal cancelled state without restart affordances", () => {
+  assert.match(source, /payload\.job\.status === "cancelled"/);
+  assert.match(source, /pollingSequenceRef\.current \+= 1/);
+  assert.match(source, /setDownloadStarted\(false\)/);
+  assert.match(source, /setUploadReference\(null\)/);
+  assert.match(source, /setError\(copy\.errors\.sourceUnavailable\)/);
+  assert.match(source, /const isCancelled = job\?\.status === "cancelled"/);
+  assert.match(source, /copy\.cancelledMessage/);
+  assert.match(source, /compression-status__notice/);
+  assert.match(dictionarySource, /cancelledMessage: "Compression cancelled\."/);
+  assert.match(dictionarySource, /cancelledMessage: "Compressão cancelada\."/);
+  assert.match(dictionarySource, /cancelledMessage: "Compresión cancelada\."/);
+  assert.match(dictionarySource, /Compression cannot continue because the original file is no longer available/);
+  assert.match(dictionarySource, /Não foi possível continuar porque o arquivo original não está mais disponível/);
+  assert.match(dictionarySource, /La compresión no puede continuar porque el archivo original ya no está disponible/);
+});
+
+test("source-unavailable terminal state disables preset cards and invalid actions", () => {
+  assert.match(source, /const isSourceUnavailable =\s*hasValidatedFile && !uploadReference && !isDownloadable && !isPolling/);
+  assert.match(source, /const arePresetButtonsDisabled =\s*isSourceUnavailable \|\| isPolling \|\| isCancelling \|\| isDeleting/);
+  assert.match(source, /if \(arePresetButtonsDisabled\) \{\s*return;\s*\}/);
+  assert.match(source, /aria-disabled=\{arePresetButtonsDisabled\}/);
+  assert.match(source, /aria-pressed=\{arePresetButtonsDisabled \? false : preset === presetId\}/);
+  assert.match(source, /disabled=\{arePresetButtonsDisabled\}/);
+  assert.match(source, /disabled=\{!canStartCompression\}/);
+  assert.match(source, /disabled=\{!canCancelCompression\}/);
+  assert.match(source, /disabled=\{!canDeleteCompression\}/);
+  assert.match(source, /Boolean\(uploadReference\)/);
+  assert.match(source, /setUploadReference\(payload\.analysis\.uploadReference\)/);
+  assert.match(cssSource, /\.preset-card:not\(:disabled\):hover/);
+  assert.match(cssSource, /\.preset-card:disabled/);
+  assert.match(cssSource, /transition: none/);
+  assert.match(cssSource, /cursor: not-allowed/);
+});
+
+test("missing-source compression responses use user-facing unavailable copy", () => {
+  assert.match(source, /case "missing_reference":/);
+  assert.match(source, /case "missing_file":/);
+  assert.match(source, /case "metadata_mismatch":/);
+  assert.match(source, /return copy\.errors\.sourceUnavailable/);
+  assert.match(source, /payload\.error\.code === "missing_reference"/);
+  assert.match(source, /payload\.error\.code === "missing_file"/);
+  assert.match(source, /payload\.error\.code === "metadata_mismatch"/);
+  assert.match(source, /setUploadReference\(null\)/);
+  assert.match(source, /setDownloadStarted\(false\)/);
+  assert.doesNotMatch(dictionarySource, /compression job could not be updated/i);
+  assert.ok(!dictionarySource.includes("job de compressão"));
+  assert.doesNotMatch(dictionarySource, /trabajo de compresión/);
+  assert.match(dictionarySource, /Delete this file and select the video again/);
+  assert.match(dictionarySource, /Exclua este arquivo e selecione o vídeo novamente/);
+  assert.match(dictionarySource, /Elimina este archivo y selecciona el vídeo de nuevo/);
 });
 
 test("compression action buttons use one turquoise design system", () => {
@@ -117,6 +177,21 @@ test("compression panel automatically validates uploads before enabling compress
   assert.match(source, /type UploadResponse/);
   assert.match(source, /type ValidationState/);
   assert.match(source, /validationSequenceRef/);
+  assert.match(source, /stage: keyof CompressionCopy\["validationStages"\]/);
+  assert.match(source, /stage: "preparing"/);
+  assert.match(source, /stage: "validating"/);
+  assert.match(source, /stage: "readingMetadata"/);
+  assert.match(source, /stage: "complete"/);
+  assert.match(source, /validationStageMessage/);
+  assert.match(source, /validation-loader/);
+  assert.match(source, /validation-complete-mark/);
+  assert.match(source, /shouldShowValidationComplete/);
+  assert.match(source, /copy\.validationStages\.complete/);
+  assert.match(cssSource, /\.validation-loader/);
+  assert.match(cssSource, /validation-loader-slide/);
+  assert.match(cssSource, /animation: validation-loader-slide 1\.35s linear infinite/);
+  assert.match(cssSource, /\.validation-complete-mark/);
+  assert.match(cssSource, /prefers-reduced-motion: reduce/);
   assert.match(source, /void analyzeSelectedFile\(selectedFile\)/);
   assert.match(source, /fetch\("\/api\/upload\/analyze"/);
   assert.match(source, /method: "POST"/);
@@ -127,6 +202,22 @@ test("compression panel automatically validates uploads before enabling compress
   assert.match(source, /validation\.status !== "valid"/);
   assert.match(source, /copy\.validationSuccessLabel/);
   assert.match(source, /copy\.validationFailedLabel/);
+  assert.match(dictionarySource, /validationStages:/);
+  assert.match(dictionarySource, /Preparing file/);
+  assert.match(dictionarySource, /Preparando arquivo/);
+  assert.match(dictionarySource, /Preparando archivo/);
+});
+
+test("compression panel constrains long filenames during validation and results", () => {
+  assert.match(source, /className="bounded-file-name"/);
+  assert.match(source, /title=\{validation\.analysis\.file\.name\}/);
+  assert.match(source, /className="validation-file-name"/);
+  assert.match(source, /title=\{validation\.fileName\}/);
+  assert.match(cssSource, /\.bounded-file-name/);
+  assert.match(cssSource, /\.validation-file-name/);
+  assert.match(cssSource, /overflow-wrap: anywhere/);
+  assert.match(cssSource, /-webkit-line-clamp: 3/);
+  assert.match(cssSource, /-webkit-line-clamp: 2/);
 });
 
 test("compression panel presents oversized upload errors with relevant details only", () => {
@@ -296,8 +387,16 @@ test("compression panel scrolls settled validation results into reading position
 });
 
 test("footer keeps only useful content and legal links", () => {
+  assert.match(headerSource, /dictionary\.navigation\.compressVideo/);
+  assert.match(headerSource, /dictionary\.pages\.about\.label/);
+  assert.match(headerSource, /dictionary\.pages\.faq\.label/);
+  assert.match(headerSource, /dictionary\.pages\.contact\.label/);
+  assert.doesNotMatch(headerSource, /#design-system/);
+  assert.doesNotMatch(headerSource, /#accessibility/);
+  assert.doesNotMatch(headerSource, /#readiness/);
   assert.match(footerSource, /contentPageSlugs\.map/);
   assert.match(footerSource, /data-navigation-origin="footer-navigation"/);
+  assert.match(footerSource, /new Date\(\)\.getFullYear\(\)/);
   assert.doesNotMatch(footerSource, /dictionary\.navigation\.product/);
   assert.doesNotMatch(footerSource, /dictionary\.navigation\.upload/);
   assert.doesNotMatch(footerSource, /dictionary\.navigation\.compression/);
@@ -306,6 +405,23 @@ test("footer keeps only useful content and legal links", () => {
   assert.match(cssSource, /align-items: center/);
   assert.match(cssSource, /\.site-footer__links/);
   assert.match(cssSource, /justify-content: flex-end/);
+});
+
+test("public pages expose release-ready SEO and deterministic compressor return links", () => {
+  assert.match(localizedHomeSource, /"@type": "WebApplication"/);
+  assert.match(localizedHomeSource, /applicationCategory: "MultimediaApplication"/);
+  assert.match(localizedHomeSource, /isAccessibleForFree: true/);
+  assert.match(contentPageSource, /className="content-page__back-link"/);
+  assert.match(contentPageSource, /dictionary\.navigation\.backToCompressor/);
+  assert.match(contentPageSource, /href=\{`\/\$\{validLocale\}`\}/);
+  assert.match(contentPageSource, /siteConfig\.supportEmail/);
+  assert.match(contentPageSource, /mailto:\$\{siteConfig\.supportEmail\}/);
+  assert.match(dictionarySource, /Last updated/);
+  assert.match(dictionarySource, /Última atualização/);
+  assert.match(envSource, /NEXT_PUBLIC_SUPPORT_EMAIL/);
+  assert.doesNotMatch(dictionarySource, /placeholder/i);
+  assert.doesNotMatch(dictionarySource, /Phase 7/i);
+  assert.match(cssSource, /\.content-page__back-link/);
 });
 
 test("compression result hierarchy has clearer titles and warning spacing", () => {

@@ -80,6 +80,9 @@ test("localized navigation control labels are present", () => {
   assert.match(dictionary, /back: "Back"/);
   assert.match(dictionary, /back: "Voltar"/);
   assert.match(dictionary, /back: "Volver"/);
+  assert.match(dictionary, /backToCompressor: "Back to compressor"/);
+  assert.match(dictionary, /backToCompressor: "Voltar ao compressor"/);
+  assert.match(dictionary, /backToCompressor: "Volver al compresor"/);
   assert.match(dictionary, /backToTop: "Back to top"/);
   assert.match(dictionary, /backToTop: "Voltar ao início"/);
   assert.match(dictionary, /backToTop: "Volver al inicio"/);
