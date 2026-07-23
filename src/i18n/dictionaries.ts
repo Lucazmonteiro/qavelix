@@ -244,11 +244,11 @@ type Dictionary = {
 
 const dictionaries: Record<Locale, Dictionary> = {
   en: {
-    metadata: {
-      title: "QAVELIX Video Compressor",
-      description:
-        "Compress videos quickly and securely with QAVELIX, then download an optimized file in just a few clicks.",
-    },
+   metadata: {
+  title: "Free Online Video Compressor | QAVELIX",
+  description:
+    "Compress MP4, MOV, AVI, WebM, MPEG and M4V videos online. Reduce file size quickly and securely with simple compression presets.",
+},
     navigation: {
       skipToContent: "Skip to content",
       homeLabel: "QAVELIX home",
@@ -882,11 +882,11 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
   },
   "pt-BR": {
-    metadata: {
-      title: "Compressor de vídeo QAVELIX",
-      description:
-        "Comprima vídeos com rapidez e segurança no QAVELIX e baixe um arquivo otimizado em poucos cliques.",
-    },
+   metadata: {
+  title: "Compressor de Vídeo Online | QAVELIX",
+  description:
+    "Comprima vídeos MP4, MOV, AVI, WebM, MPEG e M4V online. Reduza o tamanho do arquivo com rapidez, segurança e presets simples.",
+},
     navigation: {
       skipToContent: "Pular para o conteúdo",
       homeLabel: "Página inicial do QAVELIX",
@@ -1522,10 +1522,10 @@ const dictionaries: Record<Locale, Dictionary> = {
   },
   es: {
     metadata: {
-      title: "Compresor de video QAVELIX",
-      description:
-        "Comprime videos de forma rápida y segura con QAVELIX y descarga un archivo optimizado en pocos clics.",
-    },
+  title: "Compresor de Video Online | QAVELIX",
+  description:
+    "Comprime videos MP4, MOV, AVI, WebM, MPEG y M4V online. Reduce el tamaño del archivo de forma rápida, segura y con ajustes simples.",
+},
     navigation: {
       skipToContent: "Saltar al contenido",
       homeLabel: "Inicio de QAVELIX",
