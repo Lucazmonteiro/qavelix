@@ -13,6 +13,12 @@ function scriptSrcs(html) {
   return [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((match) => match[1]);
 }
 
+function jsonLdPayloads(html) {
+  return [...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(
+    (match) => JSON.parse(match[1]),
+  );
+}
+
 test("e2e: localized home page renders the complete interactive shell", async () => {
   await withNextServer(async ({ baseUrl }) => {
     const { response, text } = await fetchText(`${baseUrl}/en`);
@@ -56,6 +62,30 @@ test("e2e: localized home page renders the complete interactive shell", async ()
     assert.match(text, /qavelix-theme-script/);
     assert.match(text, /data-navigation-origin="primary-navigation"/);
     assert.match(text, /id="footer-navigation"/);
+
+    const structuredData = jsonLdPayloads(text);
+    const website = structuredData.find((payload) => payload["@type"] === "WebSite");
+    const webApplication = structuredData.find(
+      (payload) => payload["@type"] === "WebApplication",
+    );
+
+    assert.deepEqual(website, {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "QAVELIX",
+      url: "https://qavelix.com",
+    });
+    assert.equal(webApplication?.name, "QAVELIX Video Compressor");
+    assert.equal(webApplication?.applicationCategory, "MultimediaApplication");
+    assert.equal(webApplication?.operatingSystem, "Web");
+    assert.equal(webApplication?.browserRequirements, "Requires JavaScript");
+    assert.equal(webApplication?.url, "https://qavelix.com");
+    assert.equal(webApplication?.inLanguage, "en");
+    assert.deepEqual(webApplication?.offers, {
+      "@type": "Offer",
+      price: 0,
+      priceCurrency: "USD",
+    });
   });
 });
 

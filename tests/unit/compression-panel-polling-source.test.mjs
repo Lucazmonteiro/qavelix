@@ -6,7 +6,6 @@ const source = await readFile("src/components/compression-panel.tsx", "utf8");
 const headerSource = await readFile("src/components/app-header.tsx", "utf8");
 const footerSource = await readFile("src/components/app-footer.tsx", "utf8");
 const homepageSource = await readFile("src/components/homepage-compressor.tsx", "utf8");
-const localizedHomeSource = await readFile("src/app/[locale]/page.tsx", "utf8");
 const contentPageSource = await readFile("src/app/[locale]/[slug]/page.tsx", "utf8");
 const dictionarySource = await readFile("src/i18n/dictionaries.ts", "utf8");
 const envSource = await readFile("src/env/server.ts", "utf8");
@@ -408,9 +407,6 @@ test("footer keeps only useful content and legal links", () => {
 });
 
 test("public pages expose release-ready SEO and deterministic compressor return links", () => {
-  assert.match(localizedHomeSource, /"@type": "WebApplication"/);
-  assert.match(localizedHomeSource, /applicationCategory: "MultimediaApplication"/);
-  assert.match(localizedHomeSource, /isAccessibleForFree: true/);
   assert.match(contentPageSource, /className="content-page__back-link"/);
   assert.match(contentPageSource, /dictionary\.navigation\.backToCompressor/);
   assert.match(contentPageSource, /href=\{`\/\$\{validLocale\}`\}/);

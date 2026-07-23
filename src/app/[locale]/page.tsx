@@ -6,12 +6,37 @@ import { HomepageContent } from "@/components/homepage-content";
 import { siteConfig } from "@/config/site";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale } from "@/i18n/locales";
-import { buildLocalizedUrl, buildSeoMetadata } from "@/lib/metadata";
+import { buildSeoMetadata } from "@/lib/metadata";
 
 type HomePageProps = {
   params: Promise<{
     locale: string;
   }>;
+};
+
+const productionUrl = "https://qavelix.com";
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: siteConfig.name,
+  url: productionUrl,
+};
+
+const webApplicationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "QAVELIX Video Compressor",
+  applicationCategory: "MultimediaApplication",
+  operatingSystem: "Web",
+  browserRequirements: "Requires JavaScript",
+  url: productionUrl,
+  inLanguage: "en",
+  offers: {
+    "@type": "Offer",
+    price: 0,
+    priceCurrency: "USD",
+  },
 };
 
 export async function generateMetadata({ params }: HomePageProps): Promise<Metadata> {
@@ -38,20 +63,13 @@ export default async function HomePage({ params }: HomePageProps) {
   }
 
   const dictionary = getDictionary(locale);
-  const webApplicationJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: siteConfig.name,
-    url: buildLocalizedUrl(locale),
-    description: dictionary.metadata.description,
-    applicationCategory: "MultimediaApplication",
-    browserRequirements: "Requires a modern web browser.",
-    inLanguage: locale,
-    isAccessibleForFree: true,
-  };
 
   return (
     <AppShell dictionary={dictionary} locale={locale}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webApplicationJsonLd) }}
