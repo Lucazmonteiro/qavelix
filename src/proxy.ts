@@ -1,11 +1,28 @@
-import { NextResponse, type NextRequest } from "next/server";
+﻿import { NextResponse, type NextRequest } from "next/server";
 
 import { siteConfig } from "@/config/site";
 import { isLocale } from "@/i18n/locales";
 
 const PUBLIC_FILE = /\.(.*)$/;
+const PRODUCTION_HOST = "qavelix.com";
+const RENDER_HOST = "qavelix.onrender.com";
 
 export function proxy(request: NextRequest) {
+  const host =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host") ??
+    "";
+
+  if (host.split(":")[0] === RENDER_HOST) {
+    const redirectUrl = request.nextUrl.clone();
+
+    redirectUrl.protocol = "https:";
+    redirectUrl.hostname = PRODUCTION_HOST;
+    redirectUrl.port = "";
+
+    return NextResponse.redirect(redirectUrl, 308);
+  }
+
   const { pathname } = request.nextUrl;
 
   if (
