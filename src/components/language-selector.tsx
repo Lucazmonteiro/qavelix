@@ -1,9 +1,10 @@
 "use client";
 
 import type { MouseEvent } from "react";
+import { usePathname } from "next/navigation";
 
 import { isLocalizedHomePath, useLocaleState } from "@/i18n/locale-context";
-import type { Locale } from "@/i18n/locales";
+import { isLocale, type Locale } from "@/i18n/locales";
 import { localeLabels, locales } from "@/i18n/locales";
 
 type LanguageSelectorProps = {
@@ -74,10 +75,36 @@ function FlagIcon({ locale }: { locale: Locale }) {
 
 export function LanguageSelector({ currentLocale, label }: LanguageSelectorProps) {
   const localeState = useLocaleState();
+  const pathname = usePathname();
   const activeLocale = localeState.locale ?? currentLocale;
 
+  function getLocalizedHref(locale: Locale) {
+    const segments = pathname.split("/");
+    const currentPathLocale = segments[1];
+
+    if (typeof currentPathLocale === "string" && isLocale(currentPathLocale)) {
+      segments[1] = locale;
+      return segments.join("/") || `/${locale}`;
+    }
+
+    return `/${locale}`;
+  }
+
+  function isLocalizedToolPath(path: string) {
+    const [, localeSegment, toolsSegment] = path.split("/");
+
+    return (
+      typeof localeSegment === "string" &&
+      isLocale(localeSegment) &&
+      toolsSegment === "tools"
+    );
+  }
+
   function handleLocaleClick(event: MouseEvent<HTMLAnchorElement>, locale: Locale) {
-    if (!isLocalizedHomePath(window.location.pathname)) {
+    if (
+      !isLocalizedHomePath(window.location.pathname) &&
+      !isLocalizedToolPath(window.location.pathname)
+    ) {
       return;
     }
 
@@ -92,7 +119,7 @@ export function LanguageSelector({ currentLocale, label }: LanguageSelectorProps
           aria-current={locale === activeLocale ? "page" : undefined}
           aria-label={localeLabels[locale]}
           className="language-selector__link"
-          href={`/${locale}`}
+          href={getLocalizedHref(locale)}
           key={locale}
           onClick={(event) => handleLocaleClick(event, locale)}
           title={localeLabels[locale]}

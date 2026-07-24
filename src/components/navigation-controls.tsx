@@ -2,134 +2,139 @@
 
 import { useEffect, useState } from "react";
 
-type NavigationContext = {
-  destination: string;
-  originId: string;
-};
+import { isLocale, type Locale } from "@/i18n/locales";
 
 type NavigationControlsProps = {
   backLabel: string;
   backToTopLabel: string;
+  locale: Locale;
 };
 
-const contextStorageKey = "qavelix-navigation-context";
+const historyStorageKey = "qavelix-internal-history";
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
+const topButtonScrollThreshold = 120;
+
+type FloatingMode = "hidden" | "back" | "top";
 
 function getScrollBehavior(): ScrollBehavior {
   return window.matchMedia(reducedMotionQuery).matches ? "auto" : "smooth";
 }
 
-function normalizeDestination(url: URL) {
-  return `${url.pathname}${url.hash}`;
+function getCurrentPath() {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
-function getCurrentDestination() {
-  return `${window.location.pathname}${window.location.hash}`;
+function getFallbackPath(locale: Locale) {
+  return `/${locale}`;
 }
 
-function readNavigationContext() {
-  try {
-    const rawContext = window.sessionStorage.getItem(contextStorageKey);
-
-    if (!rawContext) {
-      return null;
-    }
-
-    const parsedContext = JSON.parse(rawContext) as Partial<NavigationContext>;
-
-    if (
-      typeof parsedContext.destination !== "string" ||
-      typeof parsedContext.originId !== "string"
-    ) {
-      return null;
-    }
-
-    return parsedContext as NavigationContext;
-  } catch {
-    return null;
-  }
+function getPathLocale(pathname: string): Locale | null {
+  const localeSegment = pathname.split("/")[1];
+  return typeof localeSegment === "string" && isLocale(localeSegment)
+    ? localeSegment
+    : null;
 }
 
-function writeNavigationContext(context: NavigationContext) {
-  try {
-    window.sessionStorage.setItem(contextStorageKey, JSON.stringify(context));
-  } catch {
-    // Session storage can be unavailable in hardened browser contexts.
-  }
-}
+function isLocalizedHomePath(pathname: string) {
+  const [, localeSegment, ...rest] = pathname.split("/");
 
-function clearNavigationContext() {
-  try {
-    window.sessionStorage.removeItem(contextStorageKey);
-  } catch {
-    // Session storage can be unavailable in hardened browser contexts.
-  }
+  return (
+    typeof localeSegment === "string" && isLocale(localeSegment) && rest.length === 0
+  );
 }
 
 function isInternalLink(link: HTMLAnchorElement) {
   return Boolean(link.href) && link.origin === window.location.origin;
 }
 
-function getNavigationOrigin(link: HTMLAnchorElement) {
-  const originElement = link.closest<HTMLElement>("[data-navigation-origin]");
+function readHistoryStack() {
+  try {
+    const rawStack = window.sessionStorage.getItem(historyStorageKey);
 
-  return originElement?.dataset.navigationOrigin ?? null;
+    if (!rawStack) {
+      return [];
+    }
+
+    const parsedStack = JSON.parse(rawStack);
+
+    if (!Array.isArray(parsedStack)) {
+      return [];
+    }
+
+    return parsedStack.filter((entry): entry is string => typeof entry === "string");
+  } catch {
+    return [];
+  }
+}
+
+function writeHistoryStack(stack: string[]) {
+  try {
+    window.sessionStorage.setItem(historyStorageKey, JSON.stringify(stack));
+  } catch {
+    // Session storage can be unavailable in hardened browser contexts.
+  }
+}
+
+function pushCurrentPageToHistory(destination: string) {
+  const currentPath = getCurrentPath();
+
+  if (destination === currentPath) {
+    return;
+  }
+
+  const stack = readHistoryStack();
+  const lastEntry = stack.at(-1);
+
+  if (lastEntry !== currentPath) {
+    stack.push(currentPath);
+  }
+
+  writeHistoryStack(stack.slice(-50));
+}
+
+function popInternalHistory() {
+  const stack = readHistoryStack();
+
+  if (stack.length === 0) {
+    return null;
+  }
+
+  const previousPath = stack.pop() ?? null;
+  writeHistoryStack(stack);
+
+  return previousPath;
 }
 
 export function NavigationControls({
   backLabel,
   backToTopLabel,
+  locale,
 }: NavigationControlsProps) {
-  const [navigationContext, setNavigationContext] = useState<NavigationContext | null>(
-    null,
-  );
+  const [isInternalPage, setIsInternalPage] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
   const [isEndVisible, setIsEndVisible] = useState(false);
-  const showBackToTop = isEndVisible;
-  const showContextBack = Boolean(navigationContext) && !showBackToTop;
+
+  const mode: FloatingMode = isEndVisible && (isInternalPage || hasScrolled)
+    ? "top"
+    : isInternalPage
+      ? "back"
+      : hasScrolled
+        ? "top"
+        : "hidden";
 
   useEffect(() => {
-    window.setTimeout(() => {
-      const storedContext = readNavigationContext();
-
-      if (storedContext?.destination === getCurrentDestination()) {
-        setNavigationContext(storedContext);
-      } else {
-        clearNavigationContext();
-      }
-    }, 0);
-  }, []);
-
-  useEffect(() => {
-    function handleClick(event: MouseEvent) {
-      const link = (event.target as Element | null)?.closest<HTMLAnchorElement>(
-        "a[href]",
-      );
-
-      if (!link || !isInternalLink(link)) {
-        return;
-      }
-
-      const originId = getNavigationOrigin(link);
-
-      if (!originId) {
-        return;
-      }
-
-      const destination = normalizeDestination(new URL(link.href));
-      const nextContext = { destination, originId };
-
-      writeNavigationContext(nextContext);
-      window.setTimeout(() => {
-        if (getCurrentDestination() === destination) {
-          setNavigationContext(nextContext);
-        }
-      }, 0);
+    function updatePageState() {
+      setIsInternalPage(!isLocalizedHomePath(window.location.pathname));
+      setHasScrolled(window.scrollY > topButtonScrollThreshold);
     }
 
-    document.addEventListener("click", handleClick);
+    updatePageState();
+    window.addEventListener("popstate", updatePageState);
+    window.addEventListener("scroll", updatePageState, { passive: true });
 
     return () => {
-      document.removeEventListener("click", handleClick);
+      window.removeEventListener("popstate", updatePageState);
+      window.removeEventListener("scroll", updatePageState);
     };
   }, []);
 
@@ -145,7 +150,8 @@ export function NavigationControls({
         setIsEndVisible(Boolean(entry?.isIntersecting));
       },
       {
-        threshold: 0.15,
+        rootMargin: "0px 0px 220px 0px",
+        threshold: 0.01,
       },
     );
 
@@ -156,27 +162,54 @@ export function NavigationControls({
     };
   }, []);
 
-  function handleContextBack() {
-    if (!navigationContext) {
+  useEffect(() => {
+    function handleClick(event: MouseEvent) {
+      if (!(event.target instanceof Element)) {
+        return;
+      }
+
+      const link = event.target.closest<HTMLAnchorElement>("a[href]");
+
+      if (!link || !isInternalLink(link)) {
+        return;
+      }
+
+      if (
+        link.target ||
+        link.hasAttribute("download") ||
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      const destinationUrl = new URL(link.href);
+      const destination = `${destinationUrl.pathname}${destinationUrl.search}${destinationUrl.hash}`;
+
+      pushCurrentPageToHistory(destination);
+    }
+
+    document.addEventListener("click", handleClick);
+
+    return () => {
+      document.removeEventListener("click", handleClick);
+    };
+  }, []);
+
+  function handleBack() {
+    const previousPath = popInternalHistory();
+
+    if (previousPath) {
+      window.history.back();
       return;
     }
 
-    const origin = document.getElementById(navigationContext.originId);
-
-    if (!origin) {
-      clearNavigationContext();
-      setNavigationContext(null);
-      return;
-    }
-
-    origin.scrollIntoView({
-      behavior: getScrollBehavior(),
-      block: "center",
-    });
-
-    origin.focus({ preventScroll: true });
-    clearNavigationContext();
-    setNavigationContext(null);
+    const activeLocale = getPathLocale(window.location.pathname) ?? locale;
+    window.location.assign(getFallbackPath(activeLocale));
   }
 
   function handleBackToTop() {
@@ -186,35 +219,26 @@ export function NavigationControls({
     });
   }
 
+  if (mode === "hidden") {
+    return null;
+  }
+
+  const isTopMode = mode === "top";
+  const label = isTopMode ? backToTopLabel : backLabel;
+
   return (
     <div className="navigation-controls" aria-live="polite">
-      {showContextBack ? (
-        <button
-          aria-label={backLabel}
-          className="context-back-button"
-          onClick={handleContextBack}
-          type="button"
-        >
-          <span aria-hidden="true" className="context-back-button__icon">
-            ←
-          </span>
-          <span>{backLabel}</span>
-        </button>
-      ) : null}
-
-      {showBackToTop ? (
-        <button
-          aria-label={backToTopLabel}
-          className="context-back-button context-back-button--top"
-          onClick={handleBackToTop}
-          type="button"
-        >
-          <span aria-hidden="true" className="context-back-button__icon">
-            ↑
-          </span>
-          <span>{backToTopLabel}</span>
-        </button>
-      ) : null}
+      <button
+        aria-label={label}
+        className="context-back-button"
+        onClick={isTopMode ? handleBackToTop : handleBack}
+        type="button"
+      >
+        <span aria-hidden="true" className="context-back-button__icon">
+          {isTopMode ? "\u2191" : "\u2190"}
+        </span>
+        <span>{label}</span>
+      </button>
     </div>
   );
 }

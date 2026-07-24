@@ -1,0 +1,48 @@
+
+> qavelix@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.18:3000
+- Environments: .env.local
+✓ Ready in 6.4s
+○ Compiling proxy ...
+- Experiments (use with caution):
+  · proxyClientMaxBodySize: 264241152
+
+○ Compiling /[locale] ...
+ GET /pt-BR 200 in 20.5s (next.js: 18.4s, proxy.ts: 794ms, generate-params: 4.6s, application-code: 1215ms)
+ GET /pt-BR 200 in 519ms (next.js: 89ms, proxy.ts: 18ms, generate-params: 61ms, application-code: 412ms)
+ GET /pt-BR 200 in 408ms (next.js: 133ms, proxy.ts: 44ms, generate-params: 63ms, application-code: 231ms)
+{"level":"info","event":"upload_analyzed","at":"2026-07-24T14:58:14.896Z","requestId":"30bdd0ca-86e7-4d60-ba5f-8de277f7cc33","fingerprint":"7_jnylBmJ_4V3aXg5RL8qtcLbVIPN8x2WX_bTy2DoaM","size":3924350,"mimeType":"video/mp4"}
+ POST /api/upload/analyze 200 in 2.3s (next.js: 1611ms, proxy.ts: 72ms, application-code: 663ms)
+{"level":"info","event":"compression_job_created","at":"2026-07-24T14:58:28.069Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","preset":"balanced","inputSize":3924350}
+{"level":"info","event":"compression_job_queued","at":"2026-07-24T14:58:28.071Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","queueDepth":1}
+{"level":"info","event":"compression_worker_dispatch","at":"2026-07-24T14:58:28.073Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","remainingQueueDepth":0}
+{"level":"info","event":"compression_job_created","at":"2026-07-24T14:58:28.075Z","requestId":"8144b98b-8842-4f1e-b8e7-f3c254f8330c","fingerprint":"7_jnylBmJ_4V3aXg5RL8qtcLbVIPN8x2WX_bTy2DoaM","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","preset":"balanced","size":3924350}
+ POST /api/compression/jobs 202 in 807ms (next.js: 621ms, proxy.ts: 17ms, application-code: 169ms)
+{"level":"info","event":"compression_worker_picked_job","at":"2026-07-24T14:58:28.107Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","preset":"balanced"}
+{"level":"info","event":"compression_ffprobe_started","at":"2026-07-24T14:58:28.108Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","inputPath":"C:\\Users\\Lenovo\\AppData\\Local\\Temp\\qavelix-compression\\39e9ca55-711b-4e09-9696-6b17ea441d6b.mp4"}
+{"level":"info","event":"compression_paths_verified","at":"2026-07-24T14:58:28.114Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","inputPath":"C:\\Users\\Lenovo\\AppData\\Local\\Temp\\qavelix-compression\\39e9ca55-711b-4e09-9696-6b17ea441d6b.mp4","inputSize":3924350,"outputPath":"C:\\Users\\Lenovo\\AppData\\Local\\Temp\\qavelix-compression\\39e9ca55-711b-4e09-9696-6b17ea441d6b.compressed.mp4","outputDirectory":"C:\\Users\\Lenovo\\AppData\\Local\\Temp\\qavelix-compression"}
+{"level":"info","event":"compression_ffprobe_finished","at":"2026-07-24T14:58:28.484Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","durationSeconds":5,"bitrate":6278960,"width":1920,"height":1080,"videoCodec":"h264"}
+{"level":"info","event":"compression_ffmpeg_command_generated","at":"2026-07-24T14:58:28.486Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","argumentCount":41,"command":"ffmpeg -hide_banner -nostdin -y -i C:\\Users\\Lenovo\\AppData\\Local\\Temp\\qavelix-compression\\39e9ca55-711b-4e09-9696-6b17ea441d6b.mp4 -map 0:v:0 -map 0:a? -map_metadata -1 -sn -c:v libx264 -preset veryfast -threads 2 -x264-params threads=2:lookahead-threads=1 -crf 26 -maxrate 4235k -bufsize 8470k -pix_fmt yuv420p -c:a aac -b:a 160k -ac 2 -movflags +faststart -f mp4 -progress pipe:1 C:\\Users\\Lenovo\\AppData\\Local\\Temp\\qavelix-compression\\39e9ca55-711b-4e09-9696-6b17ea441d6b.compressed.mp4","outputPath":"C:\\Users\\Lenovo\\AppData\\Local\\Temp\\qavelix-compression\\39e9ca55-711b-4e09-9696-6b17ea441d6b.compressed.mp4"}
+{"level":"info","event":"compression_ffmpeg_spawned","at":"2026-07-24T14:58:28.506Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","pid":9324}
+{"level":"info","event":"compression_progress_updated","at":"2026-07-24T14:58:30.094Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","progress":11}
+{"level":"info","event":"compression_progress_updated","at":"2026-07-24T14:58:30.945Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","progress":22}
+{"level":"info","event":"compression_progress_updated","at":"2026-07-24T14:58:31.470Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","progress":32}
+{"level":"info","event":"compression_progress_updated","at":"2026-07-24T14:58:32.533Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","progress":43}
+{"level":"info","event":"compression_progress_updated","at":"2026-07-24T14:58:33.575Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","progress":61}
+ GET /api/compression/jobs/39e9ca55-711b-4e09-9696-6b17ea441d6b 200 in 5.2s (next.js: 5.1s, proxy.ts: 15ms, application-code: 93ms)
+{"level":"info","event":"compression_progress_updated","at":"2026-07-24T14:58:34.666Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","progress":72}
+{"level":"info","event":"compression_progress_updated","at":"2026-07-24T14:58:35.770Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","progress":93}
+ GET /api/compression/jobs/39e9ca55-711b-4e09-9696-6b17ea441d6b 200 in 488ms (next.js: 312ms, proxy.ts: 14ms, application-code: 161ms)
+{"level":"info","event":"compression_progress_updated","at":"2026-07-24T14:58:36.529Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","progress":99}
+{"level":"info","event":"compression_encoding_finished","at":"2026-07-24T14:58:36.663Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","status":"running"}
+ GET /api/compression/jobs/39e9ca55-711b-4e09-9696-6b17ea441d6b 200 in 160ms (next.js: 86ms, proxy.ts: 21ms, application-code: 53ms)
+{"level":"info","event":"compression_output_verified","at":"2026-07-24T14:58:37.433Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","inputSize":3924350,"outputSize":2204216,"reductionPercent":43.8,"increasePercent":0,"ineffective":false,"outputWidth":1920,"outputHeight":1080,"wasDownscaledToFullHd":false}
+{"level":"info","event":"compression_download_prepared","at":"2026-07-24T14:58:37.434Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","expiresAt":"2026-07-24T15:28:36.665Z"}
+{"level":"info","event":"compression_job_completed","at":"2026-07-24T14:58:37.435Z","jobId":"39e9ca55-711b-4e09-9696-6b17ea441d6b","status":"optimized"}
+ GET /api/compression/jobs/39e9ca55-711b-4e09-9696-6b17ea441d6b 200 in 105ms (next.js: 47ms, proxy.ts: 15ms, application-code: 43ms)
+ GET /pt-BR 200 in 974ms (next.js: 252ms, proxy.ts: 177ms, generate-params: 206ms, application-code: 545ms)
+[?25h

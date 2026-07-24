@@ -13,6 +13,10 @@ import {
   type CompressionPresetId,
 } from "@/lib/compression-policy";
 import {
+  estimateCompressionRisk,
+  getPresetsLikelyToReduceSize,
+} from "@/lib/compression-precheck";
+import {
   acceptedExtensions,
   acceptedMimeTypes,
   formatBytes,
@@ -89,9 +93,12 @@ type CompressionCopy = {
   expiresLabel: string;
   downloadLabel: string;
   downloadAnywayLabel: string;
+  downloadFailedMessage: string;
   deleteLabel: string;
   ineffectiveWarning: string;
   ineffectiveRecommendationLabel: string;
+  predictedIncreaseWarning: string;
+  predictedIncreaseRecommendationLabel: string;
   successMessage: string;
   successMessages: {
     excellent: string;
@@ -121,6 +128,7 @@ type CompressionCopy = {
     jobFailed: string;
     cancelFailed: string;
     sourceUnavailable: string;
+    predictedIncrease: string;
   };
   oversizedFileMessage: string;
 };
@@ -335,6 +343,20 @@ function getRecommendedPresetIds(currentPreset: CompressionPresetId) {
   return [...orderedRecommendations, ...futurePresetRecommendations];
 }
 
+function getHeaderFileName(response: Response) {
+  const disposition = response.headers.get("Content-Disposition");
+  const fileNameMatch = disposition?.match(/filename="([^"]+)"/i);
+
+  return fileNameMatch?.[1] ? fileNameMatch[1] : null;
+}
+
+function createFallbackCompressedFileName(fileName: string) {
+  const dotIndex = fileName.lastIndexOf(".");
+  const baseName = dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName;
+
+  return `${baseName}.qavelix-compressed.mp4`;
+}
+
 function getCompressionSuccessMessage(
   copy: CompressionCopy,
   compression: CompressionJobSnapshot["compression"],
@@ -457,6 +479,7 @@ export function CompressionPanel({
   const [job, setJob] = useState<CompressionJobSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [downloadStarted, setDownloadStarted] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [uploadReference, setUploadReference] = useState<UploadReference | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -912,6 +935,11 @@ export function CompressionPanel({
       return;
     }
 
+    if (isPrecheckBlocked) {
+      setError(copy.errors.predictedIncrease);
+      return;
+    }
+
     if (!uploadReference) {
       setDownloadStarted(false);
       setError(copy.errors.sourceUnavailable);
@@ -1067,18 +1095,63 @@ export function CompressionPanel({
     setPreset(nextPreset);
   }
 
-  function handleDownloadStarted() {
-    if (!downloadUrl) {
+  async function handleDownloadStarted() {
+    if (!downloadUrl || isDownloading) {
       return;
     }
 
     setError(null);
-    setDownloadStarted(true);
+
+    try {
+      setIsDownloading(true);
+      const response = await fetch(downloadUrl, {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error("Download request failed.");
+      }
+
+      const blob = await response.blob();
+
+      if (blob.size <= 0) {
+        throw new Error("Download response was empty.");
+      }
+
+      const fileName =
+        getHeaderFileName(response) ??
+        createFallbackCompressedFileName(job?.originalName ?? file?.name ?? "video");
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = objectUrl;
+      link.download = fileName;
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
+      setDownloadStarted(true);
+    } catch {
+      setDownloadStarted(false);
+      setError(copy.downloadFailedMessage);
+    } finally {
+      setIsDownloading(false);
+    }
   }
 
   const progress = job ? getCompressionDisplayProgress(job.status, job.progress) : 0;
   const compression = job?.compression ?? null;
   const validatedAnalysis = validation.status === "valid" ? validation.analysis : null;
+  const compressionRisk =
+    validatedAnalysis && file
+      ? estimateCompressionRisk(validatedAnalysis.media, file.size, preset)
+      : null;
+  const isPrecheckBlocked = Boolean(compressionRisk?.willLikelyIncrease);
+  const precheckSafePresetIds =
+    validatedAnalysis && file
+      ? getPresetsLikelyToReduceSize(validatedAnalysis.media, file.size, preset)
+      : [];
   const isPolling = canPoll(job);
   const isSuccessful = Boolean(job && isSuccessfulCompressionStatus(job.status));
   const hasCompletedResult = Boolean(
@@ -1097,7 +1170,8 @@ export function CompressionPanel({
     !isDownloadable &&
     !isSourceUnavailable &&
     !isCancelling &&
-    !isDeleting;
+    !isDeleting &&
+    !isPrecheckBlocked;
   const canCancelCompression = isPolling && !isCancelling && !isDeleting;
   const canDeleteCompression = Boolean(file || job) && !isPolling && !isCancelling && !isDeleting;
   const arePresetButtonsDisabled =
@@ -1131,6 +1205,9 @@ export function CompressionPanel({
   const downloadUrl = isDownloadable ? job?.downloadUrl : null;
   const activePreset = job?.preset ?? preset;
   const recommendedPresetIds = getRecommendedPresetIds(activePreset);
+  const precheckRecommendedPresetIds = getRecommendedPresetIds(preset).filter((id) =>
+    precheckSafePresetIds.includes(id),
+  );
   const finalResolution = getFinalResolution(validatedAnalysis, compression);
   const finalBitrate = getFinalBitrate(compression, validatedAnalysis);
   const successFeedbackMessage = getCompressionSuccessMessage(copy, compression);
@@ -1529,6 +1606,18 @@ export function CompressionPanel({
             </div>
           ) : null}
 
+          {!job && isPrecheckBlocked ? (
+            <div className="compression-status__warning">
+              <p>{copy.predictedIncreaseWarning}</p>
+              <strong>{copy.predictedIncreaseRecommendationLabel}</strong>
+              <ul>
+                {precheckRecommendedPresetIds.map((presetId) => (
+                  <li key={presetId}>{copy.presetNames[presetId]}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="compression-status__actions">
             <button
               className="button button--primary"
@@ -1539,15 +1628,16 @@ export function CompressionPanel({
               {copy.startLabel}
             </button>
             {downloadUrl ? (
-              <a
+              <button
                 className="button button--primary"
-                href={downloadUrl}
-                onClick={handleDownloadStarted}
+                disabled={isDownloading}
+                onClick={() => void handleDownloadStarted()}
+                type="button"
               >
                 {job?.status === "compression_ineffective"
                   ? copy.downloadAnywayLabel
                   : copy.downloadLabel}
-              </a>
+              </button>
             ) : (
               <button className="button button--primary" disabled type="button">
                 {copy.downloadLabel}

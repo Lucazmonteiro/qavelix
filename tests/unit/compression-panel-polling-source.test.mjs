@@ -259,7 +259,13 @@ test("compression panel removes the upload dropzone after successful validation"
 
 test("compression panel reuses the original source after a completed result", () => {
   assert.match(source, /const \[downloadStarted, setDownloadStarted\] = useState\(false\)/);
-  assert.match(source, /function handleDownloadStarted\(\)/);
+  assert.match(source, /const \[isDownloading, setIsDownloading\] = useState\(false\)/);
+  assert.match(source, /async function handleDownloadStarted\(\)/);
+  assert.match(source, /const response = await fetch\(downloadUrl/);
+  assert.match(source, /const blob = await response\.blob\(\)/);
+  assert.match(source, /URL\.createObjectURL\(blob\)/);
+  assert.match(source, /link\.download = fileName/);
+  assert.match(source, /setError\(copy\.downloadFailedMessage\)/);
   assert.match(source, /setDownloadStarted\(true\)/);
   assert.match(source, /copy\.downloadStartedMessage/);
   assert.match(source, /function prepareForNewCompression\(nextPreset: CompressionPresetId\)/);
@@ -275,6 +281,9 @@ test("compression panel reuses the original source after a completed result", ()
   assert.match(dictionarySource, /downloadStartedMessage: "✔ Download started successfully"/);
   assert.match(dictionarySource, /downloadStartedMessage: "✔ Download iniciado com sucesso"/);
   assert.match(dictionarySource, /downloadStartedMessage: "✔ Descarga iniciada correctamente"/);
+  assert.match(dictionarySource, /downloadFailedMessage: "The download could not be started\. Try again\."/);
+  assert.match(dictionarySource, /downloadFailedMessage:\s*"Não foi possível iniciar o download\. Tente novamente\."/);
+  assert.match(dictionarySource, /downloadFailedMessage:\s*"No se pudo iniciar la descarga\. Inténtalo de nuevo\."/);
   assert.match(dictionarySource, /sourceUnavailable:/);
 });
 
@@ -466,6 +475,47 @@ test("ineffective compression guidance recommends only other presets", () => {
   assert.match(source, /recommendedPresetIds\.map/);
   assert.match(dictionarySource, /This video is already highly compressed/);
   assert.match(dictionarySource, /Recommended presets/);
+});
+
+test("pre-check blocks starting a compression predicted to increase file size", () => {
+  assert.match(
+    source,
+    /import \{\s*estimateCompressionRisk,\s*getPresetsLikelyToReduceSize,\s*\} from "@\/lib\/compression-precheck"/,
+  );
+  assert.match(
+    source,
+    /const compressionRisk =\s*validatedAnalysis && file\s*\? estimateCompressionRisk\(validatedAnalysis\.media, file\.size, preset\)\s*: null;/,
+  );
+  assert.match(
+    source,
+    /const isPrecheckBlocked = Boolean\(compressionRisk\?\.willLikelyIncrease\)/,
+  );
+  assert.match(
+    source,
+    /const precheckSafePresetIds =\s*validatedAnalysis && file\s*\? getPresetsLikelyToReduceSize\(validatedAnalysis\.media, file\.size, preset\)\s*: \[\];/,
+  );
+  assert.match(
+    source,
+    /const precheckRecommendedPresetIds = getRecommendedPresetIds\(preset\)\.filter\(\(id\) =>\s*precheckSafePresetIds\.includes\(id\),\s*\);/,
+  );
+  assert.match(source, /!isPrecheckBlocked;/);
+  assert.match(
+    source,
+    /if \(isPrecheckBlocked\) \{\s*setError\(copy\.errors\.predictedIncrease\);\s*return;\s*\}/,
+  );
+  assert.match(source, /\{!job && isPrecheckBlocked \? \(/);
+  assert.match(source, /copy\.predictedIncreaseWarning/);
+  assert.match(source, /copy\.predictedIncreaseRecommendationLabel/);
+  assert.match(source, /precheckRecommendedPresetIds\.map/);
+  assert.match(
+    dictionarySource,
+    /already appears to be highly optimized for the selected preset/,
+  );
+  assert.match(dictionarySource, /Presets more likely to reduce the size/);
+  assert.match(
+    dictionarySource,
+    /This preset is very likely to increase the file size for this video/,
+  );
 });
 
 test("compression panel fully resets after delete and allows same file reselection", () => {

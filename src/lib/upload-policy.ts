@@ -1,4 +1,5 @@
 export const MAX_UPLOAD_BYTES = 250 * 1024 * 1024;
+export const MIN_UPLOAD_BYTES = 100 * 1024;
 export const UPLOAD_REQUEST_OVERHEAD_BYTES = 2 * 1024 * 1024;
 export const MAX_UPLOAD_REQUEST_BYTES = MAX_UPLOAD_BYTES + UPLOAD_REQUEST_OVERHEAD_BYTES;
 
@@ -7,6 +8,9 @@ export const acceptedMimeTypes = [
   "video/quicktime",
   "video/webm",
   "video/x-msvideo",
+  "video/avi",
+  "video/msvideo",
+  "video/vnd.avi",
   "video/mpeg",
 ] as const;
 
@@ -25,14 +29,19 @@ export type AcceptedMimeType = (typeof acceptedMimeTypes)[number];
 export type UploadValidationErrorCode =
   | "missing_file"
   | "empty_file"
+  | "file_too_small"
   | "file_too_large"
   | "invalid_size"
   | "invalid_extension"
   | "invalid_mime"
   | "invalid_signature"
   | "truncated_upload"
+  | "no_audio"
+  | "silent_audio"
   | "ffprobe_unavailable"
-  | "ffprobe_failed";
+  | "ffprobe_failed"
+  | "ffmpeg_failed"
+  | "processing_timeout";
 
 export type UploadValidationError = {
   code: UploadValidationErrorCode;

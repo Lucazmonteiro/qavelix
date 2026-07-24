@@ -9,10 +9,12 @@ import {
   isAcceptedMimeType,
   MAX_UPLOAD_BYTES,
   MAX_UPLOAD_REQUEST_BYTES,
+  MIN_UPLOAD_BYTES,
   UPLOAD_REQUEST_OVERHEAD_BYTES,
 } from "../../src/lib/upload-policy.ts";
 
 test("upload policy exposes the supported media constraints", () => {
+  assert.equal(MIN_UPLOAD_BYTES, 100 * 1024);
   assert.equal(MAX_UPLOAD_BYTES, 250 * 1024 * 1024);
   assert.deepEqual(acceptedExtensions, [
     ".mp4",
@@ -25,6 +27,10 @@ test("upload policy exposes the supported media constraints", () => {
   ]);
   assert.ok(acceptedMimeTypes.includes("video/mp4"));
   assert.ok(acceptedMimeTypes.includes("video/webm"));
+  assert.ok(acceptedMimeTypes.includes("video/x-msvideo"));
+  assert.ok(acceptedMimeTypes.includes("video/avi"));
+  assert.ok(acceptedMimeTypes.includes("video/msvideo"));
+  assert.ok(acceptedMimeTypes.includes("video/vnd.avi"));
 });
 
 test("upload request body limit is derived from the upload policy", () => {
@@ -98,6 +104,34 @@ test("formatBytes formats file sizes for user-facing validation messages", () =>
 test("isAcceptedMimeType narrows only supported video MIME types", () => {
   assert.equal(isAcceptedMimeType("video/mp4"), true);
   assert.equal(isAcceptedMimeType("video/quicktime"), true);
+  assert.equal(isAcceptedMimeType("video/x-msvideo"), true);
+  assert.equal(isAcceptedMimeType("video/avi"), true);
+  assert.equal(isAcceptedMimeType("video/msvideo"), true);
+  assert.equal(isAcceptedMimeType("video/vnd.avi"), true);
   assert.equal(isAcceptedMimeType("image/png"), false);
   assert.equal(isAcceptedMimeType("application/octet-stream"), false);
+});
+
+test("AVI MIME variants are centralized while RIFF AVI signature validation stays strict", async () => {
+  const [uploadValidation, compressionPanel, extractAudioTool] = await Promise.all([
+    readFile("src/lib/server/upload-validation.ts", "utf8"),
+    readFile("src/components/compression-panel.tsx", "utf8"),
+    readFile("src/components/extract-audio-tool.tsx", "utf8"),
+  ]);
+
+  for (const mimeType of [
+    "video/x-msvideo",
+    "video/avi",
+    "video/msvideo",
+    "video/vnd.avi",
+  ]) {
+    assert.equal(isAcceptedMimeType(mimeType), true);
+  }
+
+  assert.equal(isAcceptedMimeType("application/octet-stream"), false);
+  assert.match(uploadValidation, /hasAsciiSignature\(bytes, 0, "RIFF"\)/);
+  assert.match(uploadValidation, /hasAsciiSignature\(bytes, 8, "AVI "\)/);
+  assert.match(uploadValidation, /extension === "\.avi"/);
+  assert.match(compressionPanel, /acceptedMimeTypes/);
+  assert.match(extractAudioTool, /acceptedMimeTypes/);
 });

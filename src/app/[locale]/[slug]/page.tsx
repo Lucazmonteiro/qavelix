@@ -126,11 +126,6 @@ export default async function ContentPage({ params }: ContentPageProps) {
           />
         ) : null}
 
-        <a className="content-page__back-link" href={`/${validLocale}`}>
-          <span aria-hidden="true">←</span>
-          <span>{dictionary.navigation.backToCompressor}</span>
-        </a>
-
         <section className="content-page__hero">
           <p className="eyebrow">{page.eyebrow}</p>
           <h1>{page.title}</h1>

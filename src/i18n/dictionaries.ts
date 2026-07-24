@@ -21,7 +21,7 @@ type ContentPageCopy = {
   }>;
 };
 
-type Dictionary = {
+export type Dictionary = {
   metadata: {
     title: string;
     description: string;
@@ -37,12 +37,15 @@ type Dictionary = {
     accessibility: string;
     readiness: string;
     compressVideo: string;
+    tools: string;
+    toolsVideoCategory: string;
+    videoCompressorTool: string;
+    extractAudioTool: string;
     languageLabel: string;
     themeLabel: string;
     lightTheme: string;
     darkTheme: string;
     back: string;
-    backToCompressor: string;
     backToTop: string;
   };
   home: {
@@ -187,9 +190,12 @@ type Dictionary = {
     expiresLabel: string;
     downloadLabel: string;
     downloadAnywayLabel: string;
+    downloadFailedMessage: string;
     deleteLabel: string;
     ineffectiveWarning: string;
     ineffectiveRecommendationLabel: string;
+    predictedIncreaseWarning: string;
+    predictedIncreaseRecommendationLabel: string;
     successMessage: string;
     successMessages: {
       excellent: string;
@@ -231,6 +237,7 @@ type Dictionary = {
       jobFailed: string;
       cancelFailed: string;
       sourceUnavailable: string;
+      predictedIncrease: string;
     };
     oversizedFileMessage: string;
   };
@@ -238,6 +245,84 @@ type Dictionary = {
     description: string;
     phase: string;
     linksLabel: string;
+  };
+  tools: {
+    extractAudio: {
+      eyebrow: string;
+      title: string;
+      subtitle: string;
+      description: string;
+      uploadTitle: string;
+      uploadDescription: string;
+      privacyMessage: string;
+      chooseFile: string;
+      chooseAnotherFile: string;
+      statusTitle: string;
+      statusWaiting: string;
+      statusReady: string;
+      statusInvalid: string;
+      statusValidating: string;
+      statusUploading: string;
+      statusAnalyzing: string;
+      statusProcessing: string;
+      statusPreparing: string;
+      statusCompleted: string;
+      statusFailed: string;
+      statusValidAudio: string;
+      statusNoAudio: string;
+      analysisProgressMessage: string;
+      extractionProgressMessage: string;
+      preparingDownloadMessage: string;
+      selectedFile: string;
+      fileName: string;
+      fileSize: string;
+      originalFileName: string;
+      generatedFileName: string;
+      originalFileSize: string;
+      audioFileSize: string;
+      outputFormat: string;
+      outputFormatValue: string;
+      extractButton: string;
+      downloadButton: string;
+      downloadStartedMessage: string;
+      cancelButton: string;
+      deleteButton: string;
+      nextStepMessage: string;
+      infoTitle: string;
+      infoItems: string[];
+      faqTitle: string;
+      faqItems: Array<{
+        question: string;
+        answer: string;
+      }>;
+      validation: {
+        multipleFiles: string;
+        emptyFile: string;
+        fileTooSmall: string;
+        fileTooLarge: string;
+        invalidExtension: string;
+        invalidMime: string;
+      };
+      errors: {
+        missingFile: string;
+        emptyFile: string;
+        fileTooSmall: string;
+        fileTooLarge: string;
+        unsupportedFormat: string;
+        invalidMedia: string;
+        noAudio: string;
+        silentAudio: string;
+        ffprobeFailed: string;
+        ffmpegFailed: string;
+        analysisFailed: string;
+        analysisTimeout: string;
+        analysisCancelled: string;
+        timeout: string;
+        serverError: string;
+        downloadUnavailable: string;
+        networkError: string;
+      };
+    };
   };
   pages: Record<ContentPageSlug, ContentPageCopy>;
 };
@@ -260,12 +345,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       accessibility: "Accessibility",
       readiness: "Reliability",
       compressVideo: "Compress video",
+      tools: "Tools",
+      toolsVideoCategory: "Video",
+      videoCompressorTool: "Video Compressor",
+      extractAudioTool: "Extract Audio",
       languageLabel: "Select language",
       themeLabel: "Theme",
       lightTheme: "Light",
       darkTheme: "Dark",
       back: "Back",
-      backToCompressor: "Back to compressor",
       backToTop: "Back to top",
     },
     home: {
@@ -414,7 +502,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Compress one validated video at a time. Progress is shown while the file is prepared, and you can cancel while processing is active.",
       dropTitle: "Drop a video to get started",
       dropDescription:
-        "Your video is processed securely and removed automatically after its availability period.",
+        "Formats accepted: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nSize allowed: 100 KB to 250 MB per video.\nYour video is processed securely and automatically removed after the availability period.",
       browseLabel: "Choose video",
       validationHelper:
         "Your file has been successfully validated. Review the file information below, choose the compression level that best fits your needs, then start compression.",
@@ -481,10 +569,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       expiresLabel: "Expires",
       downloadLabel: "Download",
       downloadAnywayLabel: "Download anyway",
+      downloadFailedMessage: "The download could not be started. Try again.",
       deleteLabel: "Delete file",
       ineffectiveWarning:
         "This video is already highly compressed. Using the selected preset, QAVELIX could not generate a file smaller than the original. Try one of the suggested presets below to prioritize a different compression strategy.",
       ineffectiveRecommendationLabel: "Recommended presets",
+      predictedIncreaseWarning:
+        "This video already appears to be highly optimized for the selected preset. Compressing it is very likely to increase the file size. Try one of the alternative presets below.",
+      predictedIncreaseRecommendationLabel: "Presets more likely to reduce the size",
       successMessage: "✔ Compression completed successfully",
       successMessages: {
         excellent: "✔ Excellent space savings.",
@@ -532,48 +624,176 @@ const dictionaries: Record<Locale, Dictionary> = {
           "This action could not be completed. Delete this file and select the video again.",
         sourceUnavailable:
           "Compression cannot continue because the original file is no longer available in this session. Delete this file and select the video again.",
+        predictedIncrease:
+          "This preset is very likely to increase the file size for this video. Choose a different preset.",
       },
       oversizedFileMessage:
         "The selected file is {fileSize}, which exceeds the maximum upload limit of {maxSize}. Please choose a smaller file to continue.",
     },
-    footer: {
+  footer: {
+    description:
+      "QAVELIX is a secure media processing platform built in stages with a strong foundation in validation, compression, security, and localization.",
+    phase: "Secure and reliable media processing.",
+    linksLabel: "Footer navigation",
+  },
+  tools: {
+    extractAudio: {
+      eyebrow: "Extract Audio",
+      title: "Extract audio from video",
+      subtitle: "Turn your video into a clean MP3 audio file quickly and securely.",
       description:
-        "QAVELIX is a secure media processing platform built in stages with a strong foundation in validation, compression, security, and localization.",
-      phase: "Secure and reliable media processing.",
-      linksLabel: "Footer navigation",
+        "Upload a supported video, review the selected file, and prepare it for MP3 extraction. Processing will be connected in the next development step.",
+      uploadTitle: "Drop a video to extract audio",
+      uploadDescription:
+        "Choose a supported video file for audio extraction.\nFormats accepted: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nSize allowed: 100 KB to 250 MB per video.",
+      privacyMessage:
+        "Files are handled temporarily and removed automatically after the availability period.",
+      chooseFile: "Choose video",
+      chooseAnotherFile: "Choose another video",
+      statusTitle: "Audio extraction",
+      statusWaiting: "Waiting for file",
+      statusReady: "File ready",
+      statusInvalid: "Invalid video",
+      statusValidating: "Validating file",
+      statusUploading: "Uploading video",
+      statusAnalyzing: "Analyzing video",
+      statusProcessing: "Extracting audio",
+      statusPreparing: "Preparing download",
+      statusCompleted: "Completed",
+      statusFailed: "Failed",
+      statusValidAudio: "Valid audio detected",
+      statusNoAudio: "Video has no audio",
+      analysisProgressMessage: "Checking the audio track...",
+      extractionProgressMessage: "Converting the audio to MP3...",
+      preparingDownloadMessage: "Preparing the download...",
+      selectedFile: "Selected file",
+      fileName: "File name",
+      fileSize: "File size",
+      originalFileName: "Original file",
+      generatedFileName: "MP3 file",
+      originalFileSize: "Original size",
+      audioFileSize: "Audio size",
+      outputFormat: "Output format",
+      outputFormatValue: "MP3",
+      extractButton: "Extract Audio",
+      downloadButton: "Download",
+      downloadStartedMessage: "Download started successfully.",
+      cancelButton: "Cancel",
+      deleteButton: "Delete file",
+      nextStepMessage:
+        "Audio extraction processing is the next development step. No file has been uploaded or processed yet.",
+      infoTitle: "How Extract Audio will work",
+      infoItems: [
+        "Upload a supported video file.",
+        "QAVELIX extracts the audio track as an MP3 file.",
+        "Download the audio file when processing is complete.",
+        "Temporary files are removed automatically after the availability period.",
+      ],
+      faqTitle: "Extract Audio FAQ",
+      faqItems: [
+        {
+          question: "What does Extract Audio do?",
+          answer:
+            "It will create a separate MP3 audio file from an uploaded video.",
+        },
+        {
+          question: "Which video formats will be supported?",
+          answer:
+            "The MVP uses the same supported video formats as the Video Compressor: MP4, M4V, MOV, WebM, AVI, MPG, and MPEG.",
+        },
+        {
+          question: "Will the output be MP3?",
+          answer: "Yes. The planned MVP output format is MP3.",
+        },
+        {
+          question: "What is the upload limit?",
+          answer: "The current file limit is 250 MB.",
+        },
+        {
+          question: "How are files handled?",
+          answer:
+            "Files are temporary and are removed automatically after the availability period.",
+        },
+      ],
+      validation: {
+        multipleFiles: "Choose one video file at a time.",
+        emptyFile: "The selected file is empty. Choose another video.",
+        fileTooSmall:
+          "This video is too small to process. Choose a video of at least 100 KB.",
+        fileTooLarge:
+          "This video exceeds the 250 MB upload limit. Choose a smaller video to continue.",
+        invalidExtension:
+          "This file extension is not supported. Choose MP4, M4V, MOV, WebM, AVI, MPG, or MPEG.",
+        invalidMime:
+          "This file type is not supported. Choose a valid video file.",
+      },
+      errors: {
+        missingFile: "Choose one supported video file before extracting audio.",
+        emptyFile: "The selected file is empty. Choose another video.",
+        fileTooSmall:
+          "This video is too small to process. Choose a video of at least 100 KB.",
+        fileTooLarge:
+          "This video exceeds the 250 MB upload limit. Choose a smaller video to continue.",
+        unsupportedFormat:
+          "This video format is not supported. Choose MP4, MOV, AVI, WebM, M4V, MPEG, or MPG.",
+        invalidMedia:
+          "This file is corrupted or is not a valid video. Choose another file to continue.",
+        noAudio:
+          "This video does not contain an audio track. Choose another video with audio to continue.",
+        silentAudio:
+          "This video has no audible sound. Choose another video with sound to continue.",
+        ffprobeFailed:
+          "QAVELIX could not analyze this video. Choose another supported video file.",
+        ffmpegFailed:
+          "QAVELIX could not extract audio from this video. Choose another file and try again.",
+        analysisFailed:
+          "QAVELIX could not complete the audio analysis. Choose another video or try again.",
+        analysisTimeout:
+          "Audio analysis took too long. Choose a shorter video or try again.",
+        analysisCancelled: "Audio analysis was cancelled.",
+        timeout:
+          "Audio extraction took too long. Choose a shorter video or try again.",
+        serverError:
+          "Audio extraction is temporarily unavailable. Try again in a moment.",
+        downloadUnavailable:
+          "The MP3 download could not be prepared. Try extracting the audio again.",
+        networkError:
+          "The request could not be completed. Check your connection and try again.",
+      },
     },
-    pages: {
+  },
+  pages: {
       about: {
         label: "About",
         metadata: {
-          title: "About QAVELIX Video Compressor",
+          title: "About QAVELIX",
           description:
-            "Learn how QAVELIX helps people compress videos with simple presets, temporary processing, and localized guidance.",
+            "Learn how QAVELIX is becoming a practical platform for secure media tools.",
         },
         eyebrow: "About",
-        title: "Simple, secure video compression",
+        title: "Practical media tools, built for clarity",
         description:
-          "QAVELIX helps you reduce video file size without turning compression into a technical project.",
+          "QAVELIX is a platform for focused media tools that help people complete everyday file tasks with less friction.",
         sections: [
           {
             title: "What QAVELIX does",
             body: [
-              "QAVELIX lets you upload a supported video, review its file information, choose a compression preset, and download an optimized MP4 result.",
-              "The service is designed for people who need smaller videos for sharing, publishing, storage, or everyday delivery without learning video encoding settings.",
+              "QAVELIX currently offers Video Compressor and is actively developing Extract Audio as the next tool in the platform.",
+              "The platform is designed for practical video, audio, image, and PDF workflows that should feel simple instead of technical.",
             ],
           },
           {
-            title: "Temporary processing",
+            title: "Privacy-minded processing",
             body: [
-              "Uploaded files are handled as temporary processing files. Source files are removed after processing, cancellation, deletion, or expiration, and completed downloads are available only for a limited time.",
-              "QAVELIX currently supports Portuguese, English, and Spanish, with the same compression workflow available in each language.",
+              "Files are handled as temporary processing files. Source files and generated outputs are removed after processing, cancellation, deletion, or expiration according to each tool workflow.",
+              "QAVELIX focuses on clear limits, localized guidance, and minimal browser preferences rather than accounts, permanent libraries, or unnecessary tracking.",
             ],
           },
           {
-            title: "Preset-based control",
+            title: "Platform roadmap",
             body: [
-              "Smaller File focuses on the smallest output. Balanced aims for a practical mix of quality and size. High Quality applies lighter compression when preserving detail matters more.",
-              "Compression results vary by source video. Some videos are already highly compressed, so QAVELIX explains when a preset cannot reduce the file further.",
+              "Video Compressor remains the current production tool. Extract Audio is under local development and is not connected to processing yet.",
+              "Future tools may expand across video, audio, images, and PDF when they can match the same privacy, simplicity, and reliability standards.",
             ],
           },
         ],
@@ -588,14 +808,14 @@ const dictionaries: Record<Locale, Dictionary> = {
         eyebrow: "Contact",
         title: "Contact QAVELIX",
         description:
-          "The email below is the official contact channel for support, privacy requests, security reports, legal notices, and accessibility feedback.",
+          "The email below is the official contact channel for product questions, technical issues, privacy requests, feedback, tool suggestions, and business inquiries.",
         sections: [
           {
             title: "General contact",
             body: [
               "Email: {supportEmail}",
-              "For support, privacy requests, security reports, legal notices, or accessibility feedback, contact us using the email above.",
-              "For upload, compression, download, or accessibility issues, include the page URL, browser, device, and a short description of what happened. Do not send video files by email unless QAVELIX specifically requests them.",
+              "For product questions, technical issues, privacy requests, feedback, tool suggestions, business inquiries, or accessibility feedback, contact us using the email above.",
+              "For upload, processing, download, or accessibility issues, include the page URL, browser, device, selected tool, and a short description of what happened. Do not send files by email unless QAVELIX specifically requests them.",
             ],
           },
           {
@@ -699,12 +919,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "QAVELIX Privacy Policy",
           description:
-            "Read how QAVELIX processes uploaded videos, file metadata, temporary files, logs, and browser preferences.",
+            "Read how QAVELIX processes uploaded files, file metadata, temporary files, logs, and browser preferences.",
         },
         eyebrow: "Privacy",
         title: "Privacy Policy",
         description:
-          "This notice explains how QAVELIX handles information when you use the video compressor.",
+          "This notice explains how QAVELIX handles information when you use its media tools.",
         sections: [
           {
             title: "Last updated",
@@ -715,21 +935,21 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Service operator and contact",
             body: [
-              "QAVELIX is the service name for this video compression application. The operator is the person or organization that deploys and makes this instance available.",
+              "QAVELIX is the service name for this media tools platform. The operator is the person or organization that deploys and makes this instance available.",
               "Contact us at {supportEmail}.",
             ],
           },
           {
             title: "Information processed",
             body: [
-              "QAVELIX processes the video you choose to upload, the file name, file size, declared file type, extension, and technical media information such as duration, codec, bitrate, resolution, frame rate, and container.",
-              "Uploaded videos may contain personal data if the video itself, file name, audio, or visual content identifies a person.",
+              "QAVELIX processes the file you choose to upload, the file name, file size, declared file type, extension, and tool-specific technical information such as duration, codec, bitrate, resolution, frame rate, and container when relevant.",
+              "Uploaded files may contain personal data if the file itself, file name, audio, visual content, or document content identifies a person.",
             ],
           },
           {
             title: "Temporary files and downloads",
             body: [
-              "Uploaded files are used to analyze and compress the selected video. Validated uploads are available for a short time so compression can start, and completed compressed files are available for a limited download period.",
+              "Uploaded files are used only for the tool action you request. Validated uploads are available for a short time so processing can start, and completed outputs are available for a limited download period.",
               "Source files and output files are removed after processing, cancellation, deletion, or expiration according to the application cleanup workflow.",
             ],
           },
@@ -737,7 +957,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Logs and security data",
             body: [
               "The server may process request metadata such as IP address, user agent, requested route, request timing, and security event information to protect the service, troubleshoot errors, and prevent misuse.",
-              "QAVELIX does not provide user accounts, payment processing, advertising profiles, or a permanent video library.",
+              "QAVELIX does not provide user accounts, payment processing, advertising profiles, or a permanent file library.",
             ],
           },
           {
@@ -757,7 +977,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Your requests",
             body: [
               "You may contact QAVELIX to ask about privacy, access, deletion, or correction requests related to information the service may process.",
-              "Because files are temporary, QAVELIX may not be able to locate a video after it has expired, been deleted, or completed cleanup.",
+              "Because files are temporary, QAVELIX may not be able to locate a file after it has expired, been deleted, or completed cleanup.",
             ],
           },
           {
@@ -774,12 +994,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "QAVELIX Terms of Service",
           description:
-            "Read the QAVELIX Terms of Service for video uploads, compression, temporary processing, downloads, and permitted use.",
+            "Read the QAVELIX Terms of Service for uploads, temporary processing, downloads, and permitted use.",
         },
         eyebrow: "Terms",
         title: "Terms of Service",
         description:
-          "These terms govern use of the QAVELIX video compressor.",
+          "These terms govern use of the QAVELIX media tools platform.",
         sections: [
           {
             title: "Last updated",
@@ -790,43 +1010,43 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Using the service",
             body: [
-              "QAVELIX lets you upload supported videos, choose a compression preset, and download a temporary optimized output.",
+              "QAVELIX lets you use supported tools to upload files, request temporary processing, and download temporary outputs when processing is available.",
               "By using QAVELIX, you confirm that you own the uploaded content or have permission to process it.",
             ],
           },
           {
             title: "Permitted and prohibited use",
             body: [
-              "Use QAVELIX only for lawful video processing. Do not upload content that is illegal, harmful, abusive, infringing, or that you are not allowed to process.",
+              "Use QAVELIX only for lawful file processing. Do not upload content that is illegal, harmful, abusive, infringing, or that you are not allowed to process.",
               "Do not attempt to bypass upload limits, security controls, origin checks, download protections, or temporary-file cleanup.",
             ],
           },
           {
             title: "Temporary processing and user responsibility",
             body: [
-              "Uploaded files and compressed outputs are temporary. Keep your own original copy because QAVELIX is not a backup or storage service.",
-              "Downloads may expire, and cancelled or deleted processing cannot be resumed without selecting the video again.",
+              "Uploaded files and generated outputs are temporary. Keep your own original copy because QAVELIX is not a backup or storage service.",
+              "Downloads may expire, and cancelled or deleted processing cannot be resumed without selecting the file again.",
             ],
           },
           {
-            title: "Compression results",
+            title: "Processing results",
             body: [
-              "QAVELIX does not guarantee a specific file size, quality level, playback compatibility, or percentage reduction.",
-              "Compression may reduce quality, change bitrate, and in some presets may reduce resolution. Some videos may not become smaller.",
+              "QAVELIX does not guarantee a specific file size, quality level, playback compatibility, output format behavior, or processing result.",
+              "Tool results depend on the uploaded file, selected action, browser behavior, and server environment. Some files may not produce the expected result.",
             ],
           },
           {
             title: "Availability and changes",
             body: [
               "The service may be unavailable, interrupted, rate-limited, or changed. QAVELIX may restrict use that appears abusive or harmful to the service.",
-              "You retain ownership of your content. QAVELIX receives only the permission needed to process the video you choose to upload and provide the requested output.",
+              "You retain ownership of your content. QAVELIX receives only the permission needed to process the file you choose to upload and provide the requested output.",
             ],
           },
           {
             title: "Disclaimers and liability",
             body: [
-              "QAVELIX is provided on an as-available basis without a promise that every file will compress successfully or remain downloadable for a specific period beyond the displayed availability window.",
-              "To the extent permitted by applicable law, QAVELIX is not responsible for lost files, lost data, failed compression, expired downloads, or indirect damages resulting from use of the service.",
+              "QAVELIX is provided on an as-available basis without a promise that every file will process successfully or remain downloadable for a specific period beyond the displayed availability window.",
+              "To the extent permitted by applicable law, QAVELIX is not responsible for lost files, lost data, failed processing, expired downloads, or indirect damages resulting from use of the service.",
             ],
           },
           {
@@ -898,13 +1118,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       accessibility: "Acessibilidade",
       readiness: "Confiabilidade",
       compressVideo: "Comprimir vídeo",
+      tools: "Ferramentas",
+      toolsVideoCategory: "Vídeo",
+      videoCompressorTool: "Compressor de Vídeo",
+      extractAudioTool: "Extrair Áudio",
       languageLabel: "Selecionar idioma",
       themeLabel: "Tema",
       lightTheme: "Claro",
       darkTheme: "Escuro",
       back: "Voltar",
-      backToCompressor: "Voltar ao compressor",
-      backToTop: "Voltar ao início",
+      backToTop: "Ir para o topo",
     },
     home: {
       eyebrow: "Compressor de vídeo",
@@ -1052,7 +1275,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Comprima um vídeo validado por vez. O progresso aparece enquanto o arquivo é preparado, e você pode cancelar enquanto o processamento estiver ativo.",
       dropTitle: "Solte um vídeo para começar",
       dropDescription:
-        "Seu vídeo é processado com segurança e removido automaticamente após o período de disponibilidade.",
+        "Formatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nTamanho permitido: 100 KB a 250 MB por vídeo.\nSeu vídeo é processado com segurança e removido automaticamente após o período de disponibilidade.",
       browseLabel: "Escolher vídeo",
       validationHelper:
         "Seu arquivo foi validado com sucesso. Confira as informações do arquivo abaixo, escolha o nível de compressão ideal para sua necessidade e inicie a compressão.",
@@ -1119,10 +1342,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       expiresLabel: "Expira em",
       downloadLabel: "Baixar",
       downloadAnywayLabel: "Baixar mesmo assim",
+      downloadFailedMessage:
+        "Não foi possível iniciar o download. Tente novamente.",
       deleteLabel: "Excluir arquivo",
       ineffectiveWarning:
         "Este vídeo já está altamente comprimido. Com o preset selecionado, o QAVELIX não conseguiu gerar um arquivo menor que o original. Experimente um dos presets sugeridos abaixo para priorizar uma estratégia de compressão diferente.",
       ineffectiveRecommendationLabel: "Presets recomendados",
+      predictedIncreaseWarning:
+        "Este vídeo já parece estar bastante otimizado para o preset selecionado. É muito provável que a compressão aumente o tamanho do arquivo. Experimente um dos presets alternativos abaixo.",
+      predictedIncreaseRecommendationLabel: "Presets com mais chance de reduzir o tamanho",
       successMessage: "✔ Compressão concluída com sucesso",
       successMessages: {
         excellent: "✔ Excelente economia de espaço.",
@@ -1171,6 +1399,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           "Não foi possível concluir esta ação. Exclua este arquivo e selecione o vídeo novamente.",
         sourceUnavailable:
           "Não foi possível continuar porque o arquivo original não está mais disponível nesta sessão. Exclua este arquivo e selecione o vídeo novamente.",
+        predictedIncrease:
+          "Este preset tem grande chance de aumentar o tamanho do arquivo para este vídeo. Escolha outro preset.",
       },
       oversizedFileMessage:
         "O arquivo selecionado possui {fileSize} e excede o limite máximo de upload de {maxSize}. Escolha um arquivo menor para continuar.",
@@ -1181,38 +1411,165 @@ const dictionaries: Record<Locale, Dictionary> = {
       phase: "Processamento de mídia com segurança e desempenho.",
       linksLabel: "Navegação do rodapé",
     },
+    tools: {
+      extractAudio: {
+        eyebrow: "Extrair áudio",
+        title: "Extraia áudio de vídeo",
+        subtitle: "Transforme seu vídeo em um arquivo de áudio MP3 limpo, com rapidez e segurança.",
+        description:
+          "Envie um vídeo compatível, revise o arquivo selecionado e prepare-o para extração em MP3. O processamento será conectado na próxima etapa de desenvolvimento.",
+        uploadTitle: "Solte um vídeo para extrair áudio",
+        uploadDescription:
+          "Escolha um arquivo de vídeo compatível para extração de áudio.\nFormatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nTamanho permitido: 100 KB a 250 MB por vídeo.",
+        privacyMessage:
+          "Os arquivos são tratados temporariamente e removidos automaticamente após o período de disponibilidade.",
+        chooseFile: "Escolher vídeo",
+        chooseAnotherFile: "Escolher outro vídeo",
+        statusTitle: "Extração de áudio",
+        statusWaiting: "Aguardando arquivo",
+        statusReady: "Arquivo pronto",
+        statusInvalid: "Vídeo inválido",
+        statusValidating: "Validando arquivo",
+        statusUploading: "Enviando vídeo",
+        statusAnalyzing: "Analisando vídeo",
+        statusProcessing: "Extraindo áudio",
+        statusPreparing: "Preparando download",
+        statusCompleted: "Concluído",
+        statusFailed: "Falha",
+        statusValidAudio: "Áudio válido detectado",
+        statusNoAudio: "Vídeo sem áudio",
+        analysisProgressMessage: "Verificando a faixa de áudio...",
+        extractionProgressMessage: "Convertendo o áudio para MP3...",
+        preparingDownloadMessage: "Preparando o download...",
+        selectedFile: "Arquivo selecionado",
+        fileName: "Nome do arquivo",
+        fileSize: "Tamanho do arquivo",
+        originalFileName: "Arquivo original",
+        generatedFileName: "Arquivo MP3",
+        originalFileSize: "Tamanho original",
+        audioFileSize: "Tamanho do áudio",
+        outputFormat: "Formato de saída",
+        outputFormatValue: "MP3",
+        extractButton: "Extrair áudio",
+        downloadButton: "Baixar",
+        downloadStartedMessage: "Download iniciado com sucesso.",
+        cancelButton: "Cancelar",
+        deleteButton: "Excluir arquivo",
+        nextStepMessage:
+          "A integração do processamento de extração de áudio é a próxima etapa de desenvolvimento. Nenhum arquivo foi enviado ou processado.",
+        infoTitle: "Como a extração de áudio vai funcionar",
+        infoItems: [
+          "Envie um arquivo de vídeo compatível.",
+          "O QAVELIX extrai a faixa de áudio como arquivo MP3.",
+          "Baixe o áudio quando o processamento terminar.",
+          "Arquivos temporários são removidos automaticamente após o período de disponibilidade.",
+        ],
+        faqTitle: "Perguntas frequentes sobre extração de áudio",
+        faqItems: [
+          {
+            question: "O que a ferramenta Extrair Áudio faz?",
+            answer:
+              "Ela vai criar um arquivo de áudio MP3 separado a partir de um vídeo enviado.",
+          },
+          {
+            question: "Quais formatos de vídeo serão aceitos?",
+            answer:
+              "O MVP usa os mesmos formatos aceitos pelo Compressor de Vídeo: MP4, M4V, MOV, WebM, AVI, MPG e MPEG.",
+          },
+          {
+            question: "A saída será em MP3?",
+            answer: "Sim. O formato de saída planejado para o MVP é MP3.",
+          },
+          {
+            question: "Qual é o limite de upload?",
+            answer: "O limite atual por arquivo é de 250 MB.",
+          },
+          {
+            question: "Como os arquivos são tratados?",
+            answer:
+              "Os arquivos são temporários e removidos automaticamente após o período de disponibilidade.",
+          },
+        ],
+        validation: {
+          multipleFiles: "Escolha apenas um arquivo de vídeo por vez.",
+          emptyFile: "O arquivo selecionado está vazio. Escolha outro vídeo.",
+          fileTooSmall:
+            "Este vídeo é pequeno demais para processamento. Escolha um vídeo de pelo menos 100 KB.",
+          fileTooLarge:
+            "Este vídeo excede o limite de upload de 250 MB. Escolha um vídeo menor para continuar.",
+          invalidExtension:
+            "Esta extensão de arquivo não é aceita. Escolha MP4, M4V, MOV, WebM, AVI, MPG ou MPEG.",
+          invalidMime:
+            "Este tipo de arquivo não é aceito. Escolha um arquivo de vídeo válido.",
+        },
+        errors: {
+          missingFile:
+            "Escolha um arquivo de vídeo compatível antes de extrair o áudio.",
+          emptyFile: "O arquivo selecionado está vazio. Escolha outro vídeo.",
+          fileTooSmall:
+            "Este vídeo é pequeno demais para processamento. Escolha um vídeo de pelo menos 100 KB.",
+          fileTooLarge:
+            "Este vídeo excede o limite de upload de 250 MB. Escolha um vídeo menor para continuar.",
+          unsupportedFormat:
+            "Este formato de vídeo não é aceito. Escolha MP4, MOV, AVI, WebM, M4V, MPEG ou MPG.",
+          invalidMedia:
+            "Este arquivo está corrompido ou não é um vídeo válido. Escolha outro arquivo para continuar.",
+          noAudio:
+            "Este vídeo não contém uma faixa de áudio. Escolha outro vídeo com áudio para continuar.",
+          silentAudio:
+            "Este vídeo está sem áudio. Escolha outro vídeo com som para continuar.",
+          ffprobeFailed:
+            "O QAVELIX não conseguiu analisar este vídeo. Escolha outro arquivo compatível.",
+          ffmpegFailed:
+            "O QAVELIX não conseguiu extrair o áudio deste vídeo. Escolha outro arquivo e tente novamente.",
+          analysisFailed:
+            "O QAVELIX não conseguiu concluir a análise de áudio. Escolha outro vídeo ou tente novamente.",
+          analysisTimeout:
+            "A análise de áudio demorou demais. Escolha um vídeo mais curto ou tente novamente.",
+          analysisCancelled: "A análise de áudio foi cancelada.",
+          timeout:
+            "A extração de áudio demorou demais. Escolha um vídeo mais curto ou tente novamente.",
+          serverError:
+            "A extração de áudio está temporariamente indisponível. Tente novamente em instantes.",
+          downloadUnavailable:
+            "Não foi possível preparar o download do MP3. Tente extrair o áudio novamente.",
+          networkError:
+            "Não foi possível concluir a solicitação. Verifique sua conexão e tente novamente.",
+        },
+      },
+    },
     pages: {
       about: {
         label: "Sobre",
         metadata: {
-          title: "Sobre o Compressor de Vídeo QAVELIX",
+          title: "Sobre o QAVELIX",
           description:
-            "Conheça como o QAVELIX ajuda a comprimir vídeos com presets simples, processamento temporário e orientação localizada.",
+            "Conheça como o QAVELIX está se tornando uma plataforma prática para ferramentas de mídia seguras.",
         },
         eyebrow: "Sobre",
-        title: "Comprima vídeos de forma simples e segura",
+        title: "Ferramentas de mídia práticas, criadas para clareza",
         description:
-          "O QAVELIX ajuda você a reduzir o tamanho de vídeos sem transformar compressão em uma tarefa técnica.",
+          "O QAVELIX é uma plataforma de ferramentas de mídia focadas, pensada para resolver tarefas de arquivo do dia a dia com menos atrito.",
         sections: [
           {
             title: "O que o QAVELIX faz",
             body: [
-              "O QAVELIX permite enviar um vídeo aceito, revisar as informações do arquivo, escolher um preset de compressão e baixar um resultado MP4 otimizado.",
-              "O serviço foi pensado para quem precisa de vídeos menores para compartilhar, publicar, armazenar ou enviar no dia a dia sem lidar com configurações avançadas.",
+              "O QAVELIX oferece atualmente o Compressor de Vídeo e está desenvolvendo ativamente a ferramenta Extrair Áudio como próxima ferramenta da plataforma.",
+              "A plataforma foi pensada para fluxos práticos de vídeo, áudio, imagem e PDF que devem parecer simples, não técnicos.",
             ],
           },
           {
-            title: "Processamento temporário",
+            title: "Processamento com foco em privacidade",
             body: [
-              "Os arquivos enviados são tratados como arquivos temporários de processamento. Os originais são removidos após processamento, cancelamento, exclusão ou expiração, e os downloads concluídos ficam disponíveis por tempo limitado.",
-              "O QAVELIX oferece suporte a português, inglês e espanhol, com o mesmo fluxo de compressão em todos os idiomas.",
+              "Os arquivos enviados são tratados como arquivos temporários de processamento. Arquivos de origem e resultados gerados são removidos após processamento, cancelamento, exclusão ou expiração conforme o fluxo de cada ferramenta.",
+              "O QAVELIX prioriza limites claros, orientação localizada e preferências mínimas no navegador em vez de contas, bibliotecas permanentes ou rastreamento desnecessário.",
             ],
           },
           {
-            title: "Controle por presets",
+            title: "Roteiro da plataforma",
             body: [
-              "Arquivo menor prioriza a menor saída possível. Equilibrada busca uma combinação prática entre qualidade e tamanho. Alta qualidade aplica compressão mais leve quando preservar detalhes é mais importante.",
-              "Os resultados variam conforme o vídeo original. Alguns vídeos já são muito comprimidos, e o QAVELIX informa quando um preset não consegue reduzir o arquivo.",
+              "O Compressor de Vídeo continua sendo a ferramenta atual em produção. Extrair Áudio está em desenvolvimento local e ainda não está conectado ao processamento.",
+              "Ferramentas futuras poderão expandir para vídeo, áudio, imagens e PDF quando puderem seguir os mesmos padrões de privacidade, simplicidade e confiabilidade.",
             ],
           },
         ],
@@ -1227,14 +1584,14 @@ const dictionaries: Record<Locale, Dictionary> = {
         eyebrow: "Contato",
         title: "Contato QAVELIX",
         description:
-          "O email abaixo é o canal oficial de contato para suporte, solicitações de privacidade, avisos de segurança, questões jurídicas e acessibilidade.",
+          "O email abaixo é o canal oficial para dúvidas sobre produtos, problemas técnicos, solicitações de privacidade, feedback, sugestões de ferramentas e contatos comerciais.",
         sections: [
           {
             title: "Contato geral",
             body: [
               "Email: {supportEmail}",
-              "Para suporte, solicitações de privacidade, avisos de segurança, questões jurídicas ou acessibilidade, entre em contato pelo email acima.",
-              "Para problemas de upload, compressão, download ou acessibilidade, inclua a URL da página, navegador, dispositivo e uma breve descrição do ocorrido. Não envie vídeos por email, a menos que o QAVELIX solicite especificamente.",
+              "Para dúvidas sobre produtos, problemas técnicos, solicitações de privacidade, feedback, sugestões de ferramentas, contatos comerciais ou acessibilidade, entre em contato pelo email acima.",
+              "Para problemas de upload, processamento, download ou acessibilidade, inclua a URL da página, navegador, dispositivo, ferramenta selecionada e uma breve descrição do ocorrido. Não envie arquivos por email, a menos que o QAVELIX solicite especificamente.",
             ],
           },
           {
@@ -1338,12 +1695,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Política de Privacidade do QAVELIX",
           description:
-            "Entenda como o QAVELIX processa vídeos enviados, metadados técnicos, arquivos temporários, logs e preferências do navegador.",
+            "Entenda como o QAVELIX processa arquivos enviados, metadados técnicos, arquivos temporários, logs e preferências do navegador.",
         },
         eyebrow: "Privacidade",
         title: "Política de Privacidade",
         description:
-          "Este aviso explica como o QAVELIX trata informações quando você usa o compressor de vídeo.",
+          "Este aviso explica como o QAVELIX trata informações quando você usa suas ferramentas de mídia.",
         sections: [
           {
             title: "Última atualização",
@@ -1354,21 +1711,21 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Operador do serviço e contato",
             body: [
-              "QAVELIX é o nome do serviço deste aplicativo de compressão de vídeo. O operador é a pessoa ou organização que implanta e disponibiliza esta instância.",
+              "QAVELIX é o nome do serviço desta plataforma de ferramentas de mídia. O operador é a pessoa ou organização que implanta e disponibiliza esta instância.",
               "Entre em contato pelo email {supportEmail}.",
             ],
           },
           {
             title: "Informações processadas",
             body: [
-              "O QAVELIX processa o vídeo que você escolhe enviar, nome do arquivo, tamanho, tipo declarado, extensão e informações técnicas de mídia, como duração, codec, taxa de bits, resolução, taxa de quadros e contêiner.",
-              "Vídeos enviados podem conter dados pessoais se o conteúdo visual, áudio ou nome do arquivo identificar uma pessoa.",
+              "O QAVELIX processa o arquivo que você escolhe enviar, nome do arquivo, tamanho, tipo declarado, extensão e informações técnicas específicas da ferramenta, como duração, codec, taxa de bits, resolução, taxa de quadros e contêiner quando aplicável.",
+              "Arquivos enviados podem conter dados pessoais se o próprio arquivo, nome, áudio, conteúdo visual ou conteúdo de documento identificar uma pessoa.",
             ],
           },
           {
             title: "Arquivos temporários e downloads",
             body: [
-              "Arquivos enviados são usados para analisar e comprimir o vídeo selecionado. Uploads validados ficam disponíveis por pouco tempo para iniciar a compressão, e arquivos comprimidos ficam disponíveis por um período limitado de download.",
+              "Arquivos enviados são usados apenas para a ação da ferramenta solicitada. Uploads validados ficam disponíveis por pouco tempo para iniciar o processamento, e resultados concluídos ficam disponíveis por um período limitado de download.",
               "Arquivos de origem e saída são removidos após processamento, cancelamento, exclusão ou expiração conforme o fluxo de limpeza do aplicativo.",
             ],
           },
@@ -1376,7 +1733,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Logs e dados de segurança",
             body: [
               "O servidor pode processar metadados de requisição, como endereço IP, agente do usuário, rota acessada, horários e eventos de segurança para proteger o serviço, investigar erros e evitar abuso.",
-              "O QAVELIX não oferece contas de usuário, processamento de pagamentos, perfis de publicidade nem biblioteca permanente de vídeos.",
+              "O QAVELIX não oferece contas de usuário, processamento de pagamentos, perfis de publicidade nem biblioteca permanente de arquivos.",
             ],
           },
           {
@@ -1396,7 +1753,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Suas solicitações",
             body: [
               "Você pode entrar em contato com o QAVELIX para tratar de privacidade, acesso, exclusão ou correção de informações que o serviço possa processar.",
-              "Como os arquivos são temporários, talvez o QAVELIX não consiga localizar um vídeo depois de expirado, excluído ou removido pelo fluxo de limpeza.",
+              "Como os arquivos são temporários, talvez o QAVELIX não consiga localizar um arquivo depois de expirado, excluído ou removido pelo fluxo de limpeza.",
             ],
           },
           {
@@ -1413,12 +1770,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Termos de Serviço do QAVELIX",
           description:
-            "Leia os Termos de Serviço do QAVELIX para uploads de vídeo, compressão, processamento temporário, downloads e uso permitido.",
+            "Leia os Termos de Serviço do QAVELIX para uploads, processamento temporário, downloads e uso permitido.",
         },
         eyebrow: "Termos",
         title: "Termos de Serviço",
         description:
-          "Estes termos regem o uso do compressor de vídeo QAVELIX.",
+          "Estes termos regem o uso da plataforma de ferramentas de mídia QAVELIX.",
         sections: [
           {
             title: "Última atualização",
@@ -1429,43 +1786,43 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Uso do serviço",
             body: [
-              "O QAVELIX permite enviar vídeos aceitos, escolher um preset de compressão e baixar uma saída otimizada temporária.",
+              "O QAVELIX permite usar ferramentas compatíveis para enviar arquivos, solicitar processamento temporário e baixar resultados temporários quando o processamento estiver disponível.",
               "Ao usar o QAVELIX, você confirma que é titular do conteúdo enviado ou tem permissão para processá-lo.",
             ],
           },
           {
             title: "Uso permitido e proibido",
             body: [
-              "Use o QAVELIX apenas para processamento lícito de vídeos. Não envie conteúdo ilegal, prejudicial, abusivo, infrator ou que você não tenha autorização para processar.",
+              "Use o QAVELIX apenas para processamento lícito de arquivos. Não envie conteúdo ilegal, prejudicial, abusivo, infrator ou que você não tenha autorização para processar.",
               "Não tente contornar limites de upload, controles de segurança, verificações de origem, proteções de download ou limpeza de arquivos temporários.",
             ],
           },
           {
             title: "Processamento temporário e responsabilidade do usuário",
             body: [
-              "Arquivos enviados e saídas comprimidas são temporários. Mantenha sua própria cópia original, pois o QAVELIX não é serviço de backup ou armazenamento.",
-              "Downloads podem expirar, e processamentos cancelados ou excluídos não podem ser retomados sem selecionar o vídeo novamente.",
+              "Arquivos enviados e resultados gerados são temporários. Mantenha sua própria cópia original, pois o QAVELIX não é serviço de backup ou armazenamento.",
+              "Downloads podem expirar, e processamentos cancelados ou excluídos não podem ser retomados sem selecionar o arquivo novamente.",
             ],
           },
           {
-            title: "Resultados de compressão",
+            title: "Resultados de processamento",
             body: [
-              "O QAVELIX não garante tamanho específico, nível de qualidade, compatibilidade de reprodução ou percentual de redução.",
-              "A compressão pode reduzir qualidade, alterar taxa de bits e, em alguns presets, reduzir resolução. Alguns vídeos podem não ficar menores.",
+              "O QAVELIX não garante tamanho específico, nível de qualidade, compatibilidade de reprodução, comportamento de formato de saída ou resultado de processamento.",
+              "Os resultados dependem do arquivo enviado, ação selecionada, comportamento do navegador e ambiente do servidor. Alguns arquivos podem não produzir o resultado esperado.",
             ],
           },
           {
             title: "Disponibilidade e alterações",
             body: [
               "O serviço pode ficar indisponível, ser interrompido, limitado ou alterado. O QAVELIX pode restringir usos que pareçam abusivos ou prejudiciais ao serviço.",
-              "Você mantém a titularidade do seu conteúdo. O QAVELIX recebe apenas a permissão necessária para processar o vídeo escolhido e fornecer a saída solicitada.",
+              "Você mantém a titularidade do seu conteúdo. O QAVELIX recebe apenas a permissão necessária para processar o arquivo escolhido e fornecer a saída solicitada.",
             ],
           },
           {
             title: "Isenções e responsabilidade",
             body: [
-              "O QAVELIX é fornecido conforme disponível, sem promessa de que todo arquivo será comprimido com sucesso ou ficará disponível para download além da janela exibida.",
-              "Na medida permitida pela lei aplicável, o QAVELIX não se responsabiliza por arquivos perdidos, dados perdidos, falha de compressão, downloads expirados ou danos indiretos decorrentes do uso do serviço.",
+              "O QAVELIX é fornecido conforme disponível, sem promessa de que todo arquivo será processado com sucesso ou ficará disponível para download além da janela exibida.",
+              "Na medida permitida pela lei aplicável, o QAVELIX não se responsabiliza por arquivos perdidos, dados perdidos, falha de processamento, downloads expirados ou danos indiretos decorrentes do uso do serviço.",
             ],
           },
           {
@@ -1537,13 +1894,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       accessibility: "Accesibilidad",
       readiness: "Fiabilidad",
       compressVideo: "Comprimir video",
+      tools: "Herramientas",
+      toolsVideoCategory: "Video",
+      videoCompressorTool: "Compresor de video",
+      extractAudioTool: "Extraer audio",
       languageLabel: "Seleccionar idioma",
       themeLabel: "Tema",
       lightTheme: "Claro",
       darkTheme: "Oscuro",
       back: "Volver",
-      backToCompressor: "Volver al compresor",
-      backToTop: "Volver al inicio",
+      backToTop: "Ir arriba",
     },
     home: {
       eyebrow: "Compresor de vídeo",
@@ -1691,7 +2051,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Comprime un video validado cada vez. El progreso se muestra mientras se prepara el archivo, y puedes cancelar mientras el procesamiento está activo.",
       dropTitle: "Suelta un video para comenzar",
       dropDescription:
-        "Tu video se procesa de forma segura y se elimina automáticamente después de su período de disponibilidad.",
+        "Formatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nTamaño permitido: 100 KB a 250 MB por video.\nTu video se procesa de forma segura y se elimina automáticamente después del periodo de disponibilidad.",
       browseLabel: "Elegir video",
       validationHelper:
         "Tu archivo se ha validado correctamente. Revisa la información del archivo, elige el nivel de compresión que mejor se adapte a lo que necesitas e inicia la compresión.",
@@ -1758,10 +2118,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       expiresLabel: "Caduca",
       downloadLabel: "Descargar",
       downloadAnywayLabel: "Descargar igualmente",
+      downloadFailedMessage:
+        "No se pudo iniciar la descarga. Inténtalo de nuevo.",
       deleteLabel: "Eliminar archivo",
       ineffectiveWarning:
         "Este vídeo ya está muy comprimido. Con el ajuste seleccionado, QAVELIX no ha podido generar un archivo más pequeño que el original. Prueba uno de los ajustes sugeridos para priorizar otra estrategia de compresión.",
       ineffectiveRecommendationLabel: "Ajustes recomendados",
+      predictedIncreaseWarning:
+        "Este vídeo ya parece estar muy optimizado para el ajuste seleccionado. Es muy probable que la compresión aumente el tamaño del archivo. Prueba uno de los ajustes alternativos a continuación.",
+      predictedIncreaseRecommendationLabel: "Ajustes con más probabilidad de reducir el tamaño",
       successMessage: "✔ Compresión completada correctamente",
       successMessages: {
         excellent: "✔ Excelente ahorro de espacio.",
@@ -1811,6 +2176,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           "No se ha podido completar esta acción. Elimina este archivo y selecciona el vídeo de nuevo.",
         sourceUnavailable:
           "La compresión no puede continuar porque el archivo original ya no está disponible en esta sesión. Elimina este archivo y selecciona el vídeo de nuevo.",
+        predictedIncrease:
+          "Es muy probable que este ajuste aumente el tamaño del archivo para este vídeo. Elige otro ajuste.",
       },
       oversizedFileMessage:
         "El archivo seleccionado tiene un tamaño de {fileSize} y supera el límite máximo de carga de {maxSize}. Selecciona un archivo más pequeño para continuar.",
@@ -1821,38 +2188,165 @@ const dictionaries: Record<Locale, Dictionary> = {
       phase: "Procesamiento multimedia seguro y fiable.",
       linksLabel: "Navegación del pie de página",
     },
+    tools: {
+      extractAudio: {
+        eyebrow: "Extraer audio",
+        title: "Extrae audio de video",
+        subtitle: "Convierte tu video en un archivo de audio MP3 limpio, rápido y seguro.",
+        description:
+          "Sube un video compatible, revisa el archivo seleccionado y prepáralo para la extracción en MP3. El procesamiento se conectará en la siguiente fase de desarrollo.",
+        uploadTitle: "Suelta un video para extraer el audio",
+        uploadDescription:
+          "Elige un archivo de video compatible para extraer el audio.\nFormatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nTamaño permitido: 100 KB a 250 MB por video.",
+        privacyMessage:
+          "Los archivos se gestionan temporalmente y se eliminan automáticamente después del periodo de disponibilidad.",
+        chooseFile: "Elegir video",
+        chooseAnotherFile: "Elegir otro video",
+        statusTitle: "Extracción de audio",
+        statusWaiting: "Esperando archivo",
+        statusReady: "Archivo listo",
+        statusInvalid: "Vídeo inválido",
+        statusValidating: "Validando archivo",
+        statusUploading: "Subiendo video",
+        statusAnalyzing: "Analizando video",
+        statusProcessing: "Extrayendo audio",
+        statusPreparing: "Preparando descarga",
+        statusCompleted: "Completado",
+        statusFailed: "Error",
+        statusValidAudio: "Audio válido detectado",
+        statusNoAudio: "Video sin audio",
+        analysisProgressMessage: "Verificando la pista de audio...",
+        extractionProgressMessage: "Convirtiendo el audio a MP3...",
+        preparingDownloadMessage: "Preparando la descarga...",
+        selectedFile: "Archivo seleccionado",
+        fileName: "Nombre del archivo",
+        fileSize: "Tamaño del archivo",
+        originalFileName: "Archivo original",
+        generatedFileName: "Archivo MP3",
+        originalFileSize: "Tamaño original",
+        audioFileSize: "Tamaño del audio",
+        outputFormat: "Formato de salida",
+        outputFormatValue: "MP3",
+        extractButton: "Extraer audio",
+        downloadButton: "Descargar",
+        downloadStartedMessage: "La descarga se inició correctamente.",
+        cancelButton: "Cancelar",
+        deleteButton: "Eliminar archivo",
+        nextStepMessage:
+          "La integración del procesamiento de extracción de audio es el siguiente paso de desarrollo. Todavía no se ha subido ni procesado ningún archivo.",
+        infoTitle: "Cómo funcionará Extraer audio",
+        infoItems: [
+          "Sube un archivo de video compatible.",
+          "QAVELIX extrae la pista de audio como archivo MP3.",
+          "Descarga el audio cuando finalice el procesamiento.",
+          "Los archivos temporales se eliminan automáticamente después del periodo de disponibilidad.",
+        ],
+        faqTitle: "Preguntas frecuentes sobre Extraer audio",
+        faqItems: [
+          {
+            question: "¿Qué hace Extraer audio?",
+            answer:
+              "Creará un archivo de audio MP3 separado a partir de un video subido.",
+          },
+          {
+            question: "¿Qué formatos de video serán compatibles?",
+            answer:
+              "El MVP usa los mismos formatos admitidos por el Compresor de video: MP4, M4V, MOV, WebM, AVI, MPG y MPEG.",
+          },
+          {
+            question: "¿La salida será MP3?",
+            answer: "Sí. El formato de salida previsto para el MVP es MP3.",
+          },
+          {
+            question: "¿Cuál es el límite de subida?",
+            answer: "El límite actual por archivo es de 250 MB.",
+          },
+          {
+            question: "¿Cómo se gestionan los archivos?",
+            answer:
+              "Los archivos son temporales y se eliminan automáticamente después del periodo de disponibilidad.",
+          },
+        ],
+        validation: {
+          multipleFiles: "Elige un solo archivo de video cada vez.",
+          emptyFile: "El archivo seleccionado está vacío. Elige otro video.",
+          fileTooSmall:
+            "Este video es demasiado pequeño para procesarlo. Elige un video de al menos 100 KB.",
+          fileTooLarge:
+            "Este video supera el límite de subida de 250 MB. Elige un video más pequeño para continuar.",
+          invalidExtension:
+            "Esta extensión de archivo no es compatible. Elige MP4, M4V, MOV, WebM, AVI, MPG o MPEG.",
+          invalidMime:
+            "Este tipo de archivo no es compatible. Elige un archivo de video válido.",
+        },
+        errors: {
+          missingFile:
+            "Elige un archivo de video compatible antes de extraer el audio.",
+          emptyFile: "El archivo seleccionado está vacío. Elige otro video.",
+          fileTooSmall:
+            "Este video es demasiado pequeño para procesarlo. Elige un video de al menos 100 KB.",
+          fileTooLarge:
+            "Este video supera el límite de subida de 250 MB. Elige un video más pequeño para continuar.",
+          unsupportedFormat:
+            "Este formato de video no es compatible. Elige MP4, MOV, AVI, WebM, M4V, MPEG o MPG.",
+          invalidMedia:
+            "Este archivo está dañado o no es un video válido. Elige otro archivo para continuar.",
+          noAudio:
+            "Este video no contiene una pista de audio. Elige otro video con audio para continuar.",
+          silentAudio:
+            "Este video está sin audio. Elige otro video con sonido para continuar.",
+          ffprobeFailed:
+            "QAVELIX no ha podido analizar este video. Elige otro archivo compatible.",
+          ffmpegFailed:
+            "QAVELIX no ha podido extraer el audio de este video. Elige otro archivo e inténtalo de nuevo.",
+          analysisFailed:
+            "QAVELIX no ha podido completar el análisis de audio. Elige otro video o inténtalo de nuevo.",
+          analysisTimeout:
+            "El análisis de audio ha tardado demasiado. Elige un video más corto o inténtalo de nuevo.",
+          analysisCancelled: "El análisis de audio se ha cancelado.",
+          timeout:
+            "La extracción de audio ha tardado demasiado. Elige un video más corto o inténtalo de nuevo.",
+          serverError:
+            "La extracción de audio no está disponible temporalmente. Inténtalo de nuevo en unos instantes.",
+          downloadUnavailable:
+            "No se ha podido preparar la descarga del MP3. Intenta extraer el audio de nuevo.",
+          networkError:
+            "No se ha podido completar la solicitud. Comprueba tu conexión e inténtalo de nuevo.",
+        },
+      },
+    },
     pages: {
       about: {
         label: "Acerca de",
         metadata: {
-          title: "Acerca del Compresor de Video QAVELIX",
+          title: "Acerca de QAVELIX",
           description:
-            "Descubre cómo QAVELIX ayuda a comprimir videos con ajustes sencillos, procesamiento temporal y orientación localizada.",
+            "Descubre cómo QAVELIX se está convirtiendo en una plataforma práctica para herramientas multimedia seguras.",
         },
         eyebrow: "Acerca de",
-        title: "Compresión de video simple y segura",
+        title: "Herramientas multimedia prácticas, creadas para aportar claridad",
         description:
-          "QAVELIX te ayuda a reducir el tamaño de tus videos sin convertir la compresión en una tarea técnica.",
+          "QAVELIX es una plataforma de herramientas multimedia enfocadas, pensada para resolver tareas cotidianas con archivos de forma más sencilla.",
         sections: [
           {
             title: "Qué hace QAVELIX",
             body: [
-              "QAVELIX te permite subir un video admitido, revisar la información del archivo, elegir un ajuste de compresión y descargar un resultado MP4 optimizado.",
-              "El servicio está pensado para quienes necesitan videos más pequeños para compartir, publicar, almacenar o enviar a diario sin manejar ajustes avanzados.",
+              "QAVELIX ofrece actualmente el Compresor de Video y está desarrollando activamente Extraer Audio como la siguiente herramienta de la plataforma.",
+              "La plataforma está pensada para flujos prácticos de video, audio, imagen y PDF que deben sentirse sencillos, no técnicos.",
             ],
           },
           {
-            title: "Procesamiento temporal",
+            title: "Procesamiento con enfoque de privacidad",
             body: [
-              "Los archivos subidos se tratan como archivos temporales de procesamiento. Los originales se eliminan tras el procesamiento, la cancelación, la eliminación o la caducidad, y las descargas completadas solo están disponibles durante un tiempo limitado.",
-              "QAVELIX está disponible en portugués, inglés y español, con el mismo flujo de compresión en cada idioma.",
+              "Los archivos subidos se tratan como archivos temporales de procesamiento. Los archivos de origen y los resultados generados se eliminan tras el procesamiento, la cancelación, la eliminación o la caducidad según el flujo de cada herramienta.",
+              "QAVELIX prioriza límites claros, orientación localizada y preferencias mínimas en el navegador en lugar de cuentas, bibliotecas permanentes o seguimiento innecesario.",
             ],
           },
           {
-            title: "Control mediante ajustes",
+            title: "Hoja de ruta de la plataforma",
             body: [
-              "Archivo menor prioriza la salida más pequeña posible. Equilibrada busca una combinación práctica entre calidad y tamaño. Alta calidad aplica una compresión más ligera cuando preservar detalle importa más.",
-              "Los resultados dependen del video original. Algunos videos ya están muy comprimidos, y QAVELIX avisa cuando un ajuste no consigue reducir el archivo.",
+              "El Compresor de Video sigue siendo la herramienta actual en producción. Extraer Audio está en desarrollo local y aún no está conectado al procesamiento.",
+              "Las futuras herramientas podrán ampliarse a video, audio, imágenes y PDF cuando puedan mantener los mismos estándares de privacidad, sencillez y fiabilidad.",
             ],
           },
         ],
@@ -1867,14 +2361,14 @@ const dictionaries: Record<Locale, Dictionary> = {
         eyebrow: "Contacto",
         title: "Contacto QAVELIX",
         description:
-          "El correo indicado abajo es el canal oficial de contacto para soporte, solicitudes de privacidad, avisos de seguridad, asuntos legales y comentarios sobre accesibilidad.",
+          "El correo indicado abajo es el canal oficial para preguntas sobre producto, problemas técnicos, solicitudes de privacidad, comentarios, sugerencias de herramientas y consultas comerciales.",
         sections: [
           {
             title: "Contacto general",
             body: [
               "Email: {supportEmail}",
-              "Para soporte, solicitudes de privacidad, avisos de seguridad, asuntos legales o comentarios sobre accesibilidad, contáctanos mediante el correo anterior.",
-              "Para problemas de carga, compresión, descarga o accesibilidad, incluye la URL de la página, navegador, dispositivo y una breve descripción de lo ocurrido. No envíes videos por email salvo que QAVELIX lo solicite expresamente.",
+              "Para preguntas sobre producto, problemas técnicos, solicitudes de privacidad, comentarios, sugerencias de herramientas, consultas comerciales o accesibilidad, contáctanos mediante el correo anterior.",
+              "Para problemas de subida, procesamiento, descarga o accesibilidad, incluye la URL de la página, navegador, dispositivo, herramienta seleccionada y una breve descripción de lo ocurrido. No envíes archivos por email salvo que QAVELIX lo solicite expresamente.",
             ],
           },
           {
@@ -1978,12 +2472,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Política de Privacidad de QAVELIX",
           description:
-            "Consulta cómo QAVELIX procesa videos subidos, metadatos técnicos, archivos temporales, registros y preferencias del navegador.",
+            "Consulta cómo QAVELIX procesa archivos subidos, metadatos técnicos, archivos temporales, registros y preferencias del navegador.",
         },
         eyebrow: "Privacidad",
         title: "Política de Privacidad",
         description:
-          "Este aviso explica cómo QAVELIX gestiona información cuando usas el compresor de video.",
+          "Este aviso explica cómo QAVELIX gestiona información cuando usas sus herramientas multimedia.",
         sections: [
           {
             title: "Última actualización",
@@ -1994,21 +2488,21 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Operador del servicio y contacto",
             body: [
-              "QAVELIX es el nombre del servicio de esta aplicación de compresión de video. El operador es la persona u organización que despliega y pone disponible esta instancia.",
+              "QAVELIX es el nombre del servicio de esta plataforma de herramientas multimedia. El operador es la persona u organización que despliega y pone disponible esta instancia.",
               "Contáctanos en {supportEmail}.",
             ],
           },
           {
             title: "Información procesada",
             body: [
-              "QAVELIX procesa el video que eliges subir, nombre del archivo, tamaño, tipo declarado, extensión e información técnica multimedia como duración, códec, tasa de bits, resolución, frecuencia de fotogramas y contenedor.",
-              "Los videos subidos pueden contener datos personales si el contenido visual, audio o nombre del archivo identifica a una persona.",
+              "QAVELIX procesa el archivo que eliges subir, nombre, tamaño, tipo declarado, extensión e información técnica específica de la herramienta, como duración, códec, tasa de bits, resolución, frecuencia de fotogramas y contenedor cuando corresponda.",
+              "Los archivos subidos pueden contener datos personales si el propio archivo, el nombre, el audio, el contenido visual o el contenido de un documento identifica a una persona.",
             ],
           },
           {
             title: "Archivos temporales y descargas",
             body: [
-              "Los archivos subidos se usan para analizar y comprimir el video seleccionado. Las cargas validadas están disponibles durante poco tiempo para iniciar la compresión, y los archivos comprimidos quedan disponibles durante un periodo limitado de descarga.",
+              "Los archivos subidos se usan solo para la acción de herramienta que solicitas. Las cargas validadas están disponibles durante poco tiempo para iniciar el procesamiento, y los resultados completados quedan disponibles durante un periodo limitado de descarga.",
               "Los archivos de origen y salida se eliminan tras el procesamiento, la cancelación, la eliminación o la caducidad según el flujo de limpieza de la aplicación.",
             ],
           },
@@ -2016,7 +2510,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Registros y datos de seguridad",
             body: [
               "El servidor puede procesar metadatos de solicitud como dirección IP, agente de usuario, ruta solicitada, horarios e información de eventos de seguridad para proteger el servicio, solucionar errores y prevenir abusos.",
-              "QAVELIX no ofrece cuentas de usuario, procesamiento de pagos, perfiles publicitarios ni biblioteca permanente de videos.",
+              "QAVELIX no ofrece cuentas de usuario, procesamiento de pagos, perfiles publicitarios ni biblioteca permanente de archivos.",
             ],
           },
           {
@@ -2036,7 +2530,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Tus solicitudes",
             body: [
               "Puedes contactar con QAVELIX para consultas de privacidad, acceso, eliminación o corrección relacionadas con información que el servicio pueda procesar.",
-              "Como los archivos son temporales, es posible que QAVELIX no pueda localizar un video después de que haya caducado, se haya eliminado o se haya limpiado.",
+              "Como los archivos son temporales, es posible que QAVELIX no pueda localizar un archivo después de que haya caducado, se haya eliminado o se haya limpiado.",
             ],
           },
           {
@@ -2053,12 +2547,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Términos de Servicio de QAVELIX",
           description:
-            "Lee los Términos de Servicio de QAVELIX para cargas de video, compresión, procesamiento temporal, descargas y uso permitido.",
+            "Lee los Términos de Servicio de QAVELIX para subidas, procesamiento temporal, descargas y uso permitido.",
         },
         eyebrow: "Términos",
         title: "Términos de Servicio",
         description:
-          "Estos términos regulan el uso del compresor de video QAVELIX.",
+          "Estos términos regulan el uso de la plataforma de herramientas multimedia QAVELIX.",
         sections: [
           {
             title: "Última actualización",
@@ -2069,43 +2563,43 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Uso del servicio",
             body: [
-              "QAVELIX permite subir videos admitidos, elegir un ajuste de compresión y descargar una salida optimizada temporal.",
+              "QAVELIX permite usar herramientas compatibles para subir archivos, solicitar procesamiento temporal y descargar resultados temporales cuando el procesamiento está disponible.",
               "Al usar QAVELIX, confirmas que eres titular del contenido subido o tienes permiso para procesarlo.",
             ],
           },
           {
             title: "Uso permitido y prohibido",
             body: [
-              "Usa QAVELIX solo para procesamiento lícito de videos. No subas contenido ilegal, perjudicial, abusivo, infractor o que no estés autorizado a procesar.",
+              "Usa QAVELIX solo para procesamiento lícito de archivos. No subas contenido ilegal, perjudicial, abusivo, infractor o que no estés autorizado a procesar.",
               "No intentes eludir límites de carga, controles de seguridad, comprobaciones de origen, protecciones de descarga o limpieza de archivos temporales.",
             ],
           },
           {
             title: "Procesamiento temporal y responsabilidad del usuario",
             body: [
-              "Los archivos subidos y las salidas comprimidas son temporales. Conserva tu propia copia original, porque QAVELIX no es un servicio de copia de seguridad ni almacenamiento.",
-              "Las descargas pueden caducar, y los procesamientos cancelados o eliminados no pueden reanudarse sin seleccionar el video de nuevo.",
+              "Los archivos subidos y los resultados generados son temporales. Conserva tu propia copia original, porque QAVELIX no es un servicio de copia de seguridad ni almacenamiento.",
+              "Las descargas pueden caducar, y los procesamientos cancelados o eliminados no pueden reanudarse sin seleccionar el archivo de nuevo.",
             ],
           },
           {
-            title: "Resultados de compresión",
+            title: "Resultados de procesamiento",
             body: [
-              "QAVELIX no garantiza un tamaño de archivo concreto, nivel de calidad, compatibilidad de reproducción ni porcentaje de reducción.",
-              "La compresión puede reducir la calidad, cambiar la tasa de bits y, en algunos ajustes, reducir la resolución. Algunos videos pueden no hacerse más pequeños.",
+              "QAVELIX no garantiza un tamaño de archivo concreto, nivel de calidad, compatibilidad de reproducción, comportamiento del formato de salida ni resultado de procesamiento.",
+              "Los resultados dependen del archivo subido, la acción seleccionada, el comportamiento del navegador y el entorno del servidor. Algunos archivos pueden no producir el resultado esperado.",
             ],
           },
           {
             title: "Disponibilidad y cambios",
             body: [
               "El servicio puede no estar disponible, sufrir interrupciones, limitarse o cambiar. QAVELIX puede restringir usos que parezcan abusivos o perjudiciales para el servicio.",
-              "Conservas la titularidad de tu contenido. QAVELIX recibe solo el permiso necesario para procesar el video elegido y proporcionar la salida solicitada.",
+              "Conservas la titularidad de tu contenido. QAVELIX recibe solo el permiso necesario para procesar el archivo elegido y proporcionar la salida solicitada.",
             ],
           },
           {
             title: "Exenciones y responsabilidad",
             body: [
-              "QAVELIX se proporciona según disponibilidad, sin prometer que todos los archivos se comprimirán correctamente ni que permanecerán descargables más allá de la ventana de disponibilidad indicada.",
-              "En la medida permitida por la ley aplicable, QAVELIX no responde por archivos perdidos, datos perdidos, fallos de compresión, descargas caducadas ni daños indirectos derivados del uso del servicio.",
+              "QAVELIX se proporciona según disponibilidad, sin prometer que todos los archivos se procesarán correctamente ni que permanecerán descargables más allá de la ventana de disponibilidad indicada.",
+              "En la medida permitida por la ley aplicable, QAVELIX no responde por archivos perdidos, datos perdidos, fallos de procesamiento, descargas caducadas ni daños indirectos derivados del uso del servicio.",
             ],
           },
           {

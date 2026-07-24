@@ -1,0 +1,16 @@
+
+> qavelix@0.1.0 dev
+> next dev --port 3000
+
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.18:3000
+- Environments: .env.local
+✓ Ready in 5.4s
+○ Compiling proxy ...
+- Experiments (use with caution):
+  · proxyClientMaxBodySize: 264241152
+
+○ Compiling /[locale] ...
+○ Compiling /_error ...
+ GET /en 500 in 296ms (next.js: 230ms, proxy.ts: 37ms, application-code: 29ms)

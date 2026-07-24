@@ -1,7 +1,16 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { createReadStream, type ReadStream } from "node:fs";
-import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
+import { type ReadStream } from "node:fs";
+import {
+  mkdir,
+  open,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -538,11 +547,16 @@ async function runJob(job: CompressionJob) {
     ffmpegTimeout.unref();
 
     job.process = ffmpeg;
-    await persistStatus(job, "running");
-    logCompressionStage("compression_ffmpeg_spawned", {
-      jobId: job.id,
-      pid: ffmpeg.pid ?? null,
-    });
+
+    if (job.status === "cancelled") {
+      ffmpeg.kill("SIGTERM");
+    } else {
+      await persistStatus(job, "running");
+      logCompressionStage("compression_ffmpeg_spawned", {
+        jobId: job.id,
+        pid: ffmpeg.pid ?? null,
+      });
+    }
 
     ffmpeg.stdout.on("data", (chunk: Buffer) => {
       const progress = parseProgress(chunk, metadata.durationSeconds);
@@ -839,7 +853,7 @@ export async function cancelCompressionJob(id: string) {
     return snapshot(job);
   }
 
-  if (job.status === "running") {
+  if (job.status === "starting" || job.status === "running") {
     await persistStatus(job, "cancelled");
     job.process?.kill("SIGTERM");
     return snapshot(job);
@@ -904,11 +918,28 @@ export async function readCompressionDownload(
     return null;
   }
 
+  let outputFile;
+  let outputStats;
+
+  try {
+    outputFile = await open(job.outputPath, "r");
+    outputStats = await outputFile.stat();
+  } catch {
+    return null;
+  }
+
+  if (!outputStats.isFile()) {
+    await outputFile.close();
+    return null;
+  }
+
   return {
     fileName: `${path.parse(job.originalName).name}.qavelix-compressed.mp4`,
     contentType: "video/mp4",
-    contentLength: (await stat(job.outputPath)).size,
-    stream: createReadStream(job.outputPath),
+    contentLength: outputStats.size,
+    stream: outputFile.createReadStream({
+      autoClose: true,
+    }),
   };
 }
 

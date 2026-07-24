@@ -56,6 +56,23 @@ export function HomepageContent() {
         </aside>
       </section>
 
+      <section className="content-section" id="faq">
+        <SectionHeading
+          description={dictionary.pages.faq.description}
+          eyebrow={dictionary.pages.faq.eyebrow}
+          title={dictionary.pages.faq.title}
+        />
+        <div className="feature-grid">
+          {dictionary.pages.faq.sections.slice(0, 6).map((item) => (
+            <FoundationCard
+              description={item.body.join(" ")}
+              key={item.title}
+              title={item.title}
+            />
+          ))}
+        </div>
+      </section>
+
       <section className="card-grid" aria-label={dictionary.home.eyebrow}>
         {dictionary.home.principles.map((principle) => (
           <FoundationCard

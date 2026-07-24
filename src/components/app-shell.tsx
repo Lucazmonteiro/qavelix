@@ -36,6 +36,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
       <NavigationControls
         backLabel={dictionary.navigation.back}
         backToTopLabel={dictionary.navigation.backToTop}
+        locale={locale}
       />
       <AppHeader dictionary={dictionary} locale={locale} />
       {children}

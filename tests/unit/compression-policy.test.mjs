@@ -264,8 +264,9 @@ test("compression worker bounds FFmpeg diagnostics and fails safely", () => {
 });
 
 test("compression downloads are streamed instead of fully buffered", () => {
-  assert.match(compressionQueueSource, /createReadStream\(job\.outputPath\)/);
-  assert.match(compressionQueueSource, /contentLength: \(await stat\(job\.outputPath\)\)\.size/);
+  assert.match(compressionQueueSource, /outputFile = await open\(job\.outputPath, "r"\)/);
+  assert.match(compressionQueueSource, /outputFile\.createReadStream/);
+  assert.match(compressionQueueSource, /contentLength: outputStats\.size/);
   assert.doesNotMatch(compressionQueueSource, /bytes: await readFile\(job\.outputPath\)/);
   assert.match(downloadRouteSource, /Readable\.toWeb\(download\.stream\)/);
   assert.match(downloadRouteSource, /"Content-Length": String\(download\.contentLength\)/);
