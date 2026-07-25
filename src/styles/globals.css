@@ -1982,6 +1982,182 @@ button.tools-menu__item:disabled {
   font-size: 0.92rem;
 }
 
+/* Dashboard (Milestone 3) — the cards below deliberately reuse .foundation-card
+   (border/radius/background/shadow already defined for it) rather than a new card
+   class; only the dashboard-specific layout/nav/status pieces are new here. */
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  padding-block: clamp(2rem, 5vw, 3.5rem);
+}
+
+.dashboard-nav {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  position: sticky;
+  top: 5.5rem;
+}
+
+.dashboard-nav__link {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+  border-radius: 8px;
+  padding-inline: 0.9rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.dashboard-nav__link:hover {
+  color: var(--foreground);
+  background: var(--surface-muted);
+}
+
+.dashboard-nav__link[aria-current="page"] {
+  color: var(--accent-foreground);
+  background: var(--accent);
+}
+
+.dashboard-content {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2rem);
+  min-width: 0;
+}
+
+.dashboard-header {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  line-height: 1.15;
+}
+
+.dashboard-header p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.dashboard-card__title {
+  margin: 0 0 0.9rem;
+  font-size: 1.05rem;
+}
+
+.dashboard-summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-summary-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dashboard-summary-row dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.dashboard-summary-row dd {
+  margin: 0;
+  color: var(--foreground);
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.dashboard-status--positive {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.dashboard-status--neutral {
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+.dashboard-tool-card {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.dashboard-tool-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.dashboard-placeholder {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}
+
+.dashboard-placeholder__badge {
+  display: inline-flex;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.6rem;
+  text-transform: uppercase;
+}
+
+.dashboard-placeholder p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.dashboard-loading {
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  padding-block: clamp(3rem, 8vw, 6rem);
+  color: var(--muted);
+}
+
+.dashboard-error {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+  padding-block: clamp(2rem, 5vw, 3rem);
+}
+
 @media (max-width: 980px) {
   .site-header__inner {
     grid-template-areas:
@@ -2039,6 +2215,18 @@ button.tools-menu__item:disabled {
 
   .site-footer__links {
     justify-content: flex-start;
+  }
+
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-nav {
+    position: static;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
   }
 }
 

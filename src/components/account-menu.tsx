@@ -111,6 +111,14 @@ export function AccountMenu({ locale, dictionary }: AccountMenuProps) {
           <span>{copy.accountMenu.signedInAsLabel}</span>
           <strong>{user.name || user.email}</strong>
         </div>
+        <a
+          className="tools-menu__item"
+          href={`/${locale}/dashboard`}
+          onClick={() => setIsOpen(false)}
+          role="menuitem"
+        >
+          <span>{copy.accountMenu.dashboardLabel}</span>
+        </a>
         <button
           className="tools-menu__item"
           disabled={isSigningOut}

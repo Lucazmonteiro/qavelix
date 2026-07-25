@@ -16,9 +16,17 @@ type FieldErrors = {
   confirmPassword?: string;
 };
 
-export function SignUpForm() {
+type SignUpFormProps = {
+  // Already sanitized server-side (sanitizeCallbackPath) before this component sees it.
+  callbackURL?: string | null;
+};
+
+export function SignUpForm({ callbackURL }: SignUpFormProps) {
   const { dictionary, locale } = useLocaleState();
   const copy = dictionary.auth;
+  const signInHref = callbackURL
+    ? `/${locale}/sign-in?callbackURL=${encodeURIComponent(callbackURL)}`
+    : `/${locale}/sign-in`;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -93,7 +101,7 @@ export function SignUpForm() {
         eyebrow={copy.signUp.eyebrow}
         title={copy.signUp.successTitle}
       >
-        <a className="button button--primary auth-form__submit" href={`/${locale}`}>
+        <a className="button button--primary auth-form__submit" href={callbackURL ?? `/${locale}`}>
           {copy.verifyEmail.goHomeLabel}
         </a>
       </AuthFormShell>
@@ -107,7 +115,7 @@ export function SignUpForm() {
       title={copy.signUp.title}
       footer={
         <p>
-          {copy.signUp.hasAccountPrompt} <a href={`/${locale}/sign-in`}>{copy.signUp.signInLink}</a>
+          {copy.signUp.hasAccountPrompt} <a href={signInHref}>{copy.signUp.signInLink}</a>
         </p>
       }
     >

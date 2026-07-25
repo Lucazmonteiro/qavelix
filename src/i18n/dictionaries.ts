@@ -414,12 +414,63 @@ export type Dictionary = {
     };
     accountMenu: {
       openLabel: string;
+      dashboardLabel: string;
       signedInAsLabel: string;
       signOutLabel: string;
       signingOutLabel: string;
     };
     guestNav: {
       signInLabel: string;
+    };
+  };
+  dashboard: {
+    nav: {
+      navLabel: string;
+      overview: string;
+      usage: string;
+      plan: string;
+      billing: string;
+      settings: string;
+    };
+    overview: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      welcomeGreeting: string;
+      welcomeFallbackName: string;
+      accountSummary: {
+        title: string;
+        emailLabel: string;
+        verifiedLabel: string;
+        unverifiedLabel: string;
+        membershipLabel: string;
+        freeAccountLabel: string;
+      };
+      tools: {
+        title: string;
+        videoCompressorLabel: string;
+        videoCompressorDescription: string;
+        extractAudioLabel: string;
+        extractAudioDescription: string;
+        openLabel: string;
+      };
+    };
+    placeholder: {
+      comingSoonBadge: string;
+      usageTitle: string;
+      usageDescription: string;
+      planTitle: string;
+      planDescription: string;
+      billingTitle: string;
+      billingDescription: string;
+      settingsTitle: string;
+      settingsDescription: string;
+    };
+    loading: string;
+    error: {
+      title: string;
+      description: string;
+      retryLabel: string;
     };
   };
   pages: Record<ContentPageSlug, ContentPageCopy>;
@@ -957,12 +1008,63 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
     accountMenu: {
       openLabel: "Account",
+      dashboardLabel: "Dashboard",
       signedInAsLabel: "Signed in as",
       signOutLabel: "Sign out",
       signingOutLabel: "Signing out...",
     },
     guestNav: {
       signInLabel: "Sign in",
+    },
+  },
+  dashboard: {
+    nav: {
+      navLabel: "Dashboard navigation",
+      overview: "Overview",
+      usage: "Usage",
+      plan: "Plan",
+      billing: "Billing",
+      settings: "Settings",
+    },
+    overview: {
+      eyebrow: "Dashboard",
+      title: "Overview",
+      description: "A quick look at your account and tools.",
+      welcomeGreeting: "Welcome",
+      welcomeFallbackName: "there",
+      accountSummary: {
+        title: "Your account",
+        emailLabel: "Email",
+        verifiedLabel: "Verified",
+        unverifiedLabel: "Not verified",
+        membershipLabel: "Membership",
+        freeAccountLabel: "Free account",
+      },
+      tools: {
+        title: "Your tools",
+        videoCompressorLabel: "Video Compressor",
+        videoCompressorDescription: "Compress videos quickly and securely.",
+        extractAudioLabel: "Extract Audio",
+        extractAudioDescription: "Pull the audio track out of a video as an MP3.",
+        openLabel: "Open",
+      },
+    },
+    placeholder: {
+      comingSoonBadge: "Coming soon",
+      usageTitle: "Usage",
+      usageDescription: "Usage tracking for your account will appear here in a future update.",
+      planTitle: "Plan",
+      planDescription: "Plan details will appear here once QAVELIX PRO plans are introduced.",
+      billingTitle: "Billing",
+      billingDescription: "Billing history and payment methods will appear here in a future update.",
+      settingsTitle: "Settings",
+      settingsDescription: "Account settings will appear here in a future update.",
+    },
+    loading: "Loading your dashboard...",
+    error: {
+      title: "Something went wrong",
+      description: "Your dashboard could not be loaded. Try again.",
+      retryLabel: "Try again",
     },
   },
   pages: {
@@ -1838,12 +1940,67 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       accountMenu: {
         openLabel: "Conta",
+        dashboardLabel: "Painel",
         signedInAsLabel: "Conectado como",
         signOutLabel: "Sair",
         signingOutLabel: "Saindo...",
       },
       guestNav: {
         signInLabel: "Entrar",
+      },
+    },
+    dashboard: {
+      nav: {
+        navLabel: "Navegação do painel",
+        overview: "Visão geral",
+        usage: "Uso",
+        plan: "Plano",
+        billing: "Faturamento",
+        settings: "Configurações",
+      },
+      overview: {
+        eyebrow: "Painel",
+        title: "Visão geral",
+        description: "Um resumo rápido da sua conta e ferramentas.",
+        welcomeGreeting: "Bem-vindo",
+        welcomeFallbackName: "você",
+        accountSummary: {
+          title: "Sua conta",
+          emailLabel: "Email",
+          verifiedLabel: "Verificado",
+          unverifiedLabel: "Não verificado",
+          membershipLabel: "Assinatura",
+          freeAccountLabel: "Conta gratuita",
+        },
+        tools: {
+          title: "Suas ferramentas",
+          videoCompressorLabel: "Compressor de Vídeo",
+          videoCompressorDescription: "Comprima vídeos de forma rápida e segura.",
+          extractAudioLabel: "Extrair Áudio",
+          extractAudioDescription: "Extraia a trilha de áudio de um vídeo como MP3.",
+          openLabel: "Abrir",
+        },
+      },
+      placeholder: {
+        comingSoonBadge: "Em breve",
+        usageTitle: "Uso",
+        usageDescription:
+          "O acompanhamento de uso da sua conta aparecerá aqui em uma atualização futura.",
+        planTitle: "Plano",
+        planDescription:
+          "Os detalhes do plano aparecerão aqui quando os planos do QAVELIX PRO forem lançados.",
+        billingTitle: "Faturamento",
+        billingDescription:
+          "O histórico de faturamento e as formas de pagamento aparecerão aqui em uma atualização futura.",
+        settingsTitle: "Configurações",
+        settingsDescription:
+          "As configurações da conta aparecerão aqui em uma atualização futura.",
+      },
+      loading: "Carregando seu painel...",
+      error: {
+        title: "Algo deu errado",
+        description: "Não foi possível carregar seu painel. Tente novamente.",
+        retryLabel: "Tentar novamente",
       },
     },
     pages: {
@@ -2720,12 +2877,67 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       accountMenu: {
         openLabel: "Cuenta",
+        dashboardLabel: "Panel",
         signedInAsLabel: "Sesión iniciada como",
         signOutLabel: "Cerrar sesión",
         signingOutLabel: "Cerrando sesión...",
       },
       guestNav: {
         signInLabel: "Iniciar sesión",
+      },
+    },
+    dashboard: {
+      nav: {
+        navLabel: "Navegación del panel",
+        overview: "Resumen",
+        usage: "Uso",
+        plan: "Plan",
+        billing: "Facturación",
+        settings: "Configuración",
+      },
+      overview: {
+        eyebrow: "Panel",
+        title: "Resumen",
+        description: "Un vistazo rápido a tu cuenta y herramientas.",
+        welcomeGreeting: "Bienvenido",
+        welcomeFallbackName: "de nuevo",
+        accountSummary: {
+          title: "Tu cuenta",
+          emailLabel: "Correo electrónico",
+          verifiedLabel: "Verificado",
+          unverifiedLabel: "No verificado",
+          membershipLabel: "Membresía",
+          freeAccountLabel: "Cuenta gratuita",
+        },
+        tools: {
+          title: "Tus herramientas",
+          videoCompressorLabel: "Compresor de Video",
+          videoCompressorDescription: "Comprime videos de forma rápida y segura.",
+          extractAudioLabel: "Extraer Audio",
+          extractAudioDescription: "Extrae la pista de audio de un video como MP3.",
+          openLabel: "Abrir",
+        },
+      },
+      placeholder: {
+        comingSoonBadge: "Próximamente",
+        usageTitle: "Uso",
+        usageDescription:
+          "El seguimiento de uso de tu cuenta aparecerá aquí en una futura actualización.",
+        planTitle: "Plan",
+        planDescription:
+          "Los detalles del plan aparecerán aquí cuando se lancen los planes de QAVELIX PRO.",
+        billingTitle: "Facturación",
+        billingDescription:
+          "El historial de facturación y los métodos de pago aparecerán aquí en una futura actualización.",
+        settingsTitle: "Configuración",
+        settingsDescription:
+          "La configuración de la cuenta aparecerá aquí en una futura actualización.",
+      },
+      loading: "Cargando tu panel...",
+      error: {
+        title: "Algo salió mal",
+        description: "No se pudo cargar tu panel. Inténtalo de nuevo.",
+        retryLabel: "Inténtalo de nuevo",
       },
     },
     pages: {

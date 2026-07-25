@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
@@ -10,10 +11,20 @@ import { authClient } from "@/lib/auth-client";
 import { mapAuthErrorCode } from "@/lib/auth-errors";
 import { EMAIL_PATTERN } from "@/lib/auth-validation";
 
-export function SignInForm() {
+type SignInFormProps = {
+  // Already sanitized server-side (sanitizeCallbackPath) before this component ever
+  // sees it — this prop is never rendered as arbitrary trusted HTML, just used as a
+  // navigation target, but it arrives pre-validated regardless.
+  callbackURL?: string | null;
+};
+
+export function SignInForm({ callbackURL }: SignInFormProps) {
   const { dictionary, locale } = useLocaleState();
   const router = useRouter();
   const copy = dictionary.auth;
+  const signUpHref = callbackURL
+    ? `/${locale}/sign-up?callbackURL=${encodeURIComponent(callbackURL)}`
+    : `/${locale}/sign-up`;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +50,7 @@ export function SignInForm() {
       return;
     }
 
-    router.push(`/${locale}`);
+    router.push((callbackURL ?? `/${locale}`) as Route);
   }
 
   return (
@@ -51,7 +62,7 @@ export function SignInForm() {
         <>
           <a href={`/${locale}/forgot-password`}>{copy.signIn.forgotPasswordLink}</a>
           <p>
-            {copy.signIn.noAccountPrompt} <a href={`/${locale}/sign-up`}>{copy.signIn.signUpLink}</a>
+            {copy.signIn.noAccountPrompt} <a href={signUpHref}>{copy.signIn.signUpLink}</a>
           </p>
         </>
       }

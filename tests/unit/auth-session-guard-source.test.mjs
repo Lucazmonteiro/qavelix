@@ -44,8 +44,18 @@ test("the 3 guest-only pages redirect an authenticated visitor server-side", () 
     assert.match(page, /from "@\/lib\/server\/auth\/session"/);
     assert.match(page, /const session = await getOptionalSession\(\)/);
     assert.match(page, /if \(session\) \{/);
-    assert.match(page, /redirect\(`\/\$\{locale\}`\)/);
   }
+
+  // sign-in/sign-up (Milestone 3) additionally honor a sanitized callback so an
+  // already-authenticated visitor who followed a dashboard link back to one of these
+  // pages still lands where they intended, not just the locale home.
+  for (const page of [signInPage, signUpPage]) {
+    assert.match(page, /redirect\(\(callbackURL \?\? `\/\$\{locale\}`\) as Route\)/);
+  }
+
+  // forgot-password has no callback concept (see Milestone 3's own scoping note) — it
+  // still redirects an authenticated visitor, just always to the locale home.
+  assert.match(forgotPasswordPage, /redirect\(`\/\$\{locale\}`\)/);
 });
 
 test("reset-password and verify-email are deliberately NOT guest-gated", () => {
