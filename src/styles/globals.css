@@ -1933,8 +1933,26 @@ textarea {
     justify-content: center;
   }
 
+  /*
+   * At this width, .tools-menu shares its flex row with another nav link
+   * (flex: 1 1 auto), so it no longer spans the row's full width. Centering
+   * the panel against .tools-menu's own (narrow, left-shifted) box pushes it
+   * outside the viewport. Anchor it to .site-header__inner instead, which
+   * always spans the full mobile width, so centering it is centering it in
+   * the viewport.
+   */
+  .site-header__inner {
+    position: relative;
+  }
+
+  .tools-menu {
+    position: static;
+  }
+
   .tools-menu__panel {
     left: 50%;
+    right: auto;
+    top: calc(100% + 0.65rem);
     width: min(calc(100vw - 1.25rem), 18rem);
     transform: translate(-50%, -0.35rem);
   }
