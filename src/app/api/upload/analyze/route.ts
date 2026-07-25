@@ -10,17 +10,15 @@ import {
   createAnalyzedUploadRecord,
   deleteAnalyzedUploadReference,
 } from "@/lib/server/analyzed-upload-registry";
+import { getAnonymousLimits, getToolLimits } from "@/lib/server/entitlements/policy";
+import { resolveActor } from "@/lib/server/entitlements/service";
 import {
   enforceApiSecurity,
   logSecurityEvent,
   securityJson,
 } from "@/lib/server/security";
 import { validateFileIdentity } from "@/lib/server/upload-validation";
-import {
-  MAX_UPLOAD_BYTES,
-  type UploadAnalysis,
-  type UploadValidationError,
-} from "@/lib/upload-policy";
+import { type UploadAnalysis, type UploadValidationError } from "@/lib/upload-policy";
 
 export const runtime = "nodejs";
 
@@ -77,7 +75,7 @@ function parseDeclaredSize(value: string | null) {
   return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
-function getUploadMetadata(request: Request) {
+function getUploadMetadata(request: Request, maxUploadBytes: number) {
   const rawFileName = request.headers.get(fileNameHeader);
   const fileType = request.headers.get(fileTypeHeader)?.trim() ?? "";
   const declaredSize = parseDeclaredSize(request.headers.get(fileSizeHeader));
@@ -112,10 +110,10 @@ function getUploadMetadata(request: Request) {
     });
   }
 
-  if (declaredSize > MAX_UPLOAD_BYTES) {
+  if (declaredSize > maxUploadBytes) {
     throw new UploadRouteError("upload_declared_size_rejected", {
       code: "file_too_large",
-      message: `The selected file exceeds the ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB upload limit.`,
+      message: `The selected file exceeds the ${Math.round(maxUploadBytes / 1024 / 1024)} MB upload limit.`,
     });
   }
 
@@ -144,6 +142,7 @@ async function streamRequestBodyToDisk(
   request: Request,
   filePath: string,
   declaredSize: number,
+  maxUploadBytes: number,
 ) {
   if (!request.body) {
     throw new UploadRouteError("upload_body_missing", {
@@ -164,10 +163,10 @@ async function streamRequestBodyToDisk(
       });
     }
 
-    if (parsedContentLength > MAX_UPLOAD_BYTES) {
+    if (parsedContentLength > maxUploadBytes) {
       throw new UploadRouteError("upload_content_length_rejected", {
         code: "file_too_large",
-        message: `The selected file exceeds the ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB upload limit.`,
+        message: `The selected file exceeds the ${Math.round(maxUploadBytes / 1024 / 1024)} MB upload limit.`,
       });
     }
 
@@ -257,10 +256,10 @@ async function streamRequestBodyToDisk(
 
       receivedBytes += value.byteLength;
 
-      if (receivedBytes > MAX_UPLOAD_BYTES) {
+      if (receivedBytes > maxUploadBytes) {
         throw new UploadRouteError("upload_real_size_rejected", {
           code: "file_too_large",
-          message: `The selected file exceeds the ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB upload limit.`,
+          message: `The selected file exceeds the ${Math.round(maxUploadBytes / 1024 / 1024)} MB upload limit.`,
         });
       }
 
@@ -311,7 +310,11 @@ export async function POST(request: Request) {
   let temporaryPath: string | null = null;
 
   try {
-    const metadata = getUploadMetadata(request);
+    const actor = await resolveActor(request);
+    const limits =
+      actor.type === "anonymous" ? getAnonymousLimits() : getToolLimits(actor.plan, "video-compressor");
+
+    const metadata = getUploadMetadata(request, limits.maxUploadBytes);
     const identity = {
       name: metadata.fileName,
       size: metadata.declaredSize,
@@ -342,6 +345,7 @@ export async function POST(request: Request) {
       request,
       temporaryPath,
       metadata.declaredSize,
+      limits.maxUploadBytes,
     );
     const signaturePrefix = await readSignaturePrefix(temporaryPath);
     const validationError = validateFileIdentity(identity, signaturePrefix);

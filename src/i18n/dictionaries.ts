@@ -238,6 +238,10 @@ export type Dictionary = {
       cancelFailed: string;
       sourceUnavailable: string;
       predictedIncrease: string;
+      accountRequired: string;
+      usageLimitReached: string;
+      toolUnavailableForPlan: string;
+      serviceUnavailable: string;
     };
     oversizedFileMessage: string;
   };
@@ -321,6 +325,10 @@ export type Dictionary = {
         serverError: string;
         downloadUnavailable: string;
         networkError: string;
+        accountRequired: string;
+        usageLimitReached: string;
+        toolUnavailableForPlan: string;
+        serviceUnavailable: string;
       };
     };
   };
@@ -445,6 +453,7 @@ export type Dictionary = {
         unverifiedLabel: string;
         membershipLabel: string;
         freeAccountLabel: string;
+        proAccountLabel: string;
       };
       tools: {
         title: string;
@@ -455,12 +464,49 @@ export type Dictionary = {
         openLabel: string;
       };
     };
+    usage: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      toolLabels: {
+        "video-compressor": string;
+        "extract-audio": string;
+      };
+      usedOfLimitDayLabel: string;
+      usedOfLimitLifetimeLabel: string;
+      limitReachedLabel: string;
+      unavailableMessage: string;
+    };
+    plan: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      currentPlanLabel: string;
+      freePlanName: string;
+      proPlanName: string;
+      dailyLimitLabel: string;
+      uploadLimitLabel: string;
+      upgradeBadge: string;
+      upgradeTitle: string;
+      upgradeDescription: string;
+      priceLabel: string;
+      upgradeButtonLabel: string;
+      checkoutPendingLabel: string;
+      checkoutErrorMessage: string;
+      manageBillingLabel: string;
+      portalPendingLabel: string;
+      portalErrorMessage: string;
+      billingStatusLabel: string;
+      renewsOnLabel: string;
+      cancelsOnLabel: string;
+      checkoutSuccessMessage: string;
+      checkoutCancelledMessage: string;
+    };
+    billing: {
+      description: string;
+    };
     placeholder: {
       comingSoonBadge: string;
-      usageTitle: string;
-      usageDescription: string;
-      planTitle: string;
-      planDescription: string;
       billingTitle: string;
       billingDescription: string;
       settingsTitle: string;
@@ -775,6 +821,10 @@ const dictionaries: Record<Locale, Dictionary> = {
           "Compression cannot continue because the original file is no longer available in this session. Delete this file and select the video again.",
         predictedIncrease:
           "This preset is very likely to increase the file size for this video. Choose a different preset.",
+        accountRequired: "Create a free account to keep using this tool.",
+        usageLimitReached: "You have reached today's usage limit for this tool.",
+        toolUnavailableForPlan: "This tool is not available on your current plan.",
+        serviceUnavailable: "The usage service is temporarily unavailable. Try again shortly.",
       },
       oversizedFileMessage:
         "The selected file is {fileSize}, which exceeds the maximum upload limit of {maxSize}. Please choose a smaller file to continue.",
@@ -908,6 +958,10 @@ const dictionaries: Record<Locale, Dictionary> = {
           "The MP3 download could not be prepared. Try extracting the audio again.",
         networkError:
           "The request could not be completed. Check your connection and try again.",
+        accountRequired: "Create a free account to keep using this tool.",
+        usageLimitReached: "You have reached today's usage limit for this tool.",
+        toolUnavailableForPlan: "This tool is not available on your current plan.",
+        serviceUnavailable: "The usage service is temporarily unavailable. Try again shortly.",
       },
     },
   },
@@ -1038,7 +1092,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         verifiedLabel: "Verified",
         unverifiedLabel: "Not verified",
         membershipLabel: "Membership",
-        freeAccountLabel: "Free account",
+        freeAccountLabel: "Free",
+        proAccountLabel: "Pro",
       },
       tools: {
         title: "Your tools",
@@ -1049,12 +1104,49 @@ const dictionaries: Record<Locale, Dictionary> = {
         openLabel: "Open",
       },
     },
+    usage: {
+      eyebrow: "Dashboard",
+      title: "Usage",
+      description: "Today's usage for each tool on your current plan.",
+      toolLabels: {
+        "video-compressor": "Video Compressor",
+        "extract-audio": "Extract Audio",
+      },
+      usedOfLimitDayLabel: "{used} of {limit} used today",
+      usedOfLimitLifetimeLabel: "{used} of {limit} used",
+      limitReachedLabel: "Limit reached",
+      unavailableMessage: "Usage data is temporarily unavailable. Try again shortly.",
+    },
+    plan: {
+      eyebrow: "Dashboard",
+      title: "Plan",
+      description: "Your current plan and its limits for each tool.",
+      currentPlanLabel: "Current plan",
+      freePlanName: "Free",
+      proPlanName: "Pro",
+      dailyLimitLabel: "{limit} uses per day",
+      uploadLimitLabel: "Up to {maxSize} per file",
+      upgradeBadge: "Coming soon",
+      upgradeTitle: "Upgrade to Pro",
+      upgradeDescription: "Pro plans are not available for purchase yet. Check back soon.",
+      priceLabel: "{price} / month",
+      upgradeButtonLabel: "Upgrade to Pro",
+      checkoutPendingLabel: "Redirecting to checkout...",
+      checkoutErrorMessage: "Could not start checkout. Try again.",
+      manageBillingLabel: "Manage billing",
+      portalPendingLabel: "Opening billing portal...",
+      portalErrorMessage: "Could not open the billing portal. Try again.",
+      billingStatusLabel: "Billing",
+      renewsOnLabel: "Renews on {date}",
+      cancelsOnLabel: "Access ends on {date}",
+      checkoutSuccessMessage: "You're now on the Pro plan.",
+      checkoutCancelledMessage: "Checkout was cancelled. You're still on the Free plan.",
+    },
+    billing: {
+      description: "Manage your subscription, payment method, and invoices.",
+    },
     placeholder: {
       comingSoonBadge: "Coming soon",
-      usageTitle: "Usage",
-      usageDescription: "Usage tracking for your account will appear here in a future update.",
-      planTitle: "Plan",
-      planDescription: "Plan details will appear here once QAVELIX PRO plans are introduced.",
       billingTitle: "Billing",
       billingDescription: "Billing history and payment methods will appear here in a future update.",
       settingsTitle: "Settings",
@@ -1706,6 +1798,11 @@ const dictionaries: Record<Locale, Dictionary> = {
           "Não foi possível continuar porque o arquivo original não está mais disponível nesta sessão. Exclua este arquivo e selecione o vídeo novamente.",
         predictedIncrease:
           "Este preset tem grande chance de aumentar o tamanho do arquivo para este vídeo. Escolha outro preset.",
+        accountRequired: "Crie uma conta gratuita para continuar usando esta ferramenta.",
+        usageLimitReached: "Você atingiu o limite de uso de hoje para esta ferramenta.",
+        toolUnavailableForPlan: "Esta ferramenta não está disponível no seu plano atual.",
+        serviceUnavailable:
+          "O serviço de uso está temporariamente indisponível. Tente novamente em instantes.",
       },
       oversizedFileMessage:
         "O arquivo selecionado possui {fileSize} e excede o limite máximo de upload de {maxSize}. Escolha um arquivo menor para continuar.",
@@ -1840,6 +1937,11 @@ const dictionaries: Record<Locale, Dictionary> = {
             "Não foi possível preparar o download do MP3. Tente extrair o áudio novamente.",
           networkError:
             "Não foi possível concluir a solicitação. Verifique sua conexão e tente novamente.",
+          accountRequired: "Crie uma conta gratuita para continuar usando esta ferramenta.",
+          usageLimitReached: "Você atingiu o limite de uso de hoje para esta ferramenta.",
+          toolUnavailableForPlan: "Esta ferramenta não está disponível no seu plano atual.",
+          serviceUnavailable:
+            "O serviço de uso está temporariamente indisponível. Tente novamente em instantes.",
         },
       },
     },
@@ -1970,7 +2072,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           verifiedLabel: "Verificado",
           unverifiedLabel: "Não verificado",
           membershipLabel: "Assinatura",
-          freeAccountLabel: "Conta gratuita",
+          freeAccountLabel: "Gratuito",
+          proAccountLabel: "Pro",
         },
         tools: {
           title: "Suas ferramentas",
@@ -1981,14 +2084,50 @@ const dictionaries: Record<Locale, Dictionary> = {
           openLabel: "Abrir",
         },
       },
+      usage: {
+        eyebrow: "Painel",
+        title: "Uso",
+        description: "Uso de hoje para cada ferramenta no seu plano atual.",
+        toolLabels: {
+          "video-compressor": "Compressor de Vídeo",
+          "extract-audio": "Extrair Áudio",
+        },
+        usedOfLimitDayLabel: "{used} de {limit} usados hoje",
+        usedOfLimitLifetimeLabel: "{used} de {limit} usados",
+        limitReachedLabel: "Limite atingido",
+        unavailableMessage:
+          "Os dados de uso estão temporariamente indisponíveis. Tente novamente em instantes.",
+      },
+      plan: {
+        eyebrow: "Painel",
+        title: "Plano",
+        description: "Seu plano atual e os limites de cada ferramenta.",
+        currentPlanLabel: "Plano atual",
+        freePlanName: "Gratuito",
+        proPlanName: "Pro",
+        dailyLimitLabel: "{limit} usos por dia",
+        uploadLimitLabel: "Até {maxSize} por arquivo",
+        upgradeBadge: "Em breve",
+        upgradeTitle: "Fazer upgrade para o Pro",
+        upgradeDescription: "Os planos Pro ainda não estão disponíveis para compra. Volte em breve.",
+        priceLabel: "{price} / mês",
+        upgradeButtonLabel: "Fazer upgrade para o Pro",
+        checkoutPendingLabel: "Redirecionando para o checkout...",
+        checkoutErrorMessage: "Não foi possível iniciar o checkout. Tente novamente.",
+        manageBillingLabel: "Gerenciar cobrança",
+        portalPendingLabel: "Abrindo o portal de cobrança...",
+        portalErrorMessage: "Não foi possível abrir o portal de cobrança. Tente novamente.",
+        billingStatusLabel: "Cobrança",
+        renewsOnLabel: "Renova em {date}",
+        cancelsOnLabel: "O acesso termina em {date}",
+        checkoutSuccessMessage: "Agora você está no plano Pro.",
+        checkoutCancelledMessage: "O checkout foi cancelado. Você continua no plano Gratuito.",
+      },
+      billing: {
+        description: "Gerencie sua assinatura, forma de pagamento e faturas.",
+      },
       placeholder: {
         comingSoonBadge: "Em breve",
-        usageTitle: "Uso",
-        usageDescription:
-          "O acompanhamento de uso da sua conta aparecerá aqui em uma atualização futura.",
-        planTitle: "Plano",
-        planDescription:
-          "Os detalhes do plano aparecerão aqui quando os planos do QAVELIX PRO forem lançados.",
         billingTitle: "Faturamento",
         billingDescription:
           "O histórico de faturamento e as formas de pagamento aparecerão aqui em uma atualização futura.",
@@ -2643,6 +2782,11 @@ const dictionaries: Record<Locale, Dictionary> = {
           "La compresión no puede continuar porque el archivo original ya no está disponible en esta sesión. Elimina este archivo y selecciona el vídeo de nuevo.",
         predictedIncrease:
           "Es muy probable que este ajuste aumente el tamaño del archivo para este vídeo. Elige otro ajuste.",
+        accountRequired: "Crea una cuenta gratuita para seguir usando esta herramienta.",
+        usageLimitReached: "Has alcanzado el límite de uso de hoy para esta herramienta.",
+        toolUnavailableForPlan: "Esta herramienta no está disponible en tu plan actual.",
+        serviceUnavailable:
+          "El servicio de uso no está disponible temporalmente. Inténtalo de nuevo en unos instantes.",
       },
       oversizedFileMessage:
         "El archivo seleccionado tiene un tamaño de {fileSize} y supera el límite máximo de carga de {maxSize}. Selecciona un archivo más pequeño para continuar.",
@@ -2777,6 +2921,11 @@ const dictionaries: Record<Locale, Dictionary> = {
             "No se ha podido preparar la descarga del MP3. Intenta extraer el audio de nuevo.",
           networkError:
             "No se ha podido completar la solicitud. Comprueba tu conexión e inténtalo de nuevo.",
+          accountRequired: "Crea una cuenta gratuita para seguir usando esta herramienta.",
+          usageLimitReached: "Has alcanzado el límite de uso de hoy para esta herramienta.",
+          toolUnavailableForPlan: "Esta herramienta no está disponible en tu plan actual.",
+          serviceUnavailable:
+            "El servicio de uso no está disponible temporalmente. Inténtalo de nuevo en unos instantes.",
         },
       },
     },
@@ -2907,7 +3056,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           verifiedLabel: "Verificado",
           unverifiedLabel: "No verificado",
           membershipLabel: "Membresía",
-          freeAccountLabel: "Cuenta gratuita",
+          freeAccountLabel: "Gratis",
+          proAccountLabel: "Pro",
         },
         tools: {
           title: "Tus herramientas",
@@ -2918,14 +3068,50 @@ const dictionaries: Record<Locale, Dictionary> = {
           openLabel: "Abrir",
         },
       },
+      usage: {
+        eyebrow: "Panel",
+        title: "Uso",
+        description: "Uso de hoy para cada herramienta en tu plan actual.",
+        toolLabels: {
+          "video-compressor": "Compresor de Video",
+          "extract-audio": "Extraer Audio",
+        },
+        usedOfLimitDayLabel: "{used} de {limit} usados hoy",
+        usedOfLimitLifetimeLabel: "{used} de {limit} usados",
+        limitReachedLabel: "Límite alcanzado",
+        unavailableMessage:
+          "Los datos de uso no están disponibles temporalmente. Inténtalo de nuevo en unos instantes.",
+      },
+      plan: {
+        eyebrow: "Panel",
+        title: "Plan",
+        description: "Tu plan actual y los límites de cada herramienta.",
+        currentPlanLabel: "Plan actual",
+        freePlanName: "Gratis",
+        proPlanName: "Pro",
+        dailyLimitLabel: "{limit} usos por día",
+        uploadLimitLabel: "Hasta {maxSize} por archivo",
+        upgradeBadge: "Próximamente",
+        upgradeTitle: "Actualizar a Pro",
+        upgradeDescription: "Los planes Pro aún no están disponibles para comprar. Vuelve pronto.",
+        priceLabel: "{price} / mes",
+        upgradeButtonLabel: "Actualizar a Pro",
+        checkoutPendingLabel: "Redirigiendo al checkout...",
+        checkoutErrorMessage: "No se pudo iniciar el checkout. Inténtalo de nuevo.",
+        manageBillingLabel: "Gestionar facturación",
+        portalPendingLabel: "Abriendo el portal de facturación...",
+        portalErrorMessage: "No se pudo abrir el portal de facturación. Inténtalo de nuevo.",
+        billingStatusLabel: "Facturación",
+        renewsOnLabel: "Se renueva el {date}",
+        cancelsOnLabel: "El acceso termina el {date}",
+        checkoutSuccessMessage: "Ahora tienes el plan Pro.",
+        checkoutCancelledMessage: "El checkout se canceló. Sigues en el plan Gratis.",
+      },
+      billing: {
+        description: "Gestiona tu suscripción, método de pago y facturas.",
+      },
       placeholder: {
         comingSoonBadge: "Próximamente",
-        usageTitle: "Uso",
-        usageDescription:
-          "El seguimiento de uso de tu cuenta aparecerá aquí en una futura actualización.",
-        planTitle: "Plan",
-        planDescription:
-          "Los detalles del plan aparecerán aquí cuando se lancen los planes de QAVELIX PRO.",
         billingTitle: "Facturación",
         billingDescription:
           "El historial de facturación y los métodos de pago aparecerán aquí en una futura actualización.",

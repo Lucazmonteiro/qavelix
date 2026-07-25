@@ -129,6 +129,10 @@ type CompressionCopy = {
     cancelFailed: string;
     sourceUnavailable: string;
     predictedIncrease: string;
+    accountRequired: string;
+    usageLimitReached: string;
+    toolUnavailableForPlan: string;
+    serviceUnavailable: string;
   };
   oversizedFileMessage: string;
 };
@@ -441,6 +445,15 @@ function getCompressionErrorMessage(
       return copy.errors.invalidSignature;
     case "queue_full":
       return copy.errors.queueFull;
+    case "account_required":
+      return copy.errors.accountRequired;
+    case "usage_limit_reached":
+      return copy.errors.usageLimitReached;
+    case "tool_unavailable_for_plan":
+      return copy.errors.toolUnavailableForPlan;
+    case "invalid_entitlement_state":
+    case "usage_service_unavailable":
+      return copy.errors.serviceUnavailable;
     default:
       return copy.errors.uploadFailed;
   }

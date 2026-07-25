@@ -1,4 +1,5 @@
 import type { getDictionary } from "@/i18n/dictionaries";
+import type { PlanType } from "@/lib/server/entitlements/policy";
 
 type Dictionary = ReturnType<typeof getDictionary>;
 
@@ -6,13 +7,15 @@ type AccountSummaryCardProps = {
   dictionary: Dictionary;
   email: string;
   emailVerified: boolean;
+  plan: PlanType;
 };
 
-// Membership is rendered only as the neutral "Free account" placeholder text from the
-// dictionary — there is no subscription/plan data model yet, and this milestone
-// explicitly does not create one. Real plan status is a later milestone's concern; this
-// card just needs a place for it to eventually go.
-export function AccountSummaryCard({ dictionary, email, emailVerified }: AccountSummaryCardProps) {
+export function AccountSummaryCard({
+  dictionary,
+  email,
+  emailVerified,
+  plan,
+}: AccountSummaryCardProps) {
   const copy = dictionary.dashboard.overview.accountSummary;
 
   return (
@@ -35,8 +38,12 @@ export function AccountSummaryCard({ dictionary, email, emailVerified }: Account
         <div className="dashboard-summary-row">
           <dt>{copy.membershipLabel}</dt>
           <dd>
-            <span className="dashboard-status dashboard-status--neutral">
-              {copy.freeAccountLabel}
+            <span
+              className={`dashboard-status ${
+                plan === "pro" ? "dashboard-status--positive" : "dashboard-status--neutral"
+              }`}
+            >
+              {plan === "pro" ? copy.proAccountLabel : copy.freeAccountLabel}
             </span>
           </dd>
         </div>

@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 
+import { BillingPortalButton } from "@/components/dashboard/billing-portal-button";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale, locales } from "@/i18n/locales";
+import { isBillingConfigured } from "@/lib/server/billing";
 
 type DashboardBillingPageProps = {
   params: Promise<{
@@ -15,8 +17,10 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-// No billing data model or payment provider exists yet, and this milestone explicitly
-// does not create one — this page is an honest "coming soon" placeholder, not fake data.
+// Milestone 5: real Stripe Billing Portal access when configured (every account gets a
+// Stripe customer at sign-up via createCustomerOnSignUp, so this works for Free and Pro
+// users alike — a Free user just sees an empty history until they subscribe). Falls back
+// to Milestone 4's honest "coming soon" placeholder when Stripe isn't configured.
 export default async function DashboardBillingPage({ params }: DashboardBillingPageProps) {
   const { locale } = await params;
 
@@ -26,20 +30,44 @@ export default async function DashboardBillingPage({ params }: DashboardBillingP
 
   const dictionary = getDictionary(locale);
   const nav = dictionary.dashboard.nav;
-  const copy = dictionary.dashboard.placeholder;
+  const placeholderCopy = dictionary.dashboard.placeholder;
+  const planCopy = dictionary.dashboard.plan;
+  const billingCopy = dictionary.dashboard.billing;
+  const billingConfigured = isBillingConfigured();
+
+  if (!billingConfigured) {
+    return (
+      <>
+        <DashboardHeader
+          description={placeholderCopy.billingDescription}
+          eyebrow={dictionary.dashboard.overview.eyebrow}
+          title={nav.billing}
+        />
+        <DashboardPlaceholder
+          badge={placeholderCopy.comingSoonBadge}
+          description={placeholderCopy.billingDescription}
+          title={placeholderCopy.billingTitle}
+        />
+      </>
+    );
+  }
 
   return (
     <>
       <DashboardHeader
-        description={copy.billingDescription}
+        description={billingCopy.description}
         eyebrow={dictionary.dashboard.overview.eyebrow}
         title={nav.billing}
       />
-      <DashboardPlaceholder
-        badge={copy.comingSoonBadge}
-        description={copy.billingDescription}
-        title={copy.billingTitle}
-      />
+      <div className="foundation-card">
+        <h2 className="dashboard-card__title">{nav.billing}</h2>
+        <BillingPortalButton
+          errorMessage={planCopy.portalErrorMessage}
+          label={planCopy.manageBillingLabel}
+          pendingLabel={planCopy.portalPendingLabel}
+          returnPath="/dashboard/billing"
+        />
+      </div>
     </>
   );
 }

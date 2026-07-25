@@ -6,6 +6,7 @@ import { ToolQuickLinks } from "@/components/dashboard/tool-quick-links";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale, locales } from "@/i18n/locales";
 import { requireSession } from "@/lib/server/auth/session";
+import { getPlan } from "@/lib/server/entitlements/service";
 
 type DashboardOverviewPageProps = {
   params: Promise<{
@@ -33,6 +34,7 @@ export default async function DashboardOverviewPage({ params }: DashboardOvervie
   const dictionary = getDictionary(locale);
   const copy = dictionary.dashboard.overview;
   const displayName = session.user.name || copy.welcomeFallbackName;
+  const plan = await getPlan(session.user.id);
 
   return (
     <>
@@ -45,6 +47,7 @@ export default async function DashboardOverviewPage({ params }: DashboardOvervie
         dictionary={dictionary}
         email={session.user.email}
         emailVerified={session.user.emailVerified}
+        plan={plan}
       />
       <ToolQuickLinks dictionary={dictionary} locale={locale} />
     </>

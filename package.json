@@ -20,12 +20,14 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@better-auth/stripe": "^1.6.25",
     "@neondatabase/serverless": "^1.1.0",
     "better-auth": "^1.6.25",
     "drizzle-orm": "^0.45.2",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "stripe": "^22.3.2",
     "zod": "latest"
   },
   "devDependencies": {

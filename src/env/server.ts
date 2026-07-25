@@ -39,6 +39,13 @@ const envSchema = z
     // themselves if something actually tries to use the database without one configured.
     DATABASE_URL: z.url().optional(),
     BETTER_AUTH_SECRET: z.string().min(32).optional(),
+    // Same "optional everywhere" reasoning as above: Milestone 5's Stripe integration is
+    // additive on top of the existing entitlement system, not a replacement for it. With
+    // these unset, getAuth() simply omits the stripe() plugin (see auth.ts) and every
+    // existing tool/dashboard/entitlement route keeps working exactly as in Milestone 4.
+    STRIPE_SECRET_KEY: z.string().startsWith("sk_").optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
+    STRIPE_PRO_MONTHLY_PRICE_ID: z.string().startsWith("price_").optional(),
   })
   .superRefine((value, context) => {
     const appUrl = new URL(value.NEXT_PUBLIC_APP_URL);
@@ -66,6 +73,9 @@ const parsedEnv = envSchema.safeParse({
     (rawNodeEnv === "production" ? undefined : "http://localhost:3000"),
   DATABASE_URL: process.env.DATABASE_URL,
   BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  STRIPE_PRO_MONTHLY_PRICE_ID: process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
 });
 
 if (!parsedEnv.success) {

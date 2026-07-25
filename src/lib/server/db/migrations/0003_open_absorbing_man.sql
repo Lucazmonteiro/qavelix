@@ -1,0 +1,1 @@
+ALTER TABLE "usage_event" ADD COLUMN "period_key" text NOT NULL;

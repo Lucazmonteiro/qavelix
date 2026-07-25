@@ -25,6 +25,7 @@ import {
   type CompressionPresetId,
 } from "@/lib/compression-policy";
 import type { ConsumedAnalyzedUpload } from "@/lib/server/analyzed-upload-registry";
+import { confirmUsage, releaseUsage } from "@/lib/server/entitlements/service";
 import { analyzeWithFfprobe } from "@/lib/server/ffprobe";
 import type { UploadValidationError } from "@/lib/upload-policy";
 
@@ -35,6 +36,13 @@ type CompressionJob = CompressionJobSnapshot & {
   downloadToken: string | null;
   downloadSignature: string | null;
   cleanupTimer: ReturnType<typeof setTimeout> | null;
+  // The entitlement reservation this job was created against (null for a job created
+  // before this milestone's data was migrated — treated as "nothing to confirm/release").
+  // usageConfirmed flips true exactly once, when the job reaches a real success state;
+  // every other terminal path (failure, timeout, cancellation, orphaned-on-restart)
+  // releases the reservation instead — see confirmJobUsage()/releaseJobUsage() below.
+  usageEventId: string | null;
+  usageConfirmed: boolean;
 };
 
 type CreateJobResult =
@@ -144,7 +152,30 @@ function serializableJob(job: CompressionJob) {
     outputPath: job.outputPath,
     downloadToken: job.downloadToken,
     downloadSignature: job.downloadSignature,
+    usageEventId: job.usageEventId,
+    usageConfirmed: job.usageConfirmed,
   };
+}
+
+// Marks the reservation as successfully spent — called exactly once, on the one path
+// where the job actually produced usable output. Idempotent via the usageConfirmed
+// guard, so a re-entrant call (there shouldn't be one) can't double-confirm.
+async function confirmJobUsage(job: CompressionJob) {
+  if (job.usageEventId && !job.usageConfirmed) {
+    await confirmUsage(job.usageEventId);
+    job.usageConfirmed = true;
+    await persistCompressionJob(job);
+  }
+}
+
+// Gives back the reservation for any job that will never produce output — failure,
+// timeout, cancellation, or an orphaned job discovered after a process restart. Safe to
+// call from multiple sites for the same job: releaseUsage() itself is idempotent
+// (guarded by the ledger row's status), and this additionally no-ops once confirmed.
+async function releaseJobUsage(job: CompressionJob) {
+  if (job.usageEventId && !job.usageConfirmed) {
+    await releaseUsage(job.usageEventId);
+  }
 }
 
 async function persistCompressionJob(job: CompressionJob) {
@@ -215,6 +246,7 @@ async function findCompressionJob(id: string) {
 
     await persistStatus(persistedJob, "failed", "Compression interrupted.");
     await cleanupJobFiles(persistedJob);
+    await releaseJobUsage(persistedJob);
     jobs.set(id, persistedJob);
     logCompressionError("compression_orphaned_processing_job_failed", {
       jobId: persistedJob.id,
@@ -250,6 +282,7 @@ async function loadPendingCompressionJobs() {
       if (job && isInterruptedProcessingStatus(job.status)) {
         await persistStatus(job, "failed", "Compression interrupted.");
         await cleanupJobFiles(job);
+        await releaseJobUsage(job);
         logCompressionError("compression_stale_processing_job_failed", {
           jobId: job.id,
           status: job.status,
@@ -628,6 +661,7 @@ async function runJob(job: CompressionJob) {
       job.downloadToken = token;
       job.downloadSignature = createDownloadSignature(job.id, token, expiresAt);
       await persistStatus(job, getCompressionOutcomeStatus(compression));
+      await confirmJobUsage(job);
       logCompressionStage("compression_output_verified", {
         jobId: job.id,
         inputSize: job.inputSize,
@@ -669,6 +703,12 @@ async function runJob(job: CompressionJob) {
     if (!isDownloadableCompressionStatus(job.status)) {
       await cleanupJobFiles(job);
     }
+    // Covers every terminal path that isn't the success branch above: failure, timeout,
+    // and cancellation-while-running (cancelCompressionJob() sets status to "cancelled"
+    // and kills the process, but this is the finally block that actually runs after that
+    // — see the shared job-reference note on cancelCompressionJob()). No-ops if
+    // confirmJobUsage() already ran.
+    await releaseJobUsage(job);
     await releaseJobLock(job.id);
     void processNextJob();
   }
@@ -720,106 +760,121 @@ function pruneTerminalJobs() {
 export async function createCompressionJobFromAnalyzedUpload(
   upload: ConsumedAnalyzedUpload,
   preset: CompressionPresetId,
+  usageEventId: string | null,
 ): Promise<CreateJobResult> {
-  pruneTerminalJobs();
-
-  if (queue.length >= maxQueuedJobs) {
-    return {
-      ok: false,
-      error: {
-        code: "queue_full",
-        message: "The compression queue is full. Try again later.",
-      },
-    };
-  }
-
-  let sourceStats;
+  let jobCreated = false;
 
   try {
-    sourceStats = await stat(upload.inputPath);
-  } catch {
-    return {
-      ok: false,
-      error: {
-        code: "missing_file",
-        message: "The analyzed upload is no longer available.",
-      },
-    };
-  }
+    pruneTerminalJobs();
 
-  if (!sourceStats.isFile() || sourceStats.size !== upload.size) {
-    await rm(upload.inputPath, { force: true });
-    return {
-      ok: false,
-      error: {
-        code: "metadata_mismatch",
-        message: "The analyzed upload metadata no longer matches the stored file.",
-      },
-    };
-  }
+    if (queue.length >= maxQueuedJobs) {
+      return {
+        ok: false,
+        error: {
+          code: "queue_full",
+          message: "The compression queue is full. Try again later.",
+        },
+      };
+    }
 
-  await mkdir(jobMetadataDirectory, { recursive: true });
-  await mkdir(compressionDirectory, { recursive: true });
+    let sourceStats;
 
-  const id = randomUUID();
-  const inputPath = path.join(
-    compressionDirectory,
-    `${id}${sanitizeExtension(upload.originalName)}`,
-  );
-  const outputPath = path.join(compressionDirectory, `${id}.compressed.mp4`);
-  let ownsInputPath = false;
+    try {
+      sourceStats = await stat(upload.inputPath);
+    } catch {
+      return {
+        ok: false,
+        error: {
+          code: "missing_file",
+          message: "The analyzed upload is no longer available.",
+        },
+      };
+    }
 
-  try {
-    await rename(upload.inputPath, inputPath);
-    ownsInputPath = true;
+    if (!sourceStats.isFile() || sourceStats.size !== upload.size) {
+      await rm(upload.inputPath, { force: true });
+      return {
+        ok: false,
+        error: {
+          code: "metadata_mismatch",
+          message: "The analyzed upload metadata no longer matches the stored file.",
+        },
+      };
+    }
 
-    const job: CompressionJob = {
-      id,
-      status: "queued",
-      preset,
-      originalName: upload.originalName,
-      inputSize: upload.size,
-      outputSize: null,
-      compression: null,
-      progress: 0,
-      createdAt: new Date().toISOString(),
-      startedAt: null,
-      completedAt: null,
-      expiresAt: null,
-      downloadUrl: null,
-      error: null,
-      inputPath,
-      outputPath,
-      process: null,
-      downloadToken: null,
-      downloadSignature: null,
-      cleanupTimer: null,
-    };
+    await mkdir(jobMetadataDirectory, { recursive: true });
+    await mkdir(compressionDirectory, { recursive: true });
 
-    jobs.set(id, job);
-    await persistCompressionJob(job);
-    logCompressionStage("compression_job_created", {
-      jobId: id,
-      preset,
-      inputSize: upload.size,
-    });
-    enqueueJob(id);
-    void ensureCompressionWorker();
+    const id = randomUUID();
+    const inputPath = path.join(
+      compressionDirectory,
+      `${id}${sanitizeExtension(upload.originalName)}`,
+    );
+    const outputPath = path.join(compressionDirectory, `${id}.compressed.mp4`);
+    let ownsInputPath = false;
 
-    return {
-      ok: true,
-      job: snapshot(job),
-    };
-  } catch {
-    await rm(ownsInputPath ? inputPath : upload.inputPath, { force: true });
-    await rm(outputPath, { force: true });
-    return {
-      ok: false,
-      error: {
-        code: "missing_file",
-        message: "The analyzed upload could not be prepared for compression.",
-      },
-    };
+    try {
+      await rename(upload.inputPath, inputPath);
+      ownsInputPath = true;
+
+      const job: CompressionJob = {
+        id,
+        status: "queued",
+        preset,
+        originalName: upload.originalName,
+        inputSize: upload.size,
+        outputSize: null,
+        compression: null,
+        progress: 0,
+        createdAt: new Date().toISOString(),
+        startedAt: null,
+        completedAt: null,
+        expiresAt: null,
+        downloadUrl: null,
+        error: null,
+        inputPath,
+        outputPath,
+        process: null,
+        downloadToken: null,
+        downloadSignature: null,
+        cleanupTimer: null,
+        usageEventId,
+        usageConfirmed: false,
+      };
+
+      jobs.set(id, job);
+      await persistCompressionJob(job);
+      logCompressionStage("compression_job_created", {
+        jobId: id,
+        preset,
+        inputSize: upload.size,
+      });
+      enqueueJob(id);
+      void ensureCompressionWorker();
+
+      jobCreated = true;
+
+      return {
+        ok: true,
+        job: snapshot(job),
+      };
+    } catch {
+      await rm(ownsInputPath ? inputPath : upload.inputPath, { force: true });
+      await rm(outputPath, { force: true });
+      return {
+        ok: false,
+        error: {
+          code: "missing_file",
+          message: "The analyzed upload could not be prepared for compression.",
+        },
+      };
+    }
+  } finally {
+    // Every early return above means no job was created — the reservation this call
+    // was given must be handed back rather than left permanently counted.
+    if (!jobCreated && usageEventId) {
+      await releaseUsage(usageEventId);
+    }
   }
 }
 
@@ -850,6 +905,9 @@ export async function cancelCompressionJob(id: string) {
 
     await persistStatus(job, "cancelled");
     await cleanupJobFiles(job);
+    // Unlike the "starting"/"running" branch below, a queued job never reaches
+    // runJob()'s finally block, so nothing else will release this reservation.
+    await releaseJobUsage(job);
     return snapshot(job);
   }
 

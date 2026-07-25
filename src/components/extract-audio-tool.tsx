@@ -135,6 +135,15 @@ async function readApiError(response: Response): Promise<ExtractAudioErrorKey> {
         return "ffmpegFailed";
       case "processing_timeout":
         return "timeout";
+      case "account_required":
+        return "accountRequired";
+      case "usage_limit_reached":
+        return "usageLimitReached";
+      case "tool_unavailable_for_plan":
+        return "toolUnavailableForPlan";
+      case "invalid_entitlement_state":
+      case "usage_service_unavailable":
+        return "serviceUnavailable";
       default:
         return response.status === 404 ? "downloadUnavailable" : "serverError";
     }

@@ -50,8 +50,15 @@ test("Next and API request limits use the shared upload request policy", async (
     readFile("src/app/api/compression/jobs/route.ts", "utf8"),
   ]);
 
-  assert.match(nextConfig, /proxyClientMaxBodySize:\s*MAX_UPLOAD_REQUEST_BYTES/);
-  assert.match(uploadRoute, /MAX_UPLOAD_BYTES/);
+  // Sized for Pro's 500MB ceiling, not the flat Free/anonymous MAX_UPLOAD_REQUEST_BYTES —
+  // see PRO_MAX_UPLOAD_REQUEST_BYTES in entitlements/policy.ts.
+  assert.match(nextConfig, /proxyClientMaxBodySize:\s*PRO_MAX_UPLOAD_REQUEST_BYTES/);
+  // The route enforces a plan-aware ceiling (Free/anonymous 250MB, Pro 500MB) rather than
+  // importing the flat MAX_UPLOAD_BYTES constant directly — see entitlements/policy.ts.
+  // proxyClientMaxBodySize above still has to cover the largest possible plan (Pro), which
+  // is why Next's own limit is untouched here.
+  assert.match(uploadRoute, /getAnonymousLimits|getToolLimits/);
+  assert.match(uploadRoute, /maxUploadBytes/);
   assert.doesNotMatch(uploadRoute, /MAX_UPLOAD_REQUEST_BYTES/);
   assert.match(compressionRoute, /request\.json\(\)/);
   assert.doesNotMatch(compressionRoute, /MAX_UPLOAD_REQUEST_BYTES/);
@@ -67,7 +74,7 @@ test("upload analysis route streams raw request bodies instead of buffering file
   assert.doesNotMatch(uploadRoute, /readFile\(/);
   assert.match(uploadRoute, /request\.body\.getReader\(\)/);
   assert.match(uploadRoute, /createWriteStream/);
-  assert.match(uploadRoute, /receivedBytes > MAX_UPLOAD_BYTES/);
+  assert.match(uploadRoute, /receivedBytes > maxUploadBytes/);
   assert.match(uploadRoute, /receivedBytes > declaredSize/);
   assert.match(uploadRoute, /receivedBytes !== declaredSize/);
 });

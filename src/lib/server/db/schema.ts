@@ -1,4 +1,13 @@
-import { boolean, index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 // Better Auth's core schema (user/session/account/verification). Column names,
 // types, and nullability follow Better Auth's Drizzle adapter expectations exactly —
@@ -18,6 +27,12 @@ export const user = pgTable("user", {
   image: text("image"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  // Milestone 5 — added by the @better-auth/stripe plugin's own schema (see
+  // node_modules/@better-auth/stripe's `user` schema extension). Populated automatically
+  // by the plugin when a Stripe customer is created for this user; nullable because it
+  // stays empty until Stripe billing is actually configured (STRIPE_SECRET_KEY unset) or
+  // for any user who never starts a checkout.
+  stripeCustomerId: text("stripe_customer_id"),
 });
 
 export const session = pgTable(
@@ -96,3 +111,118 @@ export const auditLog = pgTable(
   },
   (table) => [index("audit_log_user_id_idx").on(table.userId)],
 );
+
+// Milestone 4 — plan, entitlement, and usage foundation. No Stripe/billing tables: this
+// is deliberately just "what plan is this user on" and "how much have they used," built
+// so a future billing integration can update `plan` (e.g. from a webhook) without any of
+// this schema changing shape.
+
+// One row per authenticated user (userId is the primary key, not a separate surrogate
+// id, since "one entitlement record per user" is an invariant the schema itself should
+// enforce, not just application code). Anonymous visitors have no row here at all — they
+// are tracked entirely through usage_counter/usage_event by fingerprint, never promoted
+// into this table until they actually sign up.
+export const userEntitlement = pgTable("user_entitlement", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // "free" | "pro" — src/lib/server/entitlements/policy.ts is the source of truth for
+  // what each value actually grants. Defaults to "free" for every authenticated user;
+  // nothing here requires a Stripe customer or subscription to exist.
+  plan: text("plan").notNull().default("free"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// The fast-path aggregate: one row per (actor, tool, period), atomically incremented via
+// an INSERT ... ON CONFLICT ... WHERE count < limit upsert (see entitlements/service.ts)
+// so "check the limit" and "count this use" happen as a single atomic statement — the
+// standard safe pattern for this under concurrent requests, not a read-then-write race.
+// actorId is polymorphic (a user.id when actorType = "user", a fingerprint hash when
+// actorType = "anonymous") so it is deliberately not a foreign key — Postgres can't
+// enforce a constraint against two different meanings of the same column.
+export const usageCounter = pgTable(
+  "usage_counter",
+  {
+    id: text("id").primaryKey(),
+    actorType: text("actor_type").notNull(),
+    actorId: text("actor_id").notNull(),
+    // "video-compressor" | "extract-audio" | "any" — "any" is used only for the
+    // anonymous tier's combined (not per-tool) 5-lifetime-uses pool.
+    toolId: text("tool_id").notNull(),
+    // A daily counter's period key is the UTC date ("2026-07-25"); the anonymous
+    // lifetime pool uses the constant "lifetime" so it never resets.
+    periodKey: text("period_key").notNull(),
+    count: integer("count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("usage_counter_actor_tool_period_idx").on(
+      table.actorType,
+      table.actorId,
+      table.toolId,
+      table.periodKey,
+    ),
+  ],
+);
+
+// The audit ledger: one row per attempted usage, independent of the fast-path counter
+// above. idempotencyKey (the compression job id, or a per-request id for the synchronous
+// Extract Audio flow) is UNIQUE — a retried or duplicated request can attempt to reserve
+// the same key twice and will hit this constraint rather than double-count, which is the
+// idempotency guarantee this milestone requires.
+export const usageEvent = pgTable(
+  "usage_event",
+  {
+    id: text("id").primaryKey(),
+    actorType: text("actor_type").notNull(),
+    actorId: text("actor_id").notNull(),
+    toolId: text("tool_id").notNull(),
+    // Recorded at reservation time and reused verbatim on release — NOT recomputed as
+    // "today" at release time. An async compression job can be reserved on one UTC day
+    // and only fail/release after midnight; recomputing would target the wrong day's
+    // usage_counter row and silently fail to release the original reservation.
+    periodKey: text("period_key").notNull(),
+    // "reserved" (quota claimed, work in progress) | "confirmed" (work succeeded, slot
+    // stays counted) | "released" (work failed/was cancelled after reservation, slot
+    // given back) | "rejected" (reservation itself was denied, never counted at all).
+    status: text("status").notNull(),
+    idempotencyKey: text("idempotency_key").notNull().unique(),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("usage_event_actor_idx").on(table.actorType, table.actorId, table.toolId)],
+);
+
+// Milestone 5 — Stripe billing. This table's shape is dictated by @better-auth/stripe's
+// own subscription schema (see node_modules/@better-auth/stripe's `subscriptions`
+// export) — column names/types/nullability must match exactly for the plugin's Drizzle
+// adapter to read/write it without additional field mapping, the same convention already
+// used for Better Auth's own user/session/account/verification tables above.
+//
+// This is Stripe's own view of billing state (one row per subscription attempt,
+// `referenceId` = user.id) — it is NOT the source of truth the rest of the app reads
+// from. That stays user_entitlement.plan (Milestone 4), which the subscription
+// lifecycle hooks in auth.ts keep in sync whenever this table changes. Nothing outside
+// the Stripe integration itself queries this table directly.
+export const subscription = pgTable("subscription", {
+  id: text("id").primaryKey(),
+  plan: text("plan").notNull(),
+  referenceId: text("reference_id").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  status: text("status").notNull().default("incomplete"),
+  periodStart: timestamp("period_start", { withTimezone: true }),
+  periodEnd: timestamp("period_end", { withTimezone: true }),
+  trialStart: timestamp("trial_start", { withTimezone: true }),
+  trialEnd: timestamp("trial_end", { withTimezone: true }),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  cancelAt: timestamp("cancel_at", { withTimezone: true }),
+  canceledAt: timestamp("canceled_at", { withTimezone: true }),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+  seats: integer("seats"),
+  billingInterval: text("billing_interval"),
+  stripeScheduleId: text("stripe_schedule_id"),
+});

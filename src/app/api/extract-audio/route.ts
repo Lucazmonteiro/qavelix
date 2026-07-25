@@ -6,6 +6,15 @@ import os from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
 
+import type { EntitlementDenialReason } from "@/lib/server/entitlements/errors";
+import { entitlementErrorPayload, statusForDenialReason } from "@/lib/server/entitlements/errors";
+import { getAnonymousLimits, getToolLimits } from "@/lib/server/entitlements/policy";
+import {
+  confirmUsage,
+  releaseUsage,
+  reserveUsage,
+  resolveActor,
+} from "@/lib/server/entitlements/service";
 import {
   createExtractedAudioFileName,
   extractMp3Audio,
@@ -20,11 +29,7 @@ import {
   securityJson,
 } from "@/lib/server/security";
 import { validateFileIdentity } from "@/lib/server/upload-validation";
-import {
-  MAX_UPLOAD_BYTES,
-  MIN_UPLOAD_BYTES,
-  type UploadValidationError,
-} from "@/lib/upload-policy";
+import { MIN_UPLOAD_BYTES, type UploadValidationError } from "@/lib/upload-policy";
 
 export const runtime = "nodejs";
 
@@ -46,6 +51,16 @@ class ExtractAudioRouteError extends Error {
 
 function errorResponse(error: UploadValidationError, status = 400, requestId?: string) {
   return securityJson({ ok: false, error }, { status, requestId });
+}
+
+// Same response shape as errorResponse(), but for entitlement denials — these carry
+// their own code space (EntitlementDenialReason), not UploadValidationErrorCode, since
+// "you're out of quota" is a different kind of rejection than "this file is invalid".
+function entitlementErrorResponse(reason: EntitlementDenialReason, requestId: string) {
+  return securityJson(
+    { ok: false, error: entitlementErrorPayload(reason) },
+    { status: statusForDenialReason(reason), requestId },
+  );
 }
 
 function sanitizeFileName(fileName: string) {
@@ -81,7 +96,7 @@ function parseDeclaredSize(value: string | null) {
   return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
-function getUploadMetadata(request: Request) {
+function getUploadMetadata(request: Request, maxUploadBytes: number) {
   const rawFileName = request.headers.get(fileNameHeader);
   const fileType = request.headers.get(fileTypeHeader)?.trim() ?? "";
   const declaredSize = parseDeclaredSize(request.headers.get(fileSizeHeader));
@@ -123,7 +138,7 @@ function getUploadMetadata(request: Request) {
     });
   }
 
-  if (declaredSize > MAX_UPLOAD_BYTES) {
+  if (declaredSize > maxUploadBytes) {
     throw new ExtractAudioRouteError("extract_audio_declared_size_rejected", {
       code: "file_too_large",
       message: "The selected file exceeds the upload limit.",
@@ -155,6 +170,7 @@ async function streamRequestBodyToDisk(
   request: Request,
   filePath: string,
   declaredSize: number,
+  maxUploadBytes: number,
 ) {
   if (!request.body) {
     throw new ExtractAudioRouteError("extract_audio_body_missing", {
@@ -182,7 +198,7 @@ async function streamRequestBodyToDisk(
       });
     }
 
-    if (parsedContentLength > MAX_UPLOAD_BYTES) {
+    if (parsedContentLength > maxUploadBytes) {
       throw new ExtractAudioRouteError("extract_audio_content_length_rejected", {
         code: "file_too_large",
         message: "The selected file exceeds the upload limit.",
@@ -261,7 +277,7 @@ async function streamRequestBodyToDisk(
 
       receivedBytes += value.byteLength;
 
-      if (receivedBytes > MAX_UPLOAD_BYTES) {
+      if (receivedBytes > maxUploadBytes) {
         throw new ExtractAudioRouteError("extract_audio_real_size_rejected", {
           code: "file_too_large",
           message: "The selected file exceeds the upload limit.",
@@ -359,9 +375,15 @@ export async function POST(request: Request) {
   }
 
   let workDirectory: string | null = null;
+  let usageEventId: string | null = null;
+  let usageConfirmed = false;
 
   try {
-    const metadata = getUploadMetadata(request);
+    const actor = await resolveActor(request);
+    const limits =
+      actor.type === "anonymous" ? getAnonymousLimits() : getToolLimits(actor.plan, "extract-audio");
+
+    const metadata = getUploadMetadata(request, limits.maxUploadBytes);
     const identity = {
       name: metadata.fileName,
       size: metadata.declaredSize,
@@ -381,6 +403,22 @@ export async function POST(request: Request) {
       return errorResponse(earlyValidationError, 400, security.requestId);
     }
 
+    // Reserved before accepting the upload body: an actor already out of quota is
+    // rejected without spending bandwidth/disk on a file that could never be processed,
+    // and this is well before any FFmpeg/ffprobe work starts.
+    const reservation = await reserveUsage(actor, "extract-audio", security.requestId);
+
+    if (!reservation.allowed) {
+      logSecurityEvent("warn", "extract_audio_usage_denied", {
+        requestId: security.requestId,
+        fingerprint: security.fingerprint,
+        reason: reservation.reason,
+      });
+      return entitlementErrorResponse(reservation.reason, security.requestId);
+    }
+
+    usageEventId = reservation.usageEventId;
+
     workDirectory = path.join(extractionDirectory, randomUUID());
     await mkdir(workDirectory, { recursive: true });
 
@@ -391,6 +429,7 @@ export async function POST(request: Request) {
       request,
       inputPath,
       metadata.declaredSize,
+      limits.maxUploadBytes,
     );
     const signaturePrefix = await readSignaturePrefix(inputPath);
     const validationError = validateFileIdentity(identity, signaturePrefix);
@@ -489,6 +528,11 @@ export async function POST(request: Request) {
         outputSize: output.size,
       });
 
+      if (usageEventId) {
+        await confirmUsage(usageEventId);
+        usageConfirmed = true;
+      }
+
       const response = createStreamingDownloadResponse({
         outputPath,
         outputSize: output.size,
@@ -554,6 +598,13 @@ export async function POST(request: Request) {
           fingerprint: security.fingerprint,
         });
       }
+    }
+
+    // Any path that returns without confirming (validation failure, ffprobe/ffmpeg
+    // failure, an uncaught error) gives the reserved slot back rather than leaving it
+    // permanently counted against the actor for work that never actually succeeded.
+    if (usageEventId && !usageConfirmed) {
+      await releaseUsage(usageEventId);
     }
   }
 }

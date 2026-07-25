@@ -26,7 +26,11 @@ const accountMenu = await readFile("src/components/account-menu.tsx", "utf8");
 test("auth client is a single createAuthClient() singleton, not reconstructed per form", () => {
   assert.match(authClient, /createAuthClient/);
   assert.match(authClient, /"better-auth\/react"/);
-  assert.match(authClient, /export const authClient = createAuthClient\(\)/);
+  // Milestone 5 added the Stripe subscription client plugin, but this is still the one
+  // and only createAuthClient() call in the codebase — not reconstructed per form.
+  assert.match(authClient, /export const authClient = createAuthClient\(\{/);
+  const authClientCalls = authClient.match(/createAuthClient\(/g) ?? [];
+  assert.equal(authClientCalls.length, 1);
 
   for (const source of [
     signInForm,

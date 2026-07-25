@@ -88,16 +88,31 @@ test("dashboard overview renders real authenticated session data, not placeholde
 
   assert.match(accountSummaryCard, /email: string/);
   assert.match(accountSummaryCard, /emailVerified: boolean/);
-  // Membership must stay a neutral static placeholder — no fabricated plan/usage data.
-  assert.match(accountSummaryCard, /copy\.freeAccountLabel/);
+});
+
+test("account summary shows the real entitlement plan (Milestone 4), not a hardcoded label", () => {
+  // Milestone 3 rendered a static "Free account" placeholder. Milestone 4 replaces it with
+  // the real plan looked up server-side via getPlan() — the component takes plan as a prop
+  // rather than deriving it itself, keeping entitlement lookups out of presentational code.
+  assert.match(dashboardPage, /from "@\/lib\/server\/entitlements\/service"/);
+  assert.match(dashboardPage, /const plan = await getPlan\(session\.user\.id\)/);
+  assert.match(dashboardPage, /<AccountSummaryCard[\s\S]*?plan=\{plan\}/);
+
+  assert.match(accountSummaryCard, /plan: PlanType/);
+  assert.match(accountSummaryCard, /plan === "pro" \? copy\.proAccountLabel : copy\.freeAccountLabel/);
   assert.doesNotMatch(accountSummaryCard, /\$\d/); // no hardcoded price
 });
 
-test("no fake usage, quota, or billing numbers exist anywhere in the dashboard", () => {
-  for (const source of [dashboardPage, accountSummaryCard, dashboardPlaceholder, usagePage, planPage, billingPage]) {
+test("no fake billing numbers exist anywhere in the dashboard", () => {
+  // Usage/plan pages legitimately render byte sizes and counts, but only ever through
+  // formatBytes()/dictionary interpolation at runtime — never a literal hardcoded number
+  // in the source itself. Billing/settings stay untouched honest placeholders.
+  for (const source of [dashboardPage, accountSummaryCard, dashboardPlaceholder, billingPage]) {
     assert.doesNotMatch(source, /\b\d+(\.\d+)?\s*(GB|MB|KB)\b/i);
     assert.doesNotMatch(source, /\$\d/);
   }
+  assert.doesNotMatch(usagePage, /\$\d/);
+  assert.doesNotMatch(planPage, /\$\d/);
 });
 
 test("tool quick links point at the real existing tool routes", () => {
@@ -105,8 +120,24 @@ test("tool quick links point at the real existing tool routes", () => {
   assert.match(toolQuickLinks, /href: `\/\$\{locale\}\/tools\/extract-audio`/);
 });
 
-test("the 4 placeholder sections are honest 'coming soon' pages, not fabricated data", () => {
-  for (const page of [usagePage, planPage, billingPage, settingsPage]) {
+test("usage and plan pages render real server-computed entitlement data (Milestone 4), not placeholders", () => {
+  assert.match(usagePage, /const session = await requireSession/);
+  assert.match(usagePage, /from "@\/lib\/server\/entitlements\/service"/);
+  assert.match(usagePage, /checkEntitlement\(actor, toolId\)/);
+  assert.match(usagePage, /copy\.unavailableMessage/); // honest state when the check fails
+  assert.doesNotMatch(usagePage, /from "@\/components\/dashboard\/dashboard-placeholder"/);
+
+  assert.match(planPage, /const session = await requireSession/);
+  assert.match(planPage, /from "@\/lib\/server\/entitlements\/service"/);
+  assert.match(planPage, /getToolLimits\(plan, toolId\)/);
+  // The Upgrade block is still a placeholder — no checkout button, no Stripe SDK/import.
+  assert.match(planPage, /from "@\/components\/dashboard\/dashboard-placeholder"/);
+  assert.doesNotMatch(planPage, /from "stripe"/i);
+  assert.doesNotMatch(planPage, /<button/i);
+});
+
+test("billing and settings remain honest 'coming soon' placeholders (out of Milestone 4's scope)", () => {
+  for (const page of [billingPage, settingsPage]) {
     assert.match(page, /from "@\/components\/dashboard\/dashboard-placeholder"/);
     assert.match(page, /comingSoonBadge/);
     assert.doesNotMatch(page, /requireSession/); // layout already gates this segment
