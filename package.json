@@ -14,9 +14,15 @@
     "test:unit": "node --test \"tests/unit/*.test.mjs\"",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "better-auth": "^1.6.25",
+    "drizzle-orm": "^0.45.2",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
@@ -28,6 +34,7 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "drizzle-kit": "^0.31.10",
     "eslint": "latest",
     "eslint-config-next": "latest",
     "prettier": "latest",

@@ -324,6 +324,104 @@ export type Dictionary = {
       };
     };
   };
+  auth: {
+    fields: {
+      nameLabel: string;
+      namePlaceholder: string;
+      emailLabel: string;
+      emailPlaceholder: string;
+      passwordLabel: string;
+      passwordPlaceholder: string;
+      newPasswordLabel: string;
+      newPasswordPlaceholder: string;
+      confirmPasswordLabel: string;
+      confirmPasswordPlaceholder: string;
+    };
+    validation: {
+      nameRequired: string;
+      emailInvalid: string;
+      passwordTooShort: string;
+      passwordTooLong: string;
+      passwordMismatch: string;
+    };
+    errors: {
+      invalidEmail: string;
+      userAlreadyExists: string;
+      invalidCredentials: string;
+      passwordTooShort: string;
+      passwordTooLong: string;
+      invalidToken: string;
+      tokenExpired: string;
+      emailAlreadyVerified: string;
+      networkError: string;
+      unknown: string;
+    };
+    signIn: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      submitLabel: string;
+      submittingLabel: string;
+      forgotPasswordLink: string;
+      noAccountPrompt: string;
+      signUpLink: string;
+    };
+    signUp: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      submitLabel: string;
+      submittingLabel: string;
+      hasAccountPrompt: string;
+      signInLink: string;
+      successTitle: string;
+      successMessage: string;
+    };
+    forgotPassword: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      submitLabel: string;
+      submittingLabel: string;
+      successTitle: string;
+      successMessage: string;
+      backToSignInLink: string;
+    };
+    resetPassword: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      submitLabel: string;
+      submittingLabel: string;
+      successTitle: string;
+      successMessage: string;
+      successActionLabel: string;
+      invalidLinkTitle: string;
+      invalidLinkMessage: string;
+      requestNewLinkLabel: string;
+    };
+    verifyEmail: {
+      eyebrow: string;
+      title: string;
+      verifiedTitle: string;
+      verifiedMessage: string;
+      pendingTitle: string;
+      pendingMessage: string;
+      resendButton: string;
+      resendingLabel: string;
+      resendSuccessMessage: string;
+      goHomeLabel: string;
+    };
+    accountMenu: {
+      openLabel: string;
+      signedInAsLabel: string;
+      signOutLabel: string;
+      signingOutLabel: string;
+    };
+    guestNav: {
+      signInLabel: string;
+    };
+  };
   pages: Record<ContentPageSlug, ContentPageCopy>;
 };
 
@@ -760,6 +858,111 @@ const dictionaries: Record<Locale, Dictionary> = {
         networkError:
           "The request could not be completed. Check your connection and try again.",
       },
+    },
+  },
+  auth: {
+    fields: {
+      nameLabel: "Full name",
+      namePlaceholder: "Jane Doe",
+      emailLabel: "Email address",
+      emailPlaceholder: "you@example.com",
+      passwordLabel: "Password",
+      passwordPlaceholder: "Enter your password",
+      newPasswordLabel: "New password",
+      newPasswordPlaceholder: "Enter a new password",
+      confirmPasswordLabel: "Confirm password",
+      confirmPasswordPlaceholder: "Enter the password again",
+    },
+    validation: {
+      nameRequired: "Enter your name.",
+      emailInvalid: "Enter a valid email address.",
+      passwordTooShort: "Password must be at least 8 characters.",
+      passwordTooLong: "Password must be 128 characters or fewer.",
+      passwordMismatch: "Passwords do not match.",
+    },
+    errors: {
+      invalidEmail: "Enter a valid email address.",
+      userAlreadyExists: "An account with this email already exists.",
+      invalidCredentials: "Incorrect email or password.",
+      passwordTooShort: "Password must be at least 8 characters.",
+      passwordTooLong: "Password must be 128 characters or fewer.",
+      invalidToken: "This link is invalid. Request a new one.",
+      tokenExpired: "This link has expired. Request a new one.",
+      emailAlreadyVerified: "This email is already verified.",
+      networkError:
+        "The request could not be completed. Check your connection and try again.",
+      unknown: "Something went wrong. Try again.",
+    },
+    signIn: {
+      eyebrow: "Account",
+      title: "Sign in",
+      description: "Sign in to your QAVELIX account.",
+      submitLabel: "Sign in",
+      submittingLabel: "Signing in...",
+      forgotPasswordLink: "Forgot your password?",
+      noAccountPrompt: "Don't have an account?",
+      signUpLink: "Sign up",
+    },
+    signUp: {
+      eyebrow: "Account",
+      title: "Create your account",
+      description: "Create a QAVELIX account to get started.",
+      submitLabel: "Create account",
+      submittingLabel: "Creating account...",
+      hasAccountPrompt: "Already have an account?",
+      signInLink: "Sign in",
+      successTitle: "Check your email",
+      successMessage:
+        "Your account was created. We sent a verification link to your email address.",
+    },
+    forgotPassword: {
+      eyebrow: "Account",
+      title: "Reset your password",
+      description:
+        "Enter your email address and we'll send you a link to reset your password.",
+      submitLabel: "Send reset link",
+      submittingLabel: "Sending...",
+      successTitle: "Check your email",
+      successMessage:
+        "If an account exists for this email address, a reset link is on its way.",
+      backToSignInLink: "Back to sign in",
+    },
+    resetPassword: {
+      eyebrow: "Account",
+      title: "Set a new password",
+      description: "Choose a new password for your account.",
+      submitLabel: "Reset password",
+      submittingLabel: "Resetting...",
+      successTitle: "Password updated",
+      successMessage:
+        "Your password has been reset. You can now sign in with your new password.",
+      successActionLabel: "Sign in",
+      invalidLinkTitle: "Link invalid or expired",
+      invalidLinkMessage:
+        "This password reset link is invalid or has expired. Request a new one to continue.",
+      requestNewLinkLabel: "Request a new link",
+    },
+    verifyEmail: {
+      eyebrow: "Account",
+      title: "Verify your email",
+      verifiedTitle: "Email verified",
+      verifiedMessage: "Your email address has been verified.",
+      pendingTitle: "Verify your email",
+      pendingMessage:
+        "We sent a verification link to your email address. Open it to verify your account.",
+      resendButton: "Resend verification email",
+      resendingLabel: "Sending...",
+      resendSuccessMessage: "Verification email sent. Check your inbox.",
+      goHomeLabel: "Go to homepage",
+    },
+    accountMenu: {
+      openLabel: "Account",
+      signedInAsLabel: "Signed in as",
+      signOutLabel: "Sign out",
+      signingOutLabel: "Signing out...",
+    },
+    guestNav: {
+      signInLabel: "Sign in",
     },
   },
   pages: {
@@ -1538,6 +1741,111 @@ const dictionaries: Record<Locale, Dictionary> = {
         },
       },
     },
+    auth: {
+      fields: {
+        nameLabel: "Nome completo",
+        namePlaceholder: "Maria Silva",
+        emailLabel: "Endereço de email",
+        emailPlaceholder: "voce@exemplo.com",
+        passwordLabel: "Senha",
+        passwordPlaceholder: "Digite sua senha",
+        newPasswordLabel: "Nova senha",
+        newPasswordPlaceholder: "Digite uma nova senha",
+        confirmPasswordLabel: "Confirmar senha",
+        confirmPasswordPlaceholder: "Digite a senha novamente",
+      },
+      validation: {
+        nameRequired: "Digite seu nome.",
+        emailInvalid: "Digite um endereço de email válido.",
+        passwordTooShort: "A senha deve ter pelo menos 8 caracteres.",
+        passwordTooLong: "A senha deve ter no máximo 128 caracteres.",
+        passwordMismatch: "As senhas não coincidem.",
+      },
+      errors: {
+        invalidEmail: "Digite um endereço de email válido.",
+        userAlreadyExists: "Já existe uma conta com este email.",
+        invalidCredentials: "Email ou senha incorretos.",
+        passwordTooShort: "A senha deve ter pelo menos 8 caracteres.",
+        passwordTooLong: "A senha deve ter no máximo 128 caracteres.",
+        invalidToken: "Este link é inválido. Solicite um novo.",
+        tokenExpired: "Este link expirou. Solicite um novo.",
+        emailAlreadyVerified: "Este email já foi verificado.",
+        networkError:
+          "Não foi possível concluir a solicitação. Verifique sua conexão e tente novamente.",
+        unknown: "Algo deu errado. Tente novamente.",
+      },
+      signIn: {
+        eyebrow: "Conta",
+        title: "Entrar",
+        description: "Entre na sua conta QAVELIX.",
+        submitLabel: "Entrar",
+        submittingLabel: "Entrando...",
+        forgotPasswordLink: "Esqueceu sua senha?",
+        noAccountPrompt: "Não tem uma conta?",
+        signUpLink: "Cadastre-se",
+      },
+      signUp: {
+        eyebrow: "Conta",
+        title: "Crie sua conta",
+        description: "Crie uma conta QAVELIX para começar.",
+        submitLabel: "Criar conta",
+        submittingLabel: "Criando conta...",
+        hasAccountPrompt: "Já tem uma conta?",
+        signInLink: "Entrar",
+        successTitle: "Verifique seu email",
+        successMessage:
+          "Sua conta foi criada. Enviamos um link de verificação para o seu email.",
+      },
+      forgotPassword: {
+        eyebrow: "Conta",
+        title: "Redefina sua senha",
+        description:
+          "Digite seu endereço de email e enviaremos um link para redefinir sua senha.",
+        submitLabel: "Enviar link de redefinição",
+        submittingLabel: "Enviando...",
+        successTitle: "Verifique seu email",
+        successMessage:
+          "Se existir uma conta com este email, um link de redefinição está a caminho.",
+        backToSignInLink: "Voltar para o login",
+      },
+      resetPassword: {
+        eyebrow: "Conta",
+        title: "Defina uma nova senha",
+        description: "Escolha uma nova senha para sua conta.",
+        submitLabel: "Redefinir senha",
+        submittingLabel: "Redefinindo...",
+        successTitle: "Senha atualizada",
+        successMessage:
+          "Sua senha foi redefinida. Agora você pode entrar com sua nova senha.",
+        successActionLabel: "Entrar",
+        invalidLinkTitle: "Link inválido ou expirado",
+        invalidLinkMessage:
+          "Este link de redefinição de senha é inválido ou expirou. Solicite um novo para continuar.",
+        requestNewLinkLabel: "Solicitar novo link",
+      },
+      verifyEmail: {
+        eyebrow: "Conta",
+        title: "Verifique seu email",
+        verifiedTitle: "Email verificado",
+        verifiedMessage: "Seu endereço de email foi verificado.",
+        pendingTitle: "Verifique seu email",
+        pendingMessage:
+          "Enviamos um link de verificação para o seu email. Abra-o para verificar sua conta.",
+        resendButton: "Reenviar email de verificação",
+        resendingLabel: "Enviando...",
+        resendSuccessMessage: "Email de verificação enviado. Verifique sua caixa de entrada.",
+        goHomeLabel: "Ir para a página inicial",
+      },
+      accountMenu: {
+        openLabel: "Conta",
+        signedInAsLabel: "Conectado como",
+        signOutLabel: "Sair",
+        signingOutLabel: "Saindo...",
+      },
+      guestNav: {
+        signInLabel: "Entrar",
+      },
+    },
     pages: {
       about: {
         label: "Sobre",
@@ -2313,6 +2621,111 @@ const dictionaries: Record<Locale, Dictionary> = {
           networkError:
             "No se ha podido completar la solicitud. Comprueba tu conexión e inténtalo de nuevo.",
         },
+      },
+    },
+    auth: {
+      fields: {
+        nameLabel: "Nombre completo",
+        namePlaceholder: "María García",
+        emailLabel: "Correo electrónico",
+        emailPlaceholder: "tu@ejemplo.com",
+        passwordLabel: "Contraseña",
+        passwordPlaceholder: "Introduce tu contraseña",
+        newPasswordLabel: "Nueva contraseña",
+        newPasswordPlaceholder: "Introduce una nueva contraseña",
+        confirmPasswordLabel: "Confirmar contraseña",
+        confirmPasswordPlaceholder: "Introduce la contraseña de nuevo",
+      },
+      validation: {
+        nameRequired: "Introduce tu nombre.",
+        emailInvalid: "Introduce un correo electrónico válido.",
+        passwordTooShort: "La contraseña debe tener al menos 8 caracteres.",
+        passwordTooLong: "La contraseña debe tener 128 caracteres como máximo.",
+        passwordMismatch: "Las contraseñas no coinciden.",
+      },
+      errors: {
+        invalidEmail: "Introduce un correo electrónico válido.",
+        userAlreadyExists: "Ya existe una cuenta con este correo electrónico.",
+        invalidCredentials: "Correo electrónico o contraseña incorrectos.",
+        passwordTooShort: "La contraseña debe tener al menos 8 caracteres.",
+        passwordTooLong: "La contraseña debe tener 128 caracteres como máximo.",
+        invalidToken: "Este enlace no es válido. Solicita uno nuevo.",
+        tokenExpired: "Este enlace ha caducado. Solicita uno nuevo.",
+        emailAlreadyVerified: "Este correo electrónico ya está verificado.",
+        networkError:
+          "No se ha podido completar la solicitud. Comprueba tu conexión e inténtalo de nuevo.",
+        unknown: "Algo salió mal. Inténtalo de nuevo.",
+      },
+      signIn: {
+        eyebrow: "Cuenta",
+        title: "Iniciar sesión",
+        description: "Inicia sesión en tu cuenta de QAVELIX.",
+        submitLabel: "Iniciar sesión",
+        submittingLabel: "Iniciando sesión...",
+        forgotPasswordLink: "¿Olvidaste tu contraseña?",
+        noAccountPrompt: "¿No tienes una cuenta?",
+        signUpLink: "Regístrate",
+      },
+      signUp: {
+        eyebrow: "Cuenta",
+        title: "Crea tu cuenta",
+        description: "Crea una cuenta de QAVELIX para empezar.",
+        submitLabel: "Crear cuenta",
+        submittingLabel: "Creando cuenta...",
+        hasAccountPrompt: "¿Ya tienes una cuenta?",
+        signInLink: "Iniciar sesión",
+        successTitle: "Revisa tu correo",
+        successMessage:
+          "Tu cuenta se ha creado. Te hemos enviado un enlace de verificación a tu correo electrónico.",
+      },
+      forgotPassword: {
+        eyebrow: "Cuenta",
+        title: "Restablece tu contraseña",
+        description:
+          "Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.",
+        submitLabel: "Enviar enlace",
+        submittingLabel: "Enviando...",
+        successTitle: "Revisa tu correo",
+        successMessage:
+          "Si existe una cuenta con este correo electrónico, un enlace de restablecimiento está en camino.",
+        backToSignInLink: "Volver a iniciar sesión",
+      },
+      resetPassword: {
+        eyebrow: "Cuenta",
+        title: "Establece una nueva contraseña",
+        description: "Elige una nueva contraseña para tu cuenta.",
+        submitLabel: "Restablecer contraseña",
+        submittingLabel: "Restableciendo...",
+        successTitle: "Contraseña actualizada",
+        successMessage:
+          "Tu contraseña se ha restablecido. Ya puedes iniciar sesión con tu nueva contraseña.",
+        successActionLabel: "Iniciar sesión",
+        invalidLinkTitle: "Enlace no válido o caducado",
+        invalidLinkMessage:
+          "Este enlace de restablecimiento de contraseña no es válido o ha caducado. Solicita uno nuevo para continuar.",
+        requestNewLinkLabel: "Solicitar un nuevo enlace",
+      },
+      verifyEmail: {
+        eyebrow: "Cuenta",
+        title: "Verifica tu correo",
+        verifiedTitle: "Correo verificado",
+        verifiedMessage: "Tu correo electrónico ha sido verificado.",
+        pendingTitle: "Verifica tu correo",
+        pendingMessage:
+          "Te hemos enviado un enlace de verificación a tu correo electrónico. Ábrelo para verificar tu cuenta.",
+        resendButton: "Reenviar correo de verificación",
+        resendingLabel: "Enviando...",
+        resendSuccessMessage: "Correo de verificación enviado. Revisa tu bandeja de entrada.",
+        goHomeLabel: "Ir a la página de inicio",
+      },
+      accountMenu: {
+        openLabel: "Cuenta",
+        signedInAsLabel: "Sesión iniciada como",
+        signOutLabel: "Cerrar sesión",
+        signingOutLabel: "Cerrando sesión...",
+      },
+      guestNav: {
+        signInLabel: "Iniciar sesión",
       },
     },
     pages: {

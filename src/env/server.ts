@@ -31,6 +31,14 @@ const envSchema = z
         });
       }
     }),
+    // Optional at every stage, including production: the SaaS foundation (Drizzle +
+    // Better Auth) has no UI and nothing existing depends on it yet, so the shared env
+    // module — imported by every page — must not fail production builds/boots over
+    // vars only the not-yet-reachable /api/auth/* route needs. getDb()/getAuth()
+    // (src/lib/server/db/client.ts, src/lib/server/auth/auth.ts) throw a clear error
+    // themselves if something actually tries to use the database without one configured.
+    DATABASE_URL: z.url().optional(),
+    BETTER_AUTH_SECRET: z.string().min(32).optional(),
   })
   .superRefine((value, context) => {
     const appUrl = new URL(value.NEXT_PUBLIC_APP_URL);
@@ -56,6 +64,8 @@ const parsedEnv = envSchema.safeParse({
   NEXT_PUBLIC_APP_URL:
     process.env.NEXT_PUBLIC_APP_URL ??
     (rawNodeEnv === "production" ? undefined : "http://localhost:3000"),
+  DATABASE_URL: process.env.DATABASE_URL,
+  BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 });
 
 if (!parsedEnv.success) {

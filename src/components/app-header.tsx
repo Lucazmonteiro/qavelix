@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import type { Locale } from "@/i18n/locales";
 
+import { AccountMenu } from "@/components/account-menu";
 import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { getDictionary } from "@/i18n/dictionaries";
@@ -145,6 +146,7 @@ export function AppHeader({ locale, dictionary }: AppHeaderProps) {
             label={dictionary.navigation.themeLabel}
             lightLabel={dictionary.navigation.lightTheme}
           />
+          <AccountMenu dictionary={dictionary} locale={locale} />
         </div>
       </div>
     </header>
