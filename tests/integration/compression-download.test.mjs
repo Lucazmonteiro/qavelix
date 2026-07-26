@@ -11,14 +11,19 @@ import { promisify } from "node:util";
 import { assertStatus, withNextServer } from "../helpers/next-server.mjs";
 
 const execFileAsync = promisify(execFile);
-let requestFingerprintCounter = 80;
+// Randomized per process run so repeated local runs against the same persistent dev
+// database don't replay the same synthetic IP sequence — see the matching comment in
+// tests/integration/http.test.mjs for why a fixed starting value caused accumulating
+// anonymous-quota exhaustion (401 account_required) across reruns.
+const fingerprintRunSeed = Math.floor(Math.random() * 254) + 1;
+let requestFingerprintCounter = 0;
 
 function compressionRequestHeaders(baseUrl) {
   requestFingerprintCounter += 1;
 
   return {
     Origin: baseUrl,
-    "X-Forwarded-For": `203.0.113.${requestFingerprintCounter}`,
+    "X-Forwarded-For": `10.${fingerprintRunSeed}.99.${requestFingerprintCounter}`,
     "Content-Type": "application/json",
   };
 }

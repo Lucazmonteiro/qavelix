@@ -19,7 +19,17 @@ const mp4Header = new Uint8Array([
 
 async function listUploadTempFiles() {
   try {
-    return new Set(await readdir(path.join(os.tmpdir(), "qavelix-upload-analysis")));
+    const entries = await readdir(path.join(os.tmpdir(), "qavelix-upload-analysis"));
+
+    // "records" is analyzed-upload-registry.ts's own permanent bookkeeping directory —
+    // created once, on first use, and never removed by design (see
+    // ensureAnalyzedUploadRegistry()). It isn't a per-upload temp file, so including it
+    // here made this comparison depend on whether an earlier test run had already
+    // created it: on a genuinely fresh checkout (a new CI runner, a wiped temp
+    // directory) the very first successful upload in this file would see it appear
+    // between the "before" and "after" snapshots and fail, even though nothing was
+    // actually left uncleaned.
+    return new Set(entries.filter((entry) => entry !== "records"));
   } catch {
     return new Set();
   }
@@ -50,15 +60,25 @@ const successfulCompressionStatuses = [
   "compression_ineffective",
 ];
 const uploadLimitBytes = 250 * 1024 * 1024;
-let uploadTestFingerprintCounter = 150;
-let compressionTestFingerprintCounter = 10;
+// Randomized per process run (not a fixed literal) so repeated local runs against the
+// same persistent dev database never reuse a prior run's synthetic IPs. The anonymous
+// usage pool is a lifetime quota (5 combined uses, never resets) keyed off a hash of
+// this IP — fixed starting values meant every rerun replayed the exact same fingerprint
+// sequence, so quota consumed by an earlier run silently carried over and caused
+// spurious 401 account_required failures on later runs, unrelated to any real
+// regression. Random octets keep the IPv4 shape (some code paths may expect a
+// well-formed address) while making cross-run collisions practically impossible.
+const fingerprintRunSeedA = Math.floor(Math.random() * 254) + 1;
+const fingerprintRunSeedB = Math.floor(Math.random() * 254) + 1;
+let uploadTestFingerprintCounter = 0;
+let compressionTestFingerprintCounter = 0;
 
 function compressionRequestHeaders(baseUrl) {
   compressionTestFingerprintCounter += 1;
 
   return {
     Origin: baseUrl,
-    "X-Forwarded-For": `203.0.113.${compressionTestFingerprintCounter}`,
+    "X-Forwarded-For": `10.${fingerprintRunSeedA}.${fingerprintRunSeedB}.${compressionTestFingerprintCounter}`,
     "Content-Type": "application/json",
   };
 }
@@ -174,7 +194,7 @@ async function postRawUpload(
   uploadTestFingerprintCounter += 1;
   const headers = {
     Origin: origin,
-    "X-Forwarded-For": `198.51.100.${uploadTestFingerprintCounter}`,
+    "X-Forwarded-For": `172.16.${fingerprintRunSeedA}.${uploadTestFingerprintCounter}`,
     ...extraHeaders,
   };
 
@@ -303,18 +323,98 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
     });
 
     await t.test("renders localized public pages without unfinished release language", async () => {
+      // Broad class-level markers (any of these means the page still reads as
+      // pre-launch/provisional), plus specific historical regressions this suite has
+      // already caught once (each phrase below was verified false/stale and fixed —
+      // kept here so a re-introduction is caught immediately, without pinning the test
+      // to the exact replacement marketing sentence, which is free to keep evolving).
+      // \b-anchored so this doesn't false-positive on legitimate camelCase identifiers
+      // serialized into the page's hydration payload (e.g. "namePlaceholder",
+      // "emailPlaceholder" form-field keys are not the marketing word "placeholder").
+      const unfinishedLanguagePattern =
+        /\bplaceholder\b|\bprovisional\b|phase 7|fase 7|coming soon|actively developing|under local development|is not connected to processing|planned mvp|the mvp (uses|is)|will (create|be supported)|does not (provide|offer) user accounts|account sessions/i;
+      const pages = ["/en/about", "/pt-BR/about", "/es/about"];
+
+      for (const path of pages) {
+        const { response, text } = await fetchText(`${baseUrl}${path}`);
+
+        assertStatus(response, 200, path);
+        // Scoped to the rendered <main> content only: the full response also embeds the
+        // entire i18n dictionary as an RSC hydration payload (every client component's
+        // translated props, for every page, not just this one) — that payload
+        // legitimately contains phrases like the dashboard plan page's Stripe-gated
+        // "Coming soon" upgrade badge, which would otherwise false-positive here even
+        // though it never renders on this page.
+        const mainMatch = text.match(/<main[^>]*>([\s\S]*)<\/main>/);
+        const mainContent = mainMatch ? mainMatch[1] : text;
+        assert.doesNotMatch(
+          mainContent,
+          unfinishedLanguagePattern,
+          `${path} should not contain unfinished release language`,
+        );
+        // The real regression this test guards against: the About page must mention
+        // both tools that actually exist today, not just the original flagship one.
+        assert.match(
+          mainContent,
+          /Video Compressor|Compress?or de V[ií]deo/i,
+          `${path} should mention Video Compressor`,
+        );
+        assert.match(
+          mainContent,
+          /Extract Audio|Extrair [ÁA]udio|Extraer [Aa]udio/i,
+          `${path} should mention Extract Audio`,
+        );
+      }
+    });
+
+    await t.test("renders correctly encoded accented characters on localized legal pages", async () => {
       const pages = [
-        { path: "/en/about", expected: "Simple, secure video compression" },
-        { path: "/pt-BR/privacy-policy", expected: "Última atualização" },
-        { path: "/es/faq", expected: "Preguntas frecuentes" },
+        "/pt-BR/privacy-policy",
+        "/pt-BR/terms",
+        "/pt-BR/cookie-policy",
+        "/es/privacy-policy",
       ];
 
-      for (const page of pages) {
-        const { response, text } = await fetchText(`${baseUrl}${page.path}`);
+      for (const path of pages) {
+        const { response, text } = await fetchText(`${baseUrl}${path}`);
 
-        assertStatus(response, 200, page.path);
-        assert.match(text, new RegExp(page.expected));
-        assert.doesNotMatch(text, /placeholder|provisional|Phase 7|Fase 7/i);
+        assertStatus(response, 200, path);
+        assert.match(
+          response.headers.get("content-type") ?? "",
+          /charset=utf-8/i,
+          `${path} must declare UTF-8`,
+        );
+        // A genuine encoding failure (truncated multi-byte sequence, wrong charset
+        // interpretation) always produces the Unicode replacement character once the
+        // bytes are decoded — this should never appear in a correctly served response.
+        assert.doesNotMatch(
+          text,
+          /�/,
+          `${path} must not contain the Unicode replacement character`,
+        );
+        // Proves this isn't just an absence of the bad pattern — a real accented
+        // character must actually be present and correctly formed.
+        assert.match(
+          text,
+          /[áàâãéêíóôõúüçÁÀÂÃÉÊÍÓÔÕÚÜÇ]/,
+          `${path} should contain correctly encoded accented characters`,
+        );
+      }
+    });
+
+    await t.test("renders structured FAQ data on the localized FAQ pages", async () => {
+      const pages = ["/en/faq", "/pt-BR/faq", "/es/faq"];
+
+      for (const path of pages) {
+        const { response, text } = await fetchText(`${baseUrl}${path}`);
+
+        assertStatus(response, 200, path);
+        assert.match(text, /"@type":\s*"FAQPage"/, `${path} should emit FAQPage structured data`);
+        assert.match(
+          text,
+          /"@type":\s*"Question"/,
+          `${path} should emit at least one Question entity`,
+        );
       }
     });
 
@@ -662,7 +762,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
           method: "POST",
           headers: {
             Origin: baseUrl,
-            "X-Forwarded-For": `203.0.113.${++compressionTestFingerprintCounter}`,
+            "X-Forwarded-For": `10.${fingerprintRunSeedA}.${fingerprintRunSeedB}.${++compressionTestFingerprintCounter}`,
           },
           body: formData,
         });

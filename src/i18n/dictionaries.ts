@@ -893,20 +893,20 @@ const dictionaries: Record<Locale, Dictionary> = {
         {
           question: "What does Extract Audio do?",
           answer:
-            "It will create a separate MP3 audio file from an uploaded video.",
+            "It creates a separate MP3 audio file from an uploaded video.",
         },
         {
-          question: "Which video formats will be supported?",
+          question: "Which video formats are supported?",
           answer:
-            "The MVP uses the same supported video formats as the Video Compressor: MP4, M4V, MOV, WebM, AVI, MPG, and MPEG.",
+            "Extract Audio supports the same video formats as Video Compressor: MP4, M4V, MOV, WebM, AVI, MPG, and MPEG.",
         },
         {
-          question: "Will the output be MP3?",
-          answer: "Yes. The planned MVP output format is MP3.",
+          question: "Is the output MP3?",
+          answer: "Yes. The output format is MP3.",
         },
         {
           question: "What is the upload limit?",
-          answer: "The current file limit is 250 MB.",
+          answer: "The file limit is 250 MB on the Free plan and 500 MB on QAVELIX PRO.",
         },
         {
           question: "How are files handled?",
@@ -1165,7 +1165,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "About QAVELIX",
           description:
-            "Learn how QAVELIX is becoming a practical platform for secure media tools.",
+            "Learn how QAVELIX's Video Compressor and Extract Audio tools work.",
         },
         eyebrow: "About",
         title: "Practical media tools, built for clarity",
@@ -1175,22 +1175,22 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "What QAVELIX does",
             body: [
-              "QAVELIX currently offers Video Compressor and is actively developing Extract Audio as the next tool in the platform.",
-              "The platform is designed for practical video, audio, image, and PDF workflows that should feel simple instead of technical.",
+              "QAVELIX currently offers Video Compressor and Extract Audio, two focused media tools you can use directly in your browser.",
+              "Both tools are designed to feel simple instead of technical: upload a file, review its details, choose an option, and download the result.",
             ],
           },
           {
             title: "Privacy-minded processing",
             body: [
               "Files are handled as temporary processing files. Source files and generated outputs are removed after processing, cancellation, deletion, or expiration according to each tool workflow.",
-              "QAVELIX focuses on clear limits, localized guidance, and minimal browser preferences rather than accounts, permanent libraries, or unnecessary tracking.",
+              "QAVELIX focuses on clear limits and localized guidance. Creating an account is optional and is only needed to unlock QAVELIX PRO — every tool works without one.",
             ],
           },
           {
-            title: "Platform roadmap",
+            title: "QAVELIX PRO",
             body: [
-              "Video Compressor remains the current production tool. Extract Audio is under local development and is not connected to processing yet.",
-              "Future tools may expand across video, audio, images, and PDF when they can match the same privacy, simplicity, and reliability standards.",
+              "Video Compressor and Extract Audio are both fully available today, for anonymous use or with a free account.",
+              "QAVELIX PRO is a paid upgrade with higher daily usage limits and larger file sizes on both tools.",
             ],
           },
         ],
@@ -1251,7 +1251,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Is there a maximum file size?",
             body: [
-              "Yes. The maximum upload size is 250 MB per video.",
+              "Yes. The maximum upload size is 250 MB per video on the Free plan and 500 MB on QAVELIX PRO.",
             ],
           },
           {
@@ -1354,7 +1354,14 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Logs and security data",
             body: [
               "The server may process request metadata such as IP address, user agent, requested route, request timing, and security event information to protect the service, troubleshoot errors, and prevent misuse.",
-              "QAVELIX does not provide user accounts, payment processing, advertising profiles, or a permanent file library.",
+              "QAVELIX does not run advertising profiles or provide a permanent file library for uploaded media.",
+            ],
+          },
+          {
+            title: "Accounts and billing",
+            body: [
+              "Creating an account is optional and is only needed to use QAVELIX PRO. An account stores your email address, a securely hashed password, and your current plan.",
+              "If you subscribe to QAVELIX PRO, payment is processed by Stripe. QAVELIX does not store your card details.",
             ],
           },
           {
@@ -1483,15 +1490,15 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Cookies and tracking",
             body: [
-              "The current application code does not include analytics cookies, advertising cookies, payment tracking, account sessions, or third-party marketing tags.",
-              "Because only necessary preference storage is currently used, QAVELIX does not show a cookie consent banner.",
+              "QAVELIX sets one strictly necessary session cookie when you sign in, solely to keep you authenticated. The application does not include analytics cookies, advertising cookies, or third-party marketing tags.",
+              "Because only strictly necessary storage (theme preference and, when signed in, your session) is used, QAVELIX does not show a cookie consent banner.",
             ],
           },
           {
             title: "Managing storage",
             body: [
               "You can clear QAVELIX localStorage through your browser settings or site data controls. Clearing storage may reset the theme to the default setting.",
-              "If non-essential analytics, advertising, embedded media, or account features are added later, this notice should be updated and consent controls should be added where required.",
+              "If non-essential analytics, advertising, or third-party marketing features are added later, this notice should be updated and consent controls should be added where required.",
             ],
           },
         ],
@@ -1871,20 +1878,20 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             question: "O que a ferramenta Extrair Áudio faz?",
             answer:
-              "Ela vai criar um arquivo de áudio MP3 separado a partir de um vídeo enviado.",
+              "Ela cria um arquivo de áudio MP3 separado a partir de um vídeo enviado.",
           },
           {
-            question: "Quais formatos de vídeo serão aceitos?",
+            question: "Quais formatos de vídeo são aceitos?",
             answer:
-              "O MVP usa os mesmos formatos aceitos pelo Compressor de Vídeo: MP4, M4V, MOV, WebM, AVI, MPG e MPEG.",
+              "Extrair Áudio aceita os mesmos formatos do Compressor de Vídeo: MP4, M4V, MOV, WebM, AVI, MPG e MPEG.",
           },
           {
-            question: "A saída será em MP3?",
-            answer: "Sim. O formato de saída planejado para o MVP é MP3.",
+            question: "A saída é em MP3?",
+            answer: "Sim. O formato de saída é MP3.",
           },
           {
             question: "Qual é o limite de upload?",
-            answer: "O limite atual por arquivo é de 250 MB.",
+            answer: "O limite por arquivo é de 250 MB no plano Free e 500 MB no QAVELIX PRO.",
           },
           {
             question: "Como os arquivos são tratados?",
@@ -2148,7 +2155,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Sobre o QAVELIX",
           description:
-            "Conheça como o QAVELIX está se tornando uma plataforma prática para ferramentas de mídia seguras.",
+            "Conheça como funcionam o Compressor de Vídeo e o Extrair Áudio do QAVELIX.",
         },
         eyebrow: "Sobre",
         title: "Ferramentas de mídia práticas, criadas para clareza",
@@ -2158,22 +2165,22 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "O que o QAVELIX faz",
             body: [
-              "O QAVELIX oferece atualmente o Compressor de Vídeo e está desenvolvendo ativamente a ferramenta Extrair Áudio como próxima ferramenta da plataforma.",
-              "A plataforma foi pensada para fluxos práticos de vídeo, áudio, imagem e PDF que devem parecer simples, não técnicos.",
+              "O QAVELIX oferece atualmente o Compressor de Vídeo e o Extrair Áudio, duas ferramentas de mídia focadas que você usa diretamente no navegador.",
+              "As duas ferramentas foram pensadas para parecer simples, não técnicas: envie um arquivo, revise os detalhes, escolha uma opção e baixe o resultado.",
             ],
           },
           {
             title: "Processamento com foco em privacidade",
             body: [
               "Os arquivos enviados são tratados como arquivos temporários de processamento. Arquivos de origem e resultados gerados são removidos após processamento, cancelamento, exclusão ou expiração conforme o fluxo de cada ferramenta.",
-              "O QAVELIX prioriza limites claros, orientação localizada e preferências mínimas no navegador em vez de contas, bibliotecas permanentes ou rastreamento desnecessário.",
+              "O QAVELIX prioriza limites claros e orientação localizada. Criar uma conta é opcional e só é necessário para desbloquear o QAVELIX PRO — todas as ferramentas funcionam sem conta.",
             ],
           },
           {
-            title: "Roteiro da plataforma",
+            title: "QAVELIX PRO",
             body: [
-              "O Compressor de Vídeo continua sendo a ferramenta atual em produção. Extrair Áudio está em desenvolvimento local e ainda não está conectado ao processamento.",
-              "Ferramentas futuras poderão expandir para vídeo, áudio, imagens e PDF quando puderem seguir os mesmos padrões de privacidade, simplicidade e confiabilidade.",
+              "O Compressor de Vídeo e o Extrair Áudio já estão totalmente disponíveis hoje, para uso anônimo ou com uma conta gratuita.",
+              "O QAVELIX PRO é um upgrade pago com limites diários mais altos e arquivos maiores nas duas ferramentas.",
             ],
           },
         ],
@@ -2234,7 +2241,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Existe tamanho máximo de arquivo?",
             body: [
-              "Sim. O tamanho máximo de upload é 250 MB por vídeo.",
+              "Sim. O tamanho máximo de upload é 250 MB por vídeo no plano Free e 500 MB no QAVELIX PRO.",
             ],
           },
           {
@@ -2337,7 +2344,14 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Logs e dados de segurança",
             body: [
               "O servidor pode processar metadados de requisição, como endereço IP, agente do usuário, rota acessada, horários e eventos de segurança para proteger o serviço, investigar erros e evitar abuso.",
-              "O QAVELIX não oferece contas de usuário, processamento de pagamentos, perfis de publicidade nem biblioteca permanente de arquivos.",
+              "O QAVELIX não exibe perfis de publicidade nem oferece biblioteca permanente de arquivos enviados.",
+            ],
+          },
+          {
+            title: "Contas e cobrança",
+            body: [
+              "Criar uma conta é opcional e só é necessário para usar o QAVELIX PRO. Uma conta armazena seu email, uma senha protegida por hash e seu plano atual.",
+              "Se você assinar o QAVELIX PRO, o pagamento é processado pela Stripe. O QAVELIX não armazena os dados do seu cartão.",
             ],
           },
           {
@@ -2466,15 +2480,15 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Cookies e rastreamento",
             body: [
-              "O código atual do aplicativo não inclui cookies de analytics, cookies de publicidade, rastreamento de pagamentos, sessões de conta ou tags de marketing de terceiros.",
-              "Como apenas armazenamento necessário de preferência é usado atualmente, o QAVELIX não exibe banner de consentimento de cookies.",
+              "O QAVELIX define um cookie de sessão estritamente necessário quando você entra na conta, apenas para manter você autenticado. O aplicativo não inclui cookies de analytics, cookies de publicidade ou tags de marketing de terceiros.",
+              "Como apenas armazenamento estritamente necessário (preferência de tema e, quando conectado, sua sessão) é usado, o QAVELIX não exibe banner de consentimento de cookies.",
             ],
           },
           {
             title: "Como gerenciar o armazenamento",
             body: [
               "Você pode limpar o localStorage do QAVELIX nas configurações do navegador ou nos controles de dados do site. Ao limpar esse armazenamento, o tema pode voltar ao padrão.",
-              "Se recursos não essenciais, como analytics, publicidade, mídia incorporada ou contas, forem adicionados depois, este aviso deverá ser atualizado e controles de consentimento deverão ser adicionados quando exigidos.",
+              "Se recursos não essenciais, como analytics, publicidade ou tags de marketing de terceiros, forem adicionados depois, este aviso deverá ser atualizado e controles de consentimento deverão ser adicionados quando exigidos.",
             ],
           },
         ],
@@ -2855,20 +2869,20 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             question: "¿Qué hace Extraer audio?",
             answer:
-              "Creará un archivo de audio MP3 separado a partir de un video subido.",
+              "Crea un archivo de audio MP3 separado a partir de un video subido.",
           },
           {
-            question: "¿Qué formatos de video serán compatibles?",
+            question: "¿Qué formatos de video son compatibles?",
             answer:
-              "El MVP usa los mismos formatos admitidos por el Compresor de video: MP4, M4V, MOV, WebM, AVI, MPG y MPEG.",
+              "Extraer audio admite los mismos formatos que el Compresor de video: MP4, M4V, MOV, WebM, AVI, MPG y MPEG.",
           },
           {
-            question: "¿La salida será MP3?",
-            answer: "Sí. El formato de salida previsto para el MVP es MP3.",
+            question: "¿La salida es MP3?",
+            answer: "Sí. El formato de salida es MP3.",
           },
           {
             question: "¿Cuál es el límite de subida?",
-            answer: "El límite actual por archivo es de 250 MB.",
+            answer: "El límite por archivo es de 250 MB en el plan Free y 500 MB en QAVELIX PRO.",
           },
           {
             question: "¿Cómo se gestionan los archivos?",
@@ -3132,7 +3146,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Acerca de QAVELIX",
           description:
-            "Descubre cómo QAVELIX se está convirtiendo en una plataforma práctica para herramientas multimedia seguras.",
+            "Descubre cómo funcionan el Compresor de Video y Extraer Audio de QAVELIX.",
         },
         eyebrow: "Acerca de",
         title: "Herramientas multimedia prácticas, creadas para aportar claridad",
@@ -3142,22 +3156,22 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Qué hace QAVELIX",
             body: [
-              "QAVELIX ofrece actualmente el Compresor de Video y está desarrollando activamente Extraer Audio como la siguiente herramienta de la plataforma.",
-              "La plataforma está pensada para flujos prácticos de video, audio, imagen y PDF que deben sentirse sencillos, no técnicos.",
+              "QAVELIX ofrece actualmente el Compresor de Video y Extraer Audio, dos herramientas multimedia enfocadas que puedes usar directamente en el navegador.",
+              "Ambas herramientas están pensadas para sentirse sencillas, no técnicas: sube un archivo, revisa sus detalles, elige una opción y descarga el resultado.",
             ],
           },
           {
             title: "Procesamiento con enfoque de privacidad",
             body: [
               "Los archivos subidos se tratan como archivos temporales de procesamiento. Los archivos de origen y los resultados generados se eliminan tras el procesamiento, la cancelación, la eliminación o la caducidad según el flujo de cada herramienta.",
-              "QAVELIX prioriza límites claros, orientación localizada y preferencias mínimas en el navegador en lugar de cuentas, bibliotecas permanentes o seguimiento innecesario.",
+              "QAVELIX prioriza límites claros y orientación localizada. Crear una cuenta es opcional y solo se necesita para desbloquear QAVELIX PRO: todas las herramientas funcionan sin cuenta.",
             ],
           },
           {
-            title: "Hoja de ruta de la plataforma",
+            title: "QAVELIX PRO",
             body: [
-              "El Compresor de Video sigue siendo la herramienta actual en producción. Extraer Audio está en desarrollo local y aún no está conectado al procesamiento.",
-              "Las futuras herramientas podrán ampliarse a video, audio, imágenes y PDF cuando puedan mantener los mismos estándares de privacidad, sencillez y fiabilidad.",
+              "El Compresor de Video y Extraer Audio ya están totalmente disponibles hoy, para uso anónimo o con una cuenta gratuita.",
+              "QAVELIX PRO es una mejora de pago con límites diarios más altos y archivos más grandes en ambas herramientas.",
             ],
           },
         ],
@@ -3218,7 +3232,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "¿Hay un tamaño máximo de archivo?",
             body: [
-              "Sí. El tamaño máximo de carga es de 250 MB por video.",
+              "Sí. El tamaño máximo de carga es de 250 MB por video en el plan Free y 500 MB en QAVELIX PRO.",
             ],
           },
           {
@@ -3321,7 +3335,14 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Registros y datos de seguridad",
             body: [
               "El servidor puede procesar metadatos de solicitud como dirección IP, agente de usuario, ruta solicitada, horarios e información de eventos de seguridad para proteger el servicio, solucionar errores y prevenir abusos.",
-              "QAVELIX no ofrece cuentas de usuario, procesamiento de pagos, perfiles publicitarios ni biblioteca permanente de archivos.",
+              "QAVELIX no muestra perfiles publicitarios ni ofrece una biblioteca permanente de archivos subidos.",
+            ],
+          },
+          {
+            title: "Cuentas y facturación",
+            body: [
+              "Crear una cuenta es opcional y solo se necesita para usar QAVELIX PRO. Una cuenta almacena tu correo electrónico, una contraseña protegida con hash y tu plan actual.",
+              "Si te suscribes a QAVELIX PRO, el pago lo procesa Stripe. QAVELIX no almacena los datos de tu tarjeta.",
             ],
           },
           {
@@ -3450,15 +3471,15 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Cookies y seguimiento",
             body: [
-              "El código actual de la aplicación no incluye cookies de analítica, cookies publicitarias, seguimiento de pagos, sesiones de cuenta ni etiquetas de marketing de terceros.",
-              "Como actualmente solo se usa almacenamiento necesario de preferencias, QAVELIX no muestra un banner de consentimiento de cookies.",
+              "QAVELIX establece una cookie de sesión estrictamente necesaria cuando inicias sesión, únicamente para mantenerte autenticado. La aplicación no incluye cookies de analítica, cookies publicitarias ni etiquetas de marketing de terceros.",
+              "Como solo se usa almacenamiento estrictamente necesario (preferencia de tema y, si iniciaste sesión, tu sesión), QAVELIX no muestra un banner de consentimiento de cookies.",
             ],
           },
           {
             title: "Cómo gestionar el almacenamiento",
             body: [
               "Puedes borrar el localStorage de QAVELIX desde la configuración del navegador o los controles de datos del sitio. Al borrar ese almacenamiento, el tema puede volver al valor predeterminado.",
-              "Si más adelante se añaden funciones no esenciales como analítica, publicidad, medios incrustados o cuentas, este aviso deberá actualizarse y añadirse controles de consentimiento cuando sea necesario.",
+              "Si más adelante se añaden funciones no esenciales como analítica, publicidad o etiquetas de marketing de terceros, este aviso deberá actualizarse y añadirse controles de consentimiento cuando sea necesario.",
             ],
           },
         ],
