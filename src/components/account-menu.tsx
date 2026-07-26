@@ -80,9 +80,14 @@ export function AccountMenu({ locale, dictionary }: AccountMenuProps) {
 
   if (!session.data) {
     return (
-      <a className="primary-nav__link" href={`/${locale}/sign-in`}>
-        {copy.guestNav.signInLabel}
-      </a>
+      <div className="guest-nav-actions">
+        <a className="primary-nav__link" href={`/${locale}/sign-in`}>
+          {copy.guestNav.signInLabel}
+        </a>
+        <a className="button button--primary guest-nav-actions__signup" href={`/${locale}/sign-up`}>
+          {copy.guestNav.signUpLabel}
+        </a>
+      </div>
     );
   }
 

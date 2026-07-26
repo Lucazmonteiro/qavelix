@@ -850,6 +850,60 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
       assert.equal(compressionPayload.error.code, "invalid_reference");
     });
 
+    await t.test(
+      "entitlements status is read-only and reflects the real anonymous pool for a fresh fingerprint",
+      async () => {
+        const statusHeaders = {
+          Origin: baseUrl,
+          "X-Forwarded-For": `10.${fingerprintRunSeedA}.${fingerprintRunSeedB}.${++compressionTestFingerprintCounter}`,
+        };
+
+        const response = await fetch(
+          `${baseUrl}/api/entitlements/status?tool=video-compressor`,
+          { headers: statusHeaders },
+        );
+        const payload = await response.json();
+
+        assertStatus(response, 200, "entitlements status for a fresh anonymous fingerprint");
+        assert.equal(payload.ok, true);
+        assert.equal(payload.plan, "anonymous");
+        assert.equal(payload.allowed, true);
+        // The anonymous pool is 5 lifetime uses combined across every tool — a never-used
+        // fingerprint must show the full amount remaining, and never mutate anything (a
+        // second read-only call right after must show the exact same number, proving
+        // this route never reserves).
+        assert.equal(payload.remaining, 5);
+
+        const secondResponse = await fetch(
+          `${baseUrl}/api/entitlements/status?tool=extract-audio`,
+          { headers: statusHeaders },
+        );
+        const secondPayload = await secondResponse.json();
+
+        assert.equal(secondPayload.remaining, 5, "a read-only status check must never reserve");
+
+        // Free/Pro comparison numbers come from the same TOOL_POLICY table every
+        // processing route enforces — never a hand-typed duplicate.
+        assert.equal(payload.freeLimits.maxUsesPerPeriod, 10);
+        assert.equal(payload.freeLimits.maxUploadBytes, 250 * 1024 * 1024);
+        assert.equal(payload.proLimits.maxUsesPerPeriod, 100);
+        assert.equal(payload.proLimits.maxUploadBytes, 500 * 1024 * 1024);
+      },
+    );
+
+    await t.test("entitlements status rejects an unknown or missing tool id", async () => {
+      for (const query of ["tool=not-a-real-tool", ""]) {
+        const response = await fetch(
+          `${baseUrl}/api/entitlements/status${query ? `?${query}` : ""}`,
+          { headers: { Origin: baseUrl } },
+        );
+        const payload = await response.json();
+
+        assertStatus(response, 400, `entitlements status rejects "${query}"`);
+        assert.equal(payload.ok, false);
+      }
+    });
+
     await t.test("creates a compression job that is immediately pollable", async () => {
       const file = await createGeneratedMp4File("queued.mp4", { durationSeconds: 1 });
       const { response: createResponse, payload: createPayload } =

@@ -1,7 +1,9 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { UpgradeModal } from "@/components/upgrade-modal";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { useLocaleState } from "@/i18n/locale-context";
 import {
@@ -12,6 +14,7 @@ import {
   MAX_UPLOAD_BYTES,
   MIN_UPLOAD_BYTES,
 } from "@/lib/upload-policy";
+import { useEntitlementGate } from "@/lib/use-entitlement-gate";
 
 type ValidationErrorKey = keyof Dictionary["tools"]["extractAudio"]["validation"];
 type ProcessingState =
@@ -190,6 +193,9 @@ async function readAnalysisResult(response: Response) {
 export function ExtractAudioTool() {
   const { dictionary } = useLocaleState();
   const copy = dictionary.tools.extractAudio;
+  const pathname = usePathname();
+  const gate = useEntitlementGate("extract-audio");
+  const isBlocked = gate.blocked;
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const analysisControllerRef = useRef<AbortController | null>(null);
@@ -218,7 +224,8 @@ export function ExtractAudioTool() {
     hasValidFile &&
     isAnalysisApproved &&
     !processingErrorKey &&
-    processingState === "idle";
+    processingState === "idle" &&
+    !isBlocked;
   const processingError = processingErrorKey
     ? copy.errors[processingErrorKey]
     : null;
@@ -376,6 +383,10 @@ export function ExtractAudioTool() {
   }
 
   function setSelectedFiles(files: FileList | null) {
+    if (isBlocked) {
+      return;
+    }
+
     abortControllerRef.current?.abort();
     analysisControllerRef.current?.abort();
     abortControllerRef.current = null;
@@ -537,7 +548,15 @@ export function ExtractAudioTool() {
       clearStatusTimers();
 
       if (!response.ok) {
-        setProcessingErrorKey(await readApiError(response));
+        const errorKey = await readApiError(response);
+
+        if (errorKey === "accountRequired") {
+          gate.reportDenial("account_required");
+        } else if (errorKey === "usageLimitReached") {
+          gate.reportDenial("usage_limit_reached");
+        }
+
+        setProcessingErrorKey(errorKey);
         setActiveOperation(null);
         setProcessingState("failed");
         return;
@@ -600,16 +619,22 @@ export function ExtractAudioTool() {
                   "upload-dropzone",
                   "extract-audio-dropzone",
                   isDragging ? "upload-dropzone--active" : "",
+                  isBlocked ? "upload-dropzone--blocked" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
+                aria-disabled={isBlocked}
                 onDragEnter={(event) => {
                   event.preventDefault();
-                  setIsDragging(true);
+                  if (!isBlocked) {
+                    setIsDragging(true);
+                  }
                 }}
                 onDragOver={(event) => {
                   event.preventDefault();
-                  setIsDragging(true);
+                  if (!isBlocked) {
+                    setIsDragging(true);
+                  }
                 }}
                 onDragLeave={(event) => {
                   event.preventDefault();
@@ -618,6 +643,11 @@ export function ExtractAudioTool() {
                 onDrop={(event) => {
                   event.preventDefault();
                   setIsDragging(false);
+
+                  if (isBlocked) {
+                    return;
+                  }
+
                   setSelectedFiles(event.dataTransfer.files);
                 }}
               >
@@ -627,6 +657,7 @@ export function ExtractAudioTool() {
                   className="upload-dropzone__input"
                   type="file"
                   accept={acceptedInputValue}
+                  disabled={isBlocked}
                   onChange={(event) => setSelectedFiles(event.target.files)}
                 />
                 <span className="upload-dropzone__icon" aria-hidden="true">
@@ -638,6 +669,7 @@ export function ExtractAudioTool() {
                 </span>
                 <button
                   className="button button--primary"
+                  disabled={isBlocked}
                   type="button"
                   onClick={() => inputRef.current?.click()}
                 >
@@ -647,6 +679,25 @@ export function ExtractAudioTool() {
                   {copy.privacyMessage}
                 </span>
               </div>
+
+              {isBlocked && !selectedFile ? (
+                <div className="entitlement-lock-notice" role="status">
+                  <p>
+                    {gate.reason === "account_required"
+                      ? copy.errors.accountRequired
+                      : copy.errors.usageLimitReached}
+                  </p>
+                  {gate.reason === "usage_limit_reached" && gate.plan === "free" ? (
+                    <button
+                      className="button button--primary"
+                      onClick={gate.openUpgradeModal}
+                      type="button"
+                    >
+                      {dictionary.upgradeModal.upgradeButtonLabel}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <aside className="compression-status extract-audio-status" aria-live="polite">
@@ -796,6 +847,7 @@ export function ExtractAudioTool() {
                   <>
                     <button
                       className="button button--primary"
+                      disabled={isBlocked}
                       type="button"
                       onClick={() => inputRef.current?.click()}
                     >
@@ -803,11 +855,21 @@ export function ExtractAudioTool() {
                     </button>
                     <button
                       className="button button--secondary"
+                      disabled={isBlocked}
                       type="button"
                       onClick={resetSelection}
                     >
                       {copy.deleteButton}
                     </button>
+                    {isBlocked && gate.reason === "usage_limit_reached" && gate.plan === "free" ? (
+                      <button
+                        className="button button--primary"
+                        onClick={gate.openUpgradeModal}
+                        type="button"
+                      >
+                        {dictionary.upgradeModal.upgradeButtonLabel}
+                      </button>
+                    ) : null}
                   </>
                 ) : null}
 
@@ -865,6 +927,16 @@ export function ExtractAudioTool() {
           ))}
         </div>
       </section>
+
+      {gate.freeLimits && gate.proLimits ? (
+        <UpgradeModal
+          cancelPath={pathname}
+          freeLimits={gate.freeLimits}
+          onClose={gate.closeUpgradeModal}
+          open={gate.showUpgradeModal}
+          proLimits={gate.proLimits}
+        />
+      ) : null}
     </main>
   );
 }

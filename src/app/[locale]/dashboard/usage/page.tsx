@@ -64,7 +64,7 @@ export default async function DashboardUsagePage({ params }: DashboardUsagePageP
                         .replace("{used}", String(used))
                         .replace("{limit}", String(check.limit))}{" "}
                       {used >= check.limit ? (
-                        <span className="dashboard-status dashboard-status--neutral">
+                        <span className="dashboard-status dashboard-status--warning">
                           {copy.limitReachedLabel}
                         </span>
                       ) : null}

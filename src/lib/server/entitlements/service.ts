@@ -1,9 +1,14 @@
 import { randomUUID } from "node:crypto";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 
 import { getDb } from "@/lib/server/db/client";
-import { usageCounter, usageEvent, userEntitlement } from "@/lib/server/db/schema";
+import {
+  subscription as subscriptionTable,
+  usageCounter,
+  usageEvent,
+  userEntitlement,
+} from "@/lib/server/db/schema";
 import type { EntitlementCheck, EntitlementReservation } from "@/lib/server/entitlements/errors";
 import {
   ANONYMOUS_POOL_TOOL_ID,
@@ -24,10 +29,48 @@ function dailyPeriodKey(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Whether the Stripe plugin's own `subscription` table (see db/schema.ts's comment on
+// that table) already shows an active/trialing row for this user. That table is written
+// two ways, both server-verified and neither a client-controlled query parameter: the
+// `customer.subscription.created`/`updated` webhook handlers in auth.ts, and — critically
+// — @better-auth/stripe's own `/subscription/success` redirect endpoint, which the
+// Checkout success_url always passes through first and which verifies the checkout
+// session directly against Stripe before writing this same table. That redirect endpoint
+// updates only its own `subscription` row; it does not invoke onSubscriptionCreated/
+// onSubscriptionUpdate. So relying on the webhook alone to flip user_entitlement.plan
+// leaves a real gap whenever the webhook is delayed, not configured, or (in local
+// development without `stripe listen --forward-to`) never delivered at all — Stripe and
+// the plugin's own table already agree the subscription is active, but this app's
+// authoritative plan silently stays "free" until the webhook eventually arrives, if ever.
+async function hasActiveStripeSubscription(userId: string): Promise<boolean> {
+  const db = getDb();
+  const rows = await db
+    .select({ status: subscriptionTable.status })
+    .from(subscriptionTable)
+    .where(
+      and(
+        eq(subscriptionTable.referenceId, userId),
+        or(eq(subscriptionTable.status, "active"), eq(subscriptionTable.status, "trialing")),
+      ),
+    )
+    .limit(1);
+
+  return rows.length > 0;
+}
+
 // Defaults to "free" whenever a row is missing (every new user — no row is created at
 // sign-up; the first read simply treats absence as the default plan) or unrecognized
 // (data corruption / an in-progress future migration) — the most restrictive plan, never
 // a crash and never silently granting more access than confirmed.
+//
+// Self-heals on every "free" result: before returning, it checks whether Stripe's own
+// subscription record (hasActiveStripeSubscription, above) already disagrees — i.e. an
+// active/trialing subscription exists that this webhook-driven table hasn't caught up to
+// yet. When it does, this writes the correction through the same setUserPlan() the
+// webhook hooks use (never a parallel code path) and returns "pro" immediately, closing
+// the race described above without waiting on webhook delivery. This makes every caller
+// (dashboard, plan/usage pages, the compression and extract-audio routes) agree, since
+// they all resolve the plan through this one function.
 export async function getPlan(userId: string): Promise<PlanType> {
   try {
     const db = getDb();
@@ -37,16 +80,23 @@ export async function getPlan(userId: string): Promise<PlanType> {
       .where(eq(userEntitlement.userId, userId))
       .limit(1);
 
-    if (!row) {
-      return "free";
-    }
-
-    if (!isPlanType(row.plan)) {
+    if (row && !isPlanType(row.plan)) {
       logSecurityEvent("warn", "entitlement_invalid_plan_value", { userId });
-      return "free";
     }
 
-    return row.plan;
+    const storedPlan = row && isPlanType(row.plan) ? row.plan : "free";
+
+    if (storedPlan === "pro") {
+      return "pro";
+    }
+
+    if (await hasActiveStripeSubscription(userId)) {
+      await setUserPlan(userId, "pro");
+      logSecurityEvent("info", "entitlement_plan_reconciled_from_subscription", { userId });
+      return "pro";
+    }
+
+    return storedPlan;
   } catch (error) {
     logSecurityEvent("error", "entitlement_plan_lookup_failed", {
       message: error instanceof Error ? error.message : "unknown",

@@ -84,10 +84,40 @@ test("entitlement denial reasons map to correct HTTP statuses and every route ca
 });
 
 test("getPlan() fails safe to the most restrictive plan, never throws, on missing or corrupt data", () => {
-  assert.match(service, /if \(!row\) \{\s*return "free";/);
-  assert.match(service, /if \(!isPlanType\(row\.plan\)\) \{/);
-  assert.match(service, /return "free";/);
-  assert.match(service, /catch \(error\) \{[\s\S]*?return "free";\s*\}\s*\n\}/);
+  assert.match(service, /const storedPlan = row && isPlanType\(row\.plan\) \? row\.plan : "free";/);
+  assert.match(service, /if \(row && !isPlanType\(row\.plan\)\) \{/);
+  const getPlanBody = service.slice(
+    service.indexOf("export async function getPlan"),
+    service.indexOf("export async function setUserPlan"),
+  );
+  assert.match(getPlanBody, /catch \(error\) \{[\s\S]*?return "free";\s*\}/);
+});
+
+// Milestone: Stripe/entitlement audit — the checkout-success redirect
+// (@better-auth/stripe's own /subscription/success endpoint) verifies the Stripe
+// checkout session and writes the plugin's own `subscription` row directly, without ever
+// invoking onSubscriptionCreated/onSubscriptionUpdate. Relying on the webhook alone left a
+// real gap: Stripe (and that table) already show an active subscription while
+// user_entitlement.plan silently stays "free" until the webhook is delivered, which may be
+// delayed or (in local development without `stripe listen --forward-to`) never happen at
+// all. getPlan() self-heals from that same verified table instead of waiting on it.
+test("getPlan() self-heals from Stripe's own subscription table when the webhook hasn't caught up yet", () => {
+  assert.match(service, /async function hasActiveStripeSubscription\(userId: string\): Promise<boolean>/);
+  assert.match(service, /eq\(subscriptionTable\.referenceId, userId\)/);
+  assert.match(
+    service,
+    /or\(eq\(subscriptionTable\.status, "active"\), eq\(subscriptionTable\.status, "trialing"\)\)/,
+  );
+
+  const getPlanBody = service.slice(
+    service.indexOf("export async function getPlan"),
+    service.indexOf("export async function setUserPlan"),
+  );
+  assert.match(getPlanBody, /if \(storedPlan === "pro"\) \{\s*return "pro";/);
+  assert.match(getPlanBody, /if \(await hasActiveStripeSubscription\(userId\)\) \{/);
+  // The correction is written through the same setUserPlan() the webhook hooks already
+  // use — never a second, parallel write path for the same column.
+  assert.match(getPlanBody, /await setUserPlan\(userId, "pro"\);/);
 });
 
 test("resolveActor() trusts only the server session, never a client-supplied plan or user id", () => {

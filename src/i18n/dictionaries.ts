@@ -429,7 +429,21 @@ export type Dictionary = {
     };
     guestNav: {
       signInLabel: string;
+      signUpLabel: string;
     };
+  };
+  upgradeModal: {
+    title: string;
+    description: string;
+    freeTierName: string;
+    proTierName: string;
+    usesPerDay: string;
+    uploadSize: string;
+    upgradeButtonLabel: string;
+    checkoutPendingLabel: string;
+    checkoutErrorMessage: string;
+    dismissLabel: string;
+    closeLabel: string;
   };
   dashboard: {
     nav: {
@@ -494,6 +508,7 @@ export type Dictionary = {
       checkoutPendingLabel: string;
       checkoutErrorMessage: string;
       manageBillingLabel: string;
+      manageSubscriptionLabel: string;
       portalPendingLabel: string;
       portalErrorMessage: string;
       billingStatusLabel: string;
@@ -501,6 +516,22 @@ export type Dictionary = {
       cancelsOnLabel: string;
       checkoutSuccessMessage: string;
       checkoutCancelledMessage: string;
+      comparisonTitle: string;
+      currentPlanBadge: string;
+      proActiveBadge: string;
+      activationPendingTitle: string;
+      activationPendingMessage: string;
+      activationStillPendingMessage: string;
+      refreshStatusLabel: string;
+      welcome: {
+        title: string;
+        intro: string;
+        supportMessage: string;
+        goalMessage: string;
+        benefitsTitle: string;
+        ctaLabel: string;
+        closeLabel: string;
+      };
     };
     billing: {
       description: string;
@@ -1069,7 +1100,22 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
     guestNav: {
       signInLabel: "Sign in",
+      signUpLabel: "Sign up",
     },
+  },
+  upgradeModal: {
+    title: "You've reached the Free plan's daily limit",
+    description:
+      "You've used all of today's free processing runs for this tool. Upgrade to Pro to keep going right now, with higher limits and larger files.",
+    freeTierName: "Free",
+    proTierName: "Pro",
+    usesPerDay: "{limit} uses per day",
+    uploadSize: "Up to {maxSize} per file",
+    upgradeButtonLabel: "Upgrade to Pro",
+    checkoutPendingLabel: "Redirecting to checkout...",
+    checkoutErrorMessage: "Could not start checkout. Try again.",
+    dismissLabel: "Not now",
+    closeLabel: "Close",
   },
   dashboard: {
     nav: {
@@ -1134,6 +1180,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       checkoutPendingLabel: "Redirecting to checkout...",
       checkoutErrorMessage: "Could not start checkout. Try again.",
       manageBillingLabel: "Manage billing",
+      manageSubscriptionLabel: "Manage subscription",
       portalPendingLabel: "Opening billing portal...",
       portalErrorMessage: "Could not open the billing portal. Try again.",
       billingStatusLabel: "Billing",
@@ -1141,6 +1188,25 @@ const dictionaries: Record<Locale, Dictionary> = {
       cancelsOnLabel: "Access ends on {date}",
       checkoutSuccessMessage: "You're now on the Pro plan.",
       checkoutCancelledMessage: "Checkout was cancelled. You're still on the Free plan.",
+      comparisonTitle: "Compare plans",
+      currentPlanBadge: "Current plan",
+      proActiveBadge: "Active",
+      activationPendingTitle: "Activating your subscription...",
+      activationPendingMessage:
+        "We're confirming your payment with Stripe. This usually takes just a few seconds.",
+      activationStillPendingMessage:
+        "Still confirming your subscription. Refresh in a moment, or contact support if this continues.",
+      refreshStatusLabel: "Refresh status",
+      welcome: {
+        title: "🎉 Welcome to QAVELIX PRO!",
+        intro: "Thank you for supporting QAVELIX.",
+        supportMessage:
+          "Your subscription directly helps us improve the platform and build new tools.",
+        goalMessage: "Our goal is to save you time and make your day-to-day workflow easier.",
+        benefitsTitle: "What you've unlocked",
+        ctaLabel: "Go to the tools",
+        closeLabel: "Close",
+      },
     },
     billing: {
       description: "Manage your subscription, payment method, and invoices.",
@@ -2056,7 +2122,22 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       guestNav: {
         signInLabel: "Entrar",
+        signUpLabel: "Registrar-se",
       },
+    },
+    upgradeModal: {
+      title: "Você atingiu o limite diário do plano Gratuito",
+      description:
+        "Você já usou todos os processamentos gratuitos de hoje para esta ferramenta. Faça upgrade para o Pro para continuar agora mesmo, com limites maiores e arquivos maiores.",
+      freeTierName: "Gratuito",
+      proTierName: "Pro",
+      usesPerDay: "{limit} usos por dia",
+      uploadSize: "Até {maxSize} por arquivo",
+      upgradeButtonLabel: "Fazer upgrade para o Pro",
+      checkoutPendingLabel: "Redirecionando para o checkout...",
+      checkoutErrorMessage: "Não foi possível iniciar o checkout. Tente novamente.",
+      dismissLabel: "Agora não",
+      closeLabel: "Fechar",
     },
     dashboard: {
       nav: {
@@ -2122,6 +2203,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         checkoutPendingLabel: "Redirecionando para o checkout...",
         checkoutErrorMessage: "Não foi possível iniciar o checkout. Tente novamente.",
         manageBillingLabel: "Gerenciar cobrança",
+        manageSubscriptionLabel: "Gerenciar assinatura",
         portalPendingLabel: "Abrindo o portal de cobrança...",
         portalErrorMessage: "Não foi possível abrir o portal de cobrança. Tente novamente.",
         billingStatusLabel: "Cobrança",
@@ -2129,6 +2211,25 @@ const dictionaries: Record<Locale, Dictionary> = {
         cancelsOnLabel: "O acesso termina em {date}",
         checkoutSuccessMessage: "Agora você está no plano Pro.",
         checkoutCancelledMessage: "O checkout foi cancelado. Você continua no plano Gratuito.",
+        comparisonTitle: "Compare os planos",
+        currentPlanBadge: "Plano atual",
+        proActiveBadge: "Ativo",
+        activationPendingTitle: "Ativando sua assinatura...",
+        activationPendingMessage:
+          "Estamos confirmando seu pagamento com o Stripe. Isso costuma levar apenas alguns segundos.",
+        activationStillPendingMessage:
+          "Ainda estamos confirmando sua assinatura. Atualize a página em instantes ou entre em contato com o suporte caso o problema persista.",
+        refreshStatusLabel: "Atualizar status",
+        welcome: {
+          title: "🎉 Bem-vindo ao QAVELIX PRO!",
+          intro: "Obrigado por apoiar o QAVELIX.",
+          supportMessage:
+            "Sua assinatura ajuda diretamente a melhorar a plataforma e a desenvolver novas ferramentas.",
+          goalMessage: "Nosso objetivo é economizar seu tempo e facilitar seu dia a dia.",
+          benefitsTitle: "O que você desbloqueou",
+          ctaLabel: "Ir para as ferramentas",
+          closeLabel: "Fechar",
+        },
       },
       billing: {
         description: "Gerencie sua assinatura, forma de pagamento e faturas.",
@@ -3047,7 +3148,22 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       guestNav: {
         signInLabel: "Iniciar sesión",
+        signUpLabel: "Registrarse",
       },
+    },
+    upgradeModal: {
+      title: "Alcanzaste el límite diario del plan Gratis",
+      description:
+        "Ya usaste todos los procesamientos gratuitos de hoy para esta herramienta. Actualiza a Pro para continuar ahora mismo, con límites más altos y archivos más grandes.",
+      freeTierName: "Gratis",
+      proTierName: "Pro",
+      usesPerDay: "{limit} usos por día",
+      uploadSize: "Hasta {maxSize} por archivo",
+      upgradeButtonLabel: "Actualizar a Pro",
+      checkoutPendingLabel: "Redirigiendo al checkout...",
+      checkoutErrorMessage: "No se pudo iniciar el checkout. Inténtalo de nuevo.",
+      dismissLabel: "Ahora no",
+      closeLabel: "Cerrar",
     },
     dashboard: {
       nav: {
@@ -3113,6 +3229,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         checkoutPendingLabel: "Redirigiendo al checkout...",
         checkoutErrorMessage: "No se pudo iniciar el checkout. Inténtalo de nuevo.",
         manageBillingLabel: "Gestionar facturación",
+        manageSubscriptionLabel: "Gestionar suscripción",
         portalPendingLabel: "Abriendo el portal de facturación...",
         portalErrorMessage: "No se pudo abrir el portal de facturación. Inténtalo de nuevo.",
         billingStatusLabel: "Facturación",
@@ -3120,6 +3237,25 @@ const dictionaries: Record<Locale, Dictionary> = {
         cancelsOnLabel: "El acceso termina el {date}",
         checkoutSuccessMessage: "Ahora tienes el plan Pro.",
         checkoutCancelledMessage: "El checkout se canceló. Sigues en el plan Gratis.",
+        comparisonTitle: "Compara los planes",
+        currentPlanBadge: "Plan actual",
+        proActiveBadge: "Activo",
+        activationPendingTitle: "Activando tu suscripción...",
+        activationPendingMessage:
+          "Estamos confirmando tu pago con Stripe. Esto suele tardar solo unos segundos.",
+        activationStillPendingMessage:
+          "Todavía estamos confirmando tu suscripción. Actualiza la página en un momento o contacta con soporte si esto continúa.",
+        refreshStatusLabel: "Actualizar estado",
+        welcome: {
+          title: "🎉 ¡Bienvenido a QAVELIX PRO!",
+          intro: "Gracias por apoyar a QAVELIX.",
+          supportMessage:
+            "Tu suscripción ayuda directamente a mejorar la plataforma y a desarrollar nuevas herramientas.",
+          goalMessage: "Nuestro objetivo es ahorrarte tiempo y facilitar tu día a día.",
+          benefitsTitle: "Lo que has desbloqueado",
+          ctaLabel: "Ir a las herramientas",
+          closeLabel: "Cerrar",
+        },
       },
       billing: {
         description: "Gestiona tu suscripción, método de pago y facturas.",

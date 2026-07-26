@@ -58,6 +58,7 @@ export function SignInForm({ callbackURL }: SignInFormProps) {
       eyebrow={copy.signIn.eyebrow}
       title={copy.signIn.title}
       description={copy.signIn.description}
+      hideTitle
       footer={
         <>
           <a href={`/${locale}/forgot-password`}>{copy.signIn.forgotPasswordLink}</a>

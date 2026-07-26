@@ -84,7 +84,19 @@ test("compression panel derives button states from lifecycle rules", () => {
   );
   assert.match(source, /const isSourceUnavailable =\s*hasValidatedFile && !uploadReference && !isDownloadable && !isPolling/);
   assert.match(source, /const canCancelCompression = isPolling && !isCancelling && !isDeleting/);
-  assert.match(source, /const canDeleteCompression = Boolean\(file \|\| job\) && !isPolling && !isCancelling && !isDeleting/);
+  // Milestone: Stripe/entitlement audit — a backend-confirmed daily limit ("isBlocked",
+  // from useEntitlementGate) additionally excludes both starting a new job and deleting/
+  // clearing the current attempt, so a blocked user can't sidestep the lock by clearing
+  // state and retrying the same day.
+  assert.match(source, /!isPrecheckBlocked &&\s*!isBlocked;/);
+  assert.match(
+    source,
+    /const canDeleteCompression =\s*Boolean\(file \|\| job\) && !isPolling && !isCancelling && !isDeleting && !isBlocked;/,
+  );
+  assert.match(
+    source,
+    /const arePresetButtonsDisabled =\s*isSourceUnavailable \|\| isPolling \|\| isCancelling \|\| isDeleting \|\| isBlocked;/,
+  );
   assert.match(source, /disabled=\{!canStartCompression\}/);
   assert.match(source, /disabled=\{!canCancelCompression\}/);
   assert.match(source, /disabled=\{!canDeleteCompression\}/);
@@ -503,7 +515,10 @@ test("pre-check blocks starting a compression predicted to increase file size", 
     source,
     /const precheckRecommendedPresetIds = getRecommendedPresetIds\(preset\)\.filter\(\(id\) =>\s*precheckSafePresetIds\.includes\(id\),\s*\);/,
   );
-  assert.match(source, /!isPrecheckBlocked;/);
+  // Milestone: Stripe/entitlement audit appended "&& !isBlocked" after this clause (the
+  // backend-confirmed daily-limit lock), so the precheck condition itself is no longer
+  // the last clause before the semicolon — see the entitlement-lock assertions above.
+  assert.match(source, /!isPrecheckBlocked &&\s*!isBlocked;/);
   assert.match(
     source,
     /if \(isPrecheckBlocked\) \{\s*setError\(copy\.errors\.predictedIncrease\);\s*return;\s*\}/,

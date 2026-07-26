@@ -250,6 +250,53 @@ When `DATABASE_URL` is set, CI also runs `npm run db:migrate` against it before 
 step, so the schema in `src/lib/server/db/schema.ts` stays current on that branch
 automatically — no manual migration step is required after adding the secret.
 
+### Manual Stripe test-mode subscription testing (local development)
+
+A real Stripe Checkout completion always writes the verified subscription state to two
+places on two different timelines: immediately, via `@better-auth/stripe`'s own
+`/subscription/success` redirect (which the browser passes through right after Checkout,
+before landing back on `/dashboard/plan?checkout=success`); and asynchronously, via
+Stripe's webhook (`customer.subscription.created`/`updated`, delivered to
+`/api/auth/stripe/webhook`), which is what actually calls this app's own
+`onSubscriptionCreated`/`onSubscriptionUpdate` hooks in `src/lib/server/auth/auth.ts`.
+`getPlan()` (`src/lib/server/entitlements/service.ts`) self-heals from the first source the
+moment either one has written an active/trialing row, so Pro shows up correctly even if
+the webhook is slow — but the webhook is still the only mechanism for changes that happen
+while nobody is looking at the app (a later renewal, a cancellation, a failed payment), so
+it must be reachable to test those paths, and to verify `onSubscriptionCreated`/
+`onSubscriptionUpdate`/`onSubscriptionDeleted` themselves actually fire (not just that the
+end state looks right).
+
+Locally, Stripe cannot reach `http://localhost:3000` directly, so forward events with the
+[Stripe CLI](https://docs.stripe.com/stripe-cli):
+
+```bash
+stripe login                 # one-time, opens a browser to link your Stripe test account
+stripe listen --forward-to localhost:3000/api/auth/stripe/webhook
+```
+
+`stripe listen` prints a webhook signing secret (`whsec_...`) to the terminal — copy that
+exact value into `STRIPE_WEBHOOK_SECRET` in `.env.local` (it's different from, and only
+valid alongside, the CLI session that printed it; a Dashboard-configured production
+endpoint has its own separate signing secret). Restart `npm run dev` after changing it.
+With `stripe listen` running in one terminal and the dev server in another:
+
+1. Sign in, go to `/dashboard/plan`, click the upgrade button, and complete Checkout with
+   [a Stripe test card](https://docs.stripe.com/testing#cards) (e.g. `4242 4242 4242 4242`,
+   any future expiry, any CVC).
+2. Confirm the terminal running `stripe listen` logs the forwarded events
+   (`checkout.session.completed`, `customer.subscription.created`, ...).
+3. Confirm the Plan/Dashboard/Usage pages show Pro, survive a refresh, and survive
+   signing out and back in.
+4. To test cancellation/payment-failure behavior: use the Billing Portal
+   (`/dashboard/billing` or the Plan page's "Manage subscription" button) to cancel, or
+   use `stripe trigger customer.subscription.updated` / the Stripe Dashboard's test-mode
+   controls to simulate a failed renewal, then confirm the plan reverts to Free.
+
+Never commit the values `stripe listen`/`stripe login` print, and never commit a real
+`STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` — `.env.local` is already git-ignored; keep it
+that way.
+
 ## Manual deployment checklist
 
 Before the first production deployment:

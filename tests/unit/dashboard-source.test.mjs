@@ -129,11 +129,15 @@ test("usage and plan pages render real server-computed entitlement data (Milesto
 
   assert.match(planPage, /const session = await requireSession/);
   assert.match(planPage, /from "@\/lib\/server\/entitlements\/service"/);
-  assert.match(planPage, /getToolLimits\(plan, toolId\)/);
-  // The Upgrade block is still a placeholder — no checkout button, no Stripe SDK/import.
+  // Milestone: Stripe/entitlement audit — the Plan page compares both tiers side by
+  // side (not just the current plan's limits), so both calls appear explicitly rather
+  // than a single getToolLimits(plan, toolId).
+  assert.match(planPage, /getToolLimits\("free", toolId\)/);
+  assert.match(planPage, /getToolLimits\("pro", toolId\)/);
+  // The Upgrade block still falls back to the honest placeholder when Stripe isn't
+  // configured — no checkout button is ever shown pointing at a route that doesn't exist.
   assert.match(planPage, /from "@\/components\/dashboard\/dashboard-placeholder"/);
   assert.doesNotMatch(planPage, /from "stripe"/i);
-  assert.doesNotMatch(planPage, /<button/i);
 });
 
 test("billing and settings remain honest 'coming soon' placeholders (out of Milestone 4's scope)", () => {

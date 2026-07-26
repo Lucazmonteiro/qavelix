@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { BillingPortalButton } from "@/components/dashboard/billing-portal-button";
 import { useLocaleState } from "@/i18n/locale-context";
-import { authClient } from "@/lib/auth-client";
+import { startProUpgradeCheckout } from "@/lib/auth-client";
 import type { PlanType } from "@/lib/server/entitlements/policy";
 
 type PlanActionsProps = {
@@ -25,7 +25,7 @@ export function PlanActions({ plan }: PlanActionsProps) {
     return (
       <BillingPortalButton
         errorMessage={copy.portalErrorMessage}
-        label={copy.manageBillingLabel}
+        label={copy.manageSubscriptionLabel}
         pendingLabel={copy.portalPendingLabel}
         returnPath="/dashboard/plan"
       />
@@ -36,11 +36,7 @@ export function PlanActions({ plan }: PlanActionsProps) {
     setErrorMessage(null);
     setIsPending(true);
 
-    const { error } = await authClient.subscription.upgrade({
-      plan: "pro",
-      successUrl: `/${locale}/dashboard/plan?checkout=success`,
-      cancelUrl: `/${locale}/dashboard/plan?checkout=cancelled`,
-    });
+    const { error } = await startProUpgradeCheckout(locale, "/dashboard/plan?checkout=cancelled");
 
     if (error) {
       setErrorMessage(copy.checkoutErrorMessage);

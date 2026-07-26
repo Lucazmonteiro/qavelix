@@ -1,7 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 
+import { UpgradeModal } from "@/components/upgrade-modal";
+import { useLocaleState } from "@/i18n/locale-context";
 import {
   compressionPresets,
   getCompressionDisplayProgress,
@@ -23,6 +26,7 @@ import {
   MAX_UPLOAD_BYTES,
   type UploadAnalysis,
 } from "@/lib/upload-policy";
+import { useEntitlementGate } from "@/lib/use-entitlement-gate";
 
 type CompressionCopy = {
   eyebrow: string;
@@ -483,6 +487,10 @@ export function CompressionPanel({
   copy,
   onValidatedChange,
 }: CompressionPanelProps) {
+  const { dictionary } = useLocaleState();
+  const pathname = usePathname();
+  const gate = useEntitlementGate("video-compressor");
+  const isBlocked = gate.blocked;
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadDropzoneRef = useRef<HTMLLabelElement>(null);
   const compressionPanelRef = useRef<HTMLDivElement>(null);
@@ -760,6 +768,10 @@ export function CompressionPanel({
   }
 
   function selectFiles(files: FileList | File[]) {
+    if (isBlocked) {
+      return;
+    }
+
     const selectedFile = Array.from(files)[0];
 
     if (uploadReference) {
@@ -987,6 +999,13 @@ export function CompressionPanel({
           setDownloadStarted(false);
         }
 
+        if (
+          payload.error.code === "usage_limit_reached" ||
+          payload.error.code === "account_required"
+        ) {
+          gate.reportDenial(payload.error.code);
+        }
+
         setError(message);
         return;
       }
@@ -1088,6 +1107,11 @@ export function CompressionPanel({
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setIsDragging(false);
+
+    if (isBlocked) {
+      return;
+    }
+
     selectFiles(event.dataTransfer.files);
   }
 
@@ -1184,11 +1208,17 @@ export function CompressionPanel({
     !isSourceUnavailable &&
     !isCancelling &&
     !isDeleting &&
-    !isPrecheckBlocked;
+    !isPrecheckBlocked &&
+    !isBlocked;
   const canCancelCompression = isPolling && !isCancelling && !isDeleting;
-  const canDeleteCompression = Boolean(file || job) && !isPolling && !isCancelling && !isDeleting;
+  // Explicitly excluded once the backend has confirmed the daily limit is reached — the
+  // user must upgrade or wait for the reset rather than clearing state to retry the same
+  // day (see useEntitlementGate's comment on this being the informational, not
+  // enforcing, layer — the real limit is still enforced at job-creation time regardless).
+  const canDeleteCompression =
+    Boolean(file || job) && !isPolling && !isCancelling && !isDeleting && !isBlocked;
   const arePresetButtonsDisabled =
-    isSourceUnavailable || isPolling || isCancelling || isDeleting;
+    isSourceUnavailable || isPolling || isCancelling || isDeleting || isBlocked;
   const hasSelectedFileOrJob = Boolean(file || job);
   const shouldShowUploadDropzone = !hasValidatedFile;
   const shouldShowPresets = hasValidatedFile || Boolean(job);
@@ -1255,10 +1285,13 @@ export function CompressionPanel({
             <label
               className={`upload-dropzone${isDragging ? " upload-dropzone--active" : ""}${
                 validation.status === "validating" ? " upload-dropzone--validating" : ""
-              }`}
+              }${isBlocked ? " upload-dropzone--blocked" : ""}`}
+              aria-disabled={isBlocked}
               onDragEnter={(event) => {
                 event.preventDefault();
-                setIsDragging(true);
+                if (!isBlocked) {
+                  setIsDragging(true);
+                }
               }}
               onDragLeave={(event) => {
                 event.preventDefault();
@@ -1272,6 +1305,7 @@ export function CompressionPanel({
               <input
                 accept={acceptedMimeTypes.join(",")}
                 className="upload-dropzone__input"
+                disabled={isBlocked}
                 onChange={(event) => {
                   if (event.target.files) {
                     selectFiles(event.target.files);
@@ -1303,8 +1337,31 @@ export function CompressionPanel({
                   </span>
                 </>
               ) : null}
-              <span className="button button--primary">{copy.browseLabel}</span>
+              <span
+                className={`button button--primary${isBlocked ? " button--disabled-look" : ""}`}
+              >
+                {copy.browseLabel}
+              </span>
             </label>
+          ) : null}
+
+          {isBlocked && shouldShowUploadDropzone ? (
+            <div className="entitlement-lock-notice" role="status">
+              <p>
+                {gate.reason === "account_required"
+                  ? copy.errors.accountRequired
+                  : copy.errors.usageLimitReached}
+              </p>
+              {gate.reason === "usage_limit_reached" && gate.plan === "free" ? (
+                <button
+                  className="button button--primary"
+                  onClick={gate.openUpgradeModal}
+                  type="button"
+                >
+                  {dictionary.upgradeModal.upgradeButtonLabel}
+                </button>
+              ) : null}
+            </div>
           ) : null}
 
           {validation.status === "valid" ? (
@@ -1688,6 +1745,16 @@ export function CompressionPanel({
           ) : null}
         </aside>
       </div>
+
+      {gate.freeLimits && gate.proLimits ? (
+        <UpgradeModal
+          cancelPath={pathname}
+          freeLimits={gate.freeLimits}
+          onClose={gate.closeUpgradeModal}
+          open={gate.showUpgradeModal}
+          proLimits={gate.proLimits}
+        />
+      ) : null}
     </section>
   );
 }

@@ -37,6 +37,22 @@ test("account menu renders session-aware state: guest link vs. signed-in dropdow
   assert.match(accountMenu, /href=\{`\/\$\{locale\}\/sign-in`\}/);
 });
 
+test("logged-out visitors see a registration CTA beside sign-in, registration primary and sign-in secondary", () => {
+  const guestBranch = accountMenu.slice(
+    accountMenu.indexOf("if (!session.data)"),
+    accountMenu.indexOf("const { user } = session.data;"),
+  );
+
+  assert.match(guestBranch, /href=\{`\/\$\{locale\}\/sign-up`\}/);
+  assert.match(guestBranch, /copy\.guestNav\.signUpLabel/);
+  assert.match(guestBranch, /className="button button--primary guest-nav-actions__signup"/);
+  // Sign-in stays a plain secondary nav link, not promoted to the primary button style.
+  assert.match(
+    guestBranch,
+    /<a className="primary-nav__link" href=\{`\/\$\{locale\}\/sign-in`\}>/,
+  );
+});
+
 test("sign out calls the client SDK and returns the visitor to the homepage", () => {
   assert.match(accountMenu, /authClient\.signOut\(\)/);
   assert.match(accountMenu, /router\.push\(`\/\$\{locale\}`\)/);

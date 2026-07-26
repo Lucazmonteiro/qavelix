@@ -111,6 +111,28 @@ textarea {
   color: var(--accent-foreground);
 }
 
+/* Cursor behavior: browsers default hovering directly over selectable text glyphs to the
+   text-selection (I-beam) cursor, even for headings, labels, and status text that aren't
+   editable — which reads as "this looks like an input" in application chrome. This only
+   forces the arrow cursor back for non-editable UI text/labels; it never touches
+   `user-select`, so legitimate text selection (including in article/legal/help content,
+   which is deliberately left alone here) keeps working exactly as before — only the cursor
+   icon changes, not what's selectable. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.eyebrow,
+.dashboard-status,
+.dashboard-summary-row dt,
+.dashboard-summary-row dd,
+.auth-field label,
+.brand__text {
+  cursor: default;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -361,6 +383,22 @@ button.tools-menu__item:disabled {
   justify-content: flex-end;
   gap: 0.55rem;
   min-width: 0;
+}
+
+/* Logged-out header CTAs: registration is the primary action, sign-in stays a secondary
+   text link beside it — matches every other primary-nav__link's sizing so it doesn't
+   introduce a second, differently-scaled button style into the header. */
+.guest-nav-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.guest-nav-actions__signup {
+  min-height: 2.35rem;
+  padding-inline: 0.9rem;
+  font-size: 0.92rem;
 }
 
 .language-selector,
@@ -1850,7 +1888,9 @@ button.tools-menu__item:disabled {
 .auth-form-shell__header {
   display: grid;
   gap: 0.5rem;
+  justify-items: center;
   margin-bottom: 1.5rem;
+  text-align: center;
 }
 
 .auth-form-shell__header h1 {
@@ -1884,15 +1924,24 @@ button.tools-menu__item:disabled {
 .auth-field input {
   width: 100%;
   min-height: 2.85rem;
-  border: 1px solid var(--border);
+  /* --border-strong (not --border) and --surface-muted (not --background-elevated,
+     identical to the card's own background in light mode) — the original pairing gave
+     the field zero background contrast against its own card, leaving only a faint
+     low-contrast border to indicate it was editable at all. */
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
-  background: var(--background-elevated);
+  background: var(--surface-muted);
   color: var(--foreground);
   font: inherit;
   padding-inline: 0.85rem;
   transition:
     border-color 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.auth-field input:hover:not(:disabled) {
+  border-color: var(--accent);
 }
 
 .auth-field input::placeholder {
@@ -1900,13 +1949,20 @@ button.tools-menu__item:disabled {
 }
 
 .auth-field input:focus-visible {
+  background: var(--background-elevated);
   border-color: var(--focus);
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent);
 }
 
 .auth-field input[aria-invalid="true"] {
-  border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
+  border-color: var(--warning);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--warning) 40%, transparent);
+}
+
+.auth-field input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .auth-field__error {
@@ -2105,6 +2161,16 @@ button.tools-menu__item:disabled {
 .dashboard-status--neutral {
   background: var(--surface-muted);
   color: var(--muted);
+}
+
+/* Same warning visual language already used for form/compression alerts
+   (.form-status__error, --warning/--warning-soft) — a "limit reached" state is a warning,
+   not a neutral fact, and should not share the same muted-gray treatment as an informational
+   badge. Both tokens are tuned per theme (see :root/:root[data-theme="dark"]) so contrast
+   holds in light and dark mode. */
+.dashboard-status--warning {
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
 .dashboard-tool-card {
@@ -2351,4 +2417,270 @@ button.tools-menu__item:disabled {
     opacity: 0.64;
     transform: translate3d(54%, 0, 0);
   }
+}
+
+/* Stripe/entitlement audit: subscription-entitlement UX (upgrade modal, Pro welcome
+   experience, activation status, entitlement-locked tool controls, Free/Pro plan
+   comparison). Reuses existing tokens/classes (.button, .foundation-card,
+   .dashboard-status, .form-status__error) throughout rather than inventing a parallel
+   visual language. */
+
+/* Shared modal primitive (src/components/modal.tsx) — the one place backdrop, dialog
+   surface, and close-button styling live, so the upgrade-offer modal and the Pro welcome
+   experience look and behave identically. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgb(21 21 21 / 0.55);
+  padding: 1rem;
+}
+
+.modal-dialog {
+  position: relative;
+  width: min(100%, 32rem);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--strong-shadow);
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.modal-dialog__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--foreground);
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.modal-dialog__close:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.modal-dialog h2 {
+  margin: 0 0 0.75rem;
+  padding-right: 2.5rem;
+}
+
+.modal-dialog p {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Upgrade-offer modal (src/components/upgrade-modal.tsx). */
+.upgrade-modal__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin-block: 1rem;
+}
+
+.upgrade-modal__tier {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem;
+}
+
+.upgrade-modal__tier--pro {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.upgrade-modal__tier-name {
+  margin: 0 0 0.5rem;
+  color: var(--foreground);
+  font-weight: 800;
+}
+
+.upgrade-modal__tier ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.upgrade-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+/* Pro welcome experience (src/components/dashboard/pro-welcome-modal.tsx). */
+.pro-welcome-modal__benefits {
+  border-radius: 8px;
+  background: var(--surface-muted);
+  margin-block: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.pro-welcome-modal__benefits-title {
+  margin: 0 0 0.5rem;
+  color: var(--foreground);
+  font-weight: 800;
+}
+
+.pro-welcome-modal__benefits ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Activation-pending state (src/components/dashboard/subscription-activation-status.tsx)
+   — shown on /dashboard/plan?checkout=success while getPlan() hasn't resolved to "pro"
+   yet, never a false success message. */
+.subscription-activation-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.subscription-activation-status__title {
+  margin: 0 0 0.3rem;
+  color: var(--foreground);
+  font-weight: 800;
+}
+
+.subscription-activation-status p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Entitlement-locked tool controls (CompressionPanel, ExtractAudioTool) — shown once the
+   backend has confirmed the daily limit is reached; reuses the warning visual language,
+   never a fabricated third alert style. */
+.entitlement-lock-notice {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+  border-radius: 8px;
+  background: var(--warning-soft);
+  margin-top: 0.75rem;
+  padding: 0.9rem;
+}
+
+.entitlement-lock-notice p {
+  margin: 0;
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.upload-dropzone--blocked {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.upload-dropzone--blocked:hover {
+  border-color: var(--border-strong);
+  transform: none;
+}
+
+/* A decorative <span> styled to look like a button inside the dropzone <label> — it can
+   never itself be disabled (it isn't a real control), so this only mirrors .button's own
+   :disabled treatment visually. */
+.button--disabled-look {
+  cursor: not-allowed;
+  filter: none;
+  opacity: 0.46;
+}
+
+/* Free/Pro plan comparison (dashboard/plan/page.tsx). */
+.plan-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.plan-comparison__tier {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
+  padding: 1.25rem;
+}
+
+.plan-comparison__tier--current {
+  border-color: var(--success);
+}
+
+.plan-comparison__tier--pro {
+  border-color: var(--accent);
+}
+
+.plan-comparison__tier--pro.plan-comparison__tier--current {
+  border-color: var(--success);
+}
+
+.plan-comparison__tier-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.plan-comparison__tier-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.plan-comparison__price {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.plan-comparison__features {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-comparison__features li {
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+}
+
+.plan-comparison__features li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.plan-comparison__features p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.plan-comparison__tool-name {
+  color: var(--foreground);
+  font-weight: 800;
 }

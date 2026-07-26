@@ -18,3 +18,18 @@ export const authClient = createAuthClient({
 });
 
 export const useSession = authClient.useSession;
+
+// Shared by every entry point that can start a Pro checkout (the Plan page's upgrade
+// button, the reusable upgrade-offer modal shown on a daily-limit block) so the plan
+// name, and the success destination that drives the activation/welcome flow, are never
+// duplicated or allowed to drift between call sites. Always returns to the Plan page on
+// success — that's the one place the app resolves and displays the activation/welcome
+// state (see dashboard/plan/page.tsx) — but cancellation returns the visitor to wherever
+// they started the checkout from.
+export function startProUpgradeCheckout(locale: string, cancelPath: string) {
+  return authClient.subscription.upgrade({
+    plan: "pro",
+    successUrl: `/${locale}/dashboard/plan?checkout=success`,
+    cancelUrl: `/${locale}${cancelPath}`,
+  });
+}

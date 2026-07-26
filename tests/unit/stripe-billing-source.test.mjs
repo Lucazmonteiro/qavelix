@@ -152,10 +152,22 @@ test("the auth client registers the Stripe subscription client plugin", () => {
 });
 
 test("checkout/portal actions call the real Better Auth client methods, never fetch a hand-rolled endpoint", () => {
-  assert.match(planActions, /authClient\.subscription\.upgrade\(\{/);
-  assert.match(planActions, /plan: "pro"/);
-  assert.match(planActions, /successUrl: `\/\$\{locale\}\/dashboard\/plan\?checkout=success`/);
-  assert.match(planActions, /cancelUrl: `\/\$\{locale\}\/dashboard\/plan\?checkout=cancelled`/);
+  // Milestone: Stripe/entitlement audit — the actual authClient.subscription.upgrade()
+  // call moved into one shared helper (startProUpgradeCheckout, auth-client.ts) reused by
+  // both the Plan page's upgrade button and the reusable daily-limit upgrade modal, so
+  // the plan name and the success destination that drives the activation/welcome flow
+  // can never drift between call sites.
+  assert.match(authClientModule, /export function startProUpgradeCheckout\(locale: string, cancelPath: string\)/);
+  assert.match(authClientModule, /authClient\.subscription\.upgrade\(\{/);
+  assert.match(authClientModule, /plan: "pro"/);
+  assert.match(
+    authClientModule,
+    /successUrl: `\/\$\{locale\}\/dashboard\/plan\?checkout=success`/,
+  );
+
+  assert.match(planActions, /from "@\/lib\/auth-client"/);
+  assert.match(planActions, /startProUpgradeCheckout\(locale, "\/dashboard\/plan\?checkout=cancelled"\)/);
+  assert.doesNotMatch(planActions, /authClient\.subscription\.upgrade/);
   assert.doesNotMatch(planActions, /STRIPE_SECRET_KEY|sk_test|sk_live/);
 
   assert.match(billingPortalButton, /authClient\.subscription\.billingPortal\(\{/);
