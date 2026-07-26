@@ -32,13 +32,13 @@ test("navigation controls are shell-owned and not statically repeated in section
   assert.match(appShell, /id="page-end-sentinel"/);
 });
 
-test("contextual Back stores origin, validates destination, and clears itself after return", () => {
-  assert.match(navigationControls, /qavelix-navigation-context/);
-  assert.match(navigationControls, /data-navigation-origin/);
-  assert.match(navigationControls, /normalizeDestination/);
-  assert.match(navigationControls, /getCurrentDestination/);
-  assert.match(navigationControls, /setNavigationContext\(null\)/);
-  assert.match(navigationControls, /clearNavigationContext\(\)/);
+test("Back tracks internal navigation history and falls back to the locale home when the stack is empty", () => {
+  assert.match(navigationControls, /qavelix-internal-history/);
+  assert.match(navigationControls, /function pushCurrentPageToHistory/);
+  assert.match(navigationControls, /function popInternalHistory/);
+  assert.match(navigationControls, /function handleBack\(\)/);
+  assert.match(navigationControls, /window\.history\.back\(\)/);
+  assert.match(navigationControls, /getFallbackPath\(activeLocale\)/);
 });
 
 test("Back to top uses an end sentinel and reduced-motion-aware scrolling", () => {
@@ -49,14 +49,11 @@ test("Back to top uses an end sentinel and reduced-motion-aware scrolling", () =
   assert.match(navigationControls, /backToTopLabel/);
 });
 
-test("contextual Back and Back to top are coordinated as mutually exclusive controls", () => {
-  assert.match(navigationControls, /const showBackToTop = isEndVisible/);
-  assert.match(
-    navigationControls,
-    /const showContextBack = Boolean\(navigationContext\) && !showBackToTop/,
-  );
-  assert.match(navigationControls, /\{showContextBack \? \(/);
-  assert.match(navigationControls, /\{showBackToTop \? \(/);
+test("Back and Back to top are coordinated as a single mutually exclusive floating control", () => {
+  assert.match(navigationControls, /type FloatingMode = "hidden" \| "back" \| "top"/);
+  assert.match(navigationControls, /if \(mode === "hidden"\) \{\s*return null;\s*\}/);
+  assert.match(navigationControls, /const isTopMode = mode === "top"/);
+  assert.match(navigationControls, /const label = isTopMode \? backToTopLabel : backLabel/);
 });
 
 test("contextual Back and Back to top share the same visual treatment", () => {
@@ -80,10 +77,7 @@ test("localized navigation control labels are present", () => {
   assert.match(dictionary, /back: "Back"/);
   assert.match(dictionary, /back: "Voltar"/);
   assert.match(dictionary, /back: "Volver"/);
-  assert.match(dictionary, /backToCompressor: "Back to compressor"/);
-  assert.match(dictionary, /backToCompressor: "Voltar ao compressor"/);
-  assert.match(dictionary, /backToCompressor: "Volver al compresor"/);
   assert.match(dictionary, /backToTop: "Back to top"/);
-  assert.match(dictionary, /backToTop: "Voltar ao início"/);
-  assert.match(dictionary, /backToTop: "Volver al inicio"/);
+  assert.match(dictionary, /backToTop: "Ir para o topo"/);
+  assert.match(dictionary, /backToTop: "Ir arriba"/);
 });

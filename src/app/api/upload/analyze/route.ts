@@ -296,7 +296,7 @@ async function streamRequestBodyToDisk(
 }
 
 export async function POST(request: Request) {
-  const security = enforceApiSecurity(request, {
+  const security = await enforceApiSecurity(request, {
     route: "upload.analyze",
     limit: 10,
     windowMs: 60_000,
@@ -460,7 +460,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const security = enforceApiSecurity(request, {
+  const security = await enforceApiSecurity(request, {
     route: "upload.discard",
     limit: 30,
     windowMs: 60_000,

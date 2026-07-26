@@ -20,6 +20,19 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      # tests/integration/entitlements-db.test.mjs and stripe-billing-db.test.mjs exercise
+      # real atomicity/idempotency guarantees against a real database and gracefully skip
+      # (never fail) when these are unset — see each file's own skip logic, unchanged here.
+      # DATABASE_URL must point at a dedicated CI/test Neon branch, never production: this
+      # suite inserts and deletes throwaway rows. The app's own Neon serverless driver
+      # (src/lib/server/db/client.ts) requires a real Neon endpoint, so this cannot be a
+      # generic Postgres service container. STRIPE_SECRET_KEY must be a Stripe *test-mode*
+      # key — the test itself refuses to run against anything not prefixed sk_test_.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      STRIPE_PRO_MONTHLY_PRICE_ID: ${{ secrets.STRIPE_PRO_MONTHLY_PRICE_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,6 +54,10 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Apply database migrations
+        if: ${{ env.DATABASE_URL != '' }}
+        run: npm run db:migrate
 
       - name: Test
         run: npm run test

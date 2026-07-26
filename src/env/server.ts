@@ -46,6 +46,12 @@ const envSchema = z
     STRIPE_SECRET_KEY: z.string().startsWith("sk_").optional(),
     STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
     STRIPE_PRO_MONTHLY_PRICE_ID: z.string().startsWith("price_").optional(),
+    // Milestone 6 Phase 3 — real transactional email for password reset and email
+    // verification (src/lib/server/email.ts). Same "optional everywhere, including
+    // production" convention as STRIPE_*: with either unset, auth.ts falls back to its
+    // original dev-only behavior (logging the link) instead of failing to boot.
+    RESEND_API_KEY: z.string().startsWith("re_").optional(),
+    EMAIL_FROM_ADDRESS: z.string().optional(),
   })
   .superRefine((value, context) => {
     const appUrl = new URL(value.NEXT_PUBLIC_APP_URL);
@@ -76,6 +82,8 @@ const parsedEnv = envSchema.safeParse({
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   STRIPE_PRO_MONTHLY_PRICE_ID: process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS,
 });
 
 if (!parsedEnv.success) {

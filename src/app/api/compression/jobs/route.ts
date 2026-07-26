@@ -32,7 +32,7 @@ async function readJsonPayload(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const security = enforceApiSecurity(request, {
+  const security = await enforceApiSecurity(request, {
     route: "compression.create",
     limit: 5,
     windowMs: 60_000,

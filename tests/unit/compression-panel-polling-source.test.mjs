@@ -348,13 +348,13 @@ test("compression panel presents prominent preset decision cards after validatio
 
 test("homepage compressor stays high enough for immediate result review", () => {
   assert.match(cssSource, /\.hero-section--tool/);
-  assert.match(cssSource, /gap: clamp\(0\.7rem, 1\.4vw, 1\.1rem\)/);
+  assert.match(cssSource, /gap: clamp\(0\.45rem, 1vw, 0\.8rem\)/);
   assert.match(
     cssSource,
-    /padding-block: clamp\(0\.25rem, 0\.9vw, 0\.65rem\) clamp\(3rem, 6vw, 5rem\)/,
+    /padding-block: clamp\(0\.1rem, 0\.45vw, 0\.35rem\) clamp\(3rem, 6vw, 5rem\)/,
   );
   assert.match(cssSource, /\.homepage-tool \.upload-dropzone/);
-  assert.match(cssSource, /min-height: clamp\(16rem, 31vw, 23rem\)/);
+  assert.match(cssSource, /min-height: clamp\(15rem, 27vw, 20rem\)/);
 });
 
 test("working states reposition the entire workspace without changing the landing layout", () => {
@@ -395,7 +395,9 @@ test("compression panel scrolls settled validation results into reading position
 });
 
 test("footer keeps only useful content and legal links", () => {
-  assert.match(headerSource, /dictionary\.navigation\.compressVideo/);
+  assert.match(headerSource, /dictionary\.navigation\.tools/);
+  assert.match(headerSource, /dictionary\.navigation\.videoCompressorTool/);
+  assert.match(headerSource, /dictionary\.navigation\.extractAudioTool/);
   assert.match(headerSource, /dictionary\.pages\.about\.label/);
   assert.match(headerSource, /dictionary\.pages\.faq\.label/);
   assert.match(headerSource, /dictionary\.pages\.contact\.label/);
@@ -416,17 +418,20 @@ test("footer keeps only useful content and legal links", () => {
 });
 
 test("public pages expose release-ready SEO and deterministic compressor return links", () => {
-  assert.match(contentPageSource, /className="content-page__back-link"/);
-  assert.match(contentPageSource, /dictionary\.navigation\.backToCompressor/);
-  assert.match(contentPageSource, /href=\{`\/\$\{validLocale\}`\}/);
+  // The compressor return link is shell-owned (see NavigationControls in
+  // navigation-controls-source.test.mjs), not a per-page element, so content pages
+  // must not render their own copy of it.
+  assert.doesNotMatch(contentPageSource, /content-page__back-link/);
   assert.match(contentPageSource, /siteConfig\.supportEmail/);
   assert.match(contentPageSource, /mailto:\$\{siteConfig\.supportEmail\}/);
   assert.match(dictionarySource, /Last updated/);
   assert.match(dictionarySource, /Última atualização/);
   assert.match(envSource, /NEXT_PUBLIC_SUPPORT_EMAIL/);
-  assert.doesNotMatch(dictionarySource, /placeholder/i);
+  // Excludes "xPlaceholder" dictionary keys (form-field placeholder copy, e.g.
+  // namePlaceholder) and the "placeholder: {" group key — only flags the word used as
+  // literal rendered prose, which is the actual stale-content risk this guards against.
+  assert.doesNotMatch(dictionarySource, /(?<![A-Za-z])placeholder(?!\s*:)/i);
   assert.doesNotMatch(dictionarySource, /Phase 7/i);
-  assert.match(cssSource, /\.content-page__back-link/);
 });
 
 test("compression result hierarchy has clearer titles and warning spacing", () => {

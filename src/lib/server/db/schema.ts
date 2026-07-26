@@ -226,3 +226,39 @@ export const subscription = pgTable("subscription", {
   billingInterval: text("billing_interval"),
   stripeScheduleId: text("stripe_schedule_id"),
 });
+
+// Milestone 6 Phase 5 — durable rate limiting. One mutable row per rate-limit key (the
+// same "route:fingerprint" string already used as the in-memory Map key in security.ts),
+// holding the count and expiry of the current fixed window. Read/written by a single
+// atomic upsert (see checkRateLimit()'s durable path in security.ts) so "is this window
+// still open" and "increment or start a new window" happen as one statement, not a
+// read-then-write race — the same discipline usageCounter's upsert already uses above.
+// Only used when DATABASE_URL is configured; security.ts falls back to the original
+// in-memory Map otherwise, so a deployment with no database configured at all (the
+// anonymous-only core product) keeps working exactly as before.
+export const rateLimitBucket = pgTable("rate_limit_bucket", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(0),
+  resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Milestone 6 Phase 6 — durable job state. Replaces the local-disk JSON snapshot
+// (os.tmpdir()/qavelix-compression/jobs/{id}.json) compression-queue.ts previously used
+// as its persistence layer — that file survived a crash of the *same* process but not a
+// redeploy (temp directory wiped) or any restart, silently losing every in-flight job.
+// `data` holds the identical serialized shape the JSON file did (see serializableJob() in
+// compression-queue.ts), so persistCompressionJob()/readPersistedCompressionJob() change
+// only their I/O backend, not the shape of what they read/write — every other function in
+// that file (dispatch, locking, FFmpeg execution) is unchanged. `status` is additionally
+// surfaced as its own column purely so a caller can filter without deserializing `data`;
+// it's kept in sync with data.status on every write. Unlike rate_limit_bucket, this table
+// has no "DATABASE_URL not configured" fallback: entitlements/service.ts's resolveActor()
+// (Milestone 5) already hard-requires a database on every compression-job-creation
+// request, so this introduces no new dependency the create path didn't already have.
+export const compressionJob = pgTable("compression_job", {
+  id: text("id").primaryKey(),
+  status: text("status").notNull(),
+  data: jsonb("data").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

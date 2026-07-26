@@ -4,14 +4,27 @@ This guide covers the production deployment path for the current QAVELIX phases.
 
 ## Production target
 
-- Frontend and API routes: Vercel, using the Next.js framework preset.
+**Render — a single persistent container runs the entire app**: web pages, API routes,
+and FFmpeg/FFprobe execution, all in one process. This is a resolved decision, not one of
+two options — see
+[`docs/architecture/hosting-decision.md`](./architecture/hosting-decision.md) for the
+full reasoning and what it means for the rest of the durability work in progress.
+Vercel is not used for production; `vercel.json` remains in the repository but does not
+represent a deployment target.
+
+- Frontend, API routes, and media execution: Render, using `Dockerfile`'s standalone
+  build (FFmpeg baked into the image).
 - DNS and edge protection: Cloudflare.
 - CI/CD verification: GitHub Actions.
-- Media execution: the current implementation runs FFmpeg and FFprobe from the server runtime and stores compression jobs in process memory.
+- Job state and rate-limit state are durable (Postgres `compression_job` /
+  `rate_limit_bucket`, Milestone 6 Phases 5–6) — a job or rate-limit window survives a
+  process restart. See "Worker deployment guide" below for what's still local-disk
+  (the video files themselves and the FFmpeg worker lock) and why that's fine under a
+  single-instance target.
 
 ## Required environment variables
 
-Set these variables in Vercel for Production, Preview, and Development as appropriate.
+Set these variables in Render for the production service (see "Render configuration" below).
 
 ```bash
 NEXT_PUBLIC_APP_URL=https://qavelix.com
@@ -28,7 +41,36 @@ Rules:
 
 The app URL is used for metadata, canonical links, language alternates, `sitemap.xml`, and `robots.txt`. The support email is rendered on public contact, privacy, and terms pages as the official MVP contact channel.
 
-## Vercel configuration
+### Transactional email (required before exposing auth to real users)
+
+```bash
+RESEND_API_KEY=re_...
+EMAIL_FROM_ADDRESS="QAVELIX <noreply@qavelix.com>"
+```
+
+Both are optional at the code level (`src/env/server.ts`) — without them, password reset
+and email verification fall back to logging the link via the structured logger instead of
+sending a real email, matching this project's original dev-only behavior. Set both before
+the sign-up/sign-in flows are exposed to real users: without them, a user who forgets
+their password has no way to recover their account.
+
+Steps, using [Resend](https://resend.com):
+
+1. Add and verify the sending domain (`qavelix.com`) in the Resend dashboard — this
+   configures the required DKIM and SPF DNS records; add a DMARC record separately if the
+   domain doesn't already have one. Skipping this step causes real deliverability
+   problems (spam-folder landing) even though the API call itself succeeds.
+2. Create an API key and set `RESEND_API_KEY`.
+3. Set `EMAIL_FROM_ADDRESS` to a verified sender on that domain, e.g.
+   `"QAVELIX <noreply@qavelix.com>"`.
+4. Verify delivery end-to-end through the real Forgot Password and Sign Up UI, not just a
+   successful API response — check that the email actually lands in an inbox.
+
+## Vercel configuration (not used for production)
+
+`vercel.json` is not the production deployment path — see "Production target" above.
+Kept in the repository for optional preview/staging use only, not documented further
+here.
 
 The project is configured in `vercel.json`:
 
@@ -47,9 +89,9 @@ Recommended Vercel project settings:
 - Output directory: leave empty and let Vercel detect Next.js.
 - Environment variables: set `NEXT_PUBLIC_APP_URL` to the final HTTPS production origin and `NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com`.
 
-## Render configuration
+## Render configuration (production)
 
-If deploying on Render, set these environment variables manually in the Render service dashboard before the public production deploy:
+Set these environment variables manually in the Render service dashboard before the public production deploy:
 
 ```bash
 NEXT_PUBLIC_APP_URL=https://qavelix.com
@@ -64,17 +106,17 @@ Use Cloudflare as DNS for the production domain.
 
 Recommended records:
 
-| Type       | Name      | Target                                         |
+| Type       | Name      | Target                                        |
 | ---------- | --------- | ---------------------------------------------- |
-| CNAME      | `www`     | Vercel-assigned canonical host                 |
-| A or CNAME | apex/root | Configure through Vercel's domain instructions |
+| CNAME      | `www`     | Render-assigned canonical host                 |
+| A or CNAME | apex/root | Configure through Render's custom domain setup |
 
 Recommended Cloudflare settings:
 
 - SSL/TLS mode: Full (strict).
 - Always Use HTTPS: enabled.
 - Automatic HTTPS Rewrites: enabled.
-- HSTS: only enable after verifying the production domain and Vercel certificate.
+- HSTS: only enable after verifying the production domain and Render certificate.
 - Cache level: Standard.
 - Do not cache API routes.
 - Do not modify CSP headers at Cloudflare unless the same policy is mirrored from `next.config.ts`.
@@ -139,11 +181,17 @@ Expected:
 - Missing multipart uploads return validation errors only for same-origin requests.
 - API responses include `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
 
-## Worker deployment guide
+## Worker deployment guide (reference only — not the current plan)
 
-The current phase keeps compression execution in the Next.js server runtime with an in-memory queue. That is suitable for local verification and a single runtime instance, but it is not horizontally durable.
+**Not adopted for now** — see
+[`docs/architecture/hosting-decision.md`](./architecture/hosting-decision.md), which
+chose a single Render instance over this split-worker architecture. Kept here as
+reference for the "Revisit trigger" condition in that document, describing what to build
+*if* this decision is later revisited, not a near-term plan.
 
-Before scaling production compression traffic, deploy a dedicated worker architecture:
+The current implementation keeps compression execution in the Next.js server runtime; job dispatch order (`queue: string[]`, which job runs next) is still in-memory, but job *state* is durable (Postgres, Milestone 6 Phase 6) — a crash or restart no longer loses a job, it's recovered or cleanly failed. That's suitable for local verification and a single runtime instance, but it is not horizontally durable — multiple instances still can't safely share the in-memory dispatch queue, which is exactly what the full worker split below would fix.
+
+If a dedicated worker architecture is later needed:
 
 1. Move job state from process memory to durable storage.
 2. Move uploaded source and compressed output files from local temporary files to private object storage.
@@ -170,20 +218,47 @@ npm ci
 npm run lint
 npm run typecheck
 npm run build
+npm run db:migrate   # only when DATABASE_URL is configured, see below
 npm run test
 ```
 
-Vercel should deploy only commits that pass CI.
+Render should deploy only commits that pass CI (configure auto-deploy from the branch CI protects, or gate deploys manually until that's set up).
+
+### CI database coverage (optional, recommended before enabling billing in production)
+
+`tests/integration/entitlements-db.test.mjs` and `tests/integration/stripe-billing-db.test.mjs`
+exercise the atomic-upsert, idempotency, and plan-sync logic that the entitlements and
+Stripe billing systems depend on, directly against a real Postgres database. Each test
+file skips gracefully (never fails) when its required variables are unset, so CI passes
+either way — but without them, this logic has no CI coverage and a regression is only
+caught after it reaches a real user.
+
+To enable this coverage, set these as GitHub Actions repository secrets:
+
+- `DATABASE_URL` — a dedicated CI/test Neon branch connection string. **Never point this
+  at the production database**: the test suite inserts and deletes rows as part of
+  running. The app's database driver (`@neondatabase/serverless` /
+  `drizzle-orm/neon-serverless`, see `src/lib/server/db/client.ts`) requires a real Neon
+  endpoint — a generic Postgres service container does not work as a substitute.
+- `BETTER_AUTH_SECRET` — any string of 32+ characters; only signs sessions against the
+  CI/test database above.
+- `STRIPE_SECRET_KEY` — a Stripe **test-mode** secret key (`sk_test_...`) only. The test
+  file itself refuses to run against a key that isn't test-mode, as a safety net.
+- `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_MONTHLY_PRICE_ID` — the matching test-mode values.
+
+When `DATABASE_URL` is set, CI also runs `npm run db:migrate` against it before the test
+step, so the schema in `src/lib/server/db/schema.ts` stays current on that branch
+automatically — no manual migration step is required after adding the secret.
 
 ## Manual deployment checklist
 
 Before the first production deployment:
 
-1. Create the Vercel project from the repository.
+1. Create the Render service from the repository, using `Dockerfile`.
 2. Set `NEXT_PUBLIC_APP_URL` to the final HTTPS production origin.
 3. Set `NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com`.
-3. Connect the production domain in Vercel.
-4. Configure Cloudflare DNS to point to Vercel.
-5. Verify Vercel has issued a valid certificate.
-6. Run the post-deployment checks in this document.
-7. Confirm `sitemap.xml`, `robots.txt`, metadata, favicon, and manifest use the production origin.
+4. Connect the production domain in Render.
+5. Configure Cloudflare DNS to point to Render.
+6. Verify Render has issued a valid certificate (or Cloudflare's, per the SSL/TLS mode above).
+7. Run the post-deployment checks in this document.
+8. Confirm `sitemap.xml`, `robots.txt`, metadata, favicon, and manifest use the production origin.

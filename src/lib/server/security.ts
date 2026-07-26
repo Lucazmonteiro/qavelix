@@ -1,7 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
 
+import { eq, lt, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+import { env } from "@/env/server";
+import { getDb } from "@/lib/server/db/client";
+import { rateLimitBucket } from "@/lib/server/db/schema";
 import { validateSameOriginRequest } from "@/lib/server/origin";
 
 type RateLimitOptions = {
@@ -12,6 +16,12 @@ type RateLimitOptions = {
 
 type RateLimitBucket = {
   count: number;
+  resetAt: number;
+};
+
+type RateLimitResult = {
+  allowed: boolean;
+  remaining: number;
   resetAt: number;
 };
 
@@ -38,7 +48,7 @@ export function validateSameOrigin(request: Request) {
   return validateSameOriginRequest(request);
 }
 
-export function checkRateLimit({ key, limit, windowMs }: RateLimitOptions) {
+function checkRateLimitInMemory({ key, limit, windowMs }: RateLimitOptions): RateLimitResult {
   const now = Date.now();
 
   if (rateLimitBuckets.size > 10_000) {
@@ -79,6 +89,92 @@ export function checkRateLimit({ key, limit, windowMs }: RateLimitOptions) {
     remaining: Math.max(0, limit - existingBucket.count),
     resetAt: existingBucket.resetAt,
   };
+}
+
+// Durable counterpart to checkRateLimitInMemory() above: a single atomic upsert against
+// rate_limit_bucket, reproducing the exact same fixed-window semantics (new window once
+// the old one expires; deny without incrementing once at the limit) so swapping backends
+// never changes observable behavior at any call site. Used whenever DATABASE_URL is
+// configured, so rate-limit state survives a process restart — the actual point of this
+// phase.
+async function checkRateLimitDurable({
+  key,
+  limit,
+  windowMs,
+}: RateLimitOptions): Promise<RateLimitResult> {
+  const now = new Date();
+  const windowResetAt = new Date(now.getTime() + windowMs);
+
+  try {
+    const db = getDb();
+
+    // Opportunistic cleanup, mirroring checkRateLimitInMemory()'s own prune-on-write
+    // behavior — bounds table growth without a scheduled job.
+    if (Math.random() < 0.01) {
+      await db.delete(rateLimitBucket).where(lt(rateLimitBucket.resetAt, now));
+    }
+
+    const [row] = await db
+      .insert(rateLimitBucket)
+      .values({ key, count: 1, resetAt: windowResetAt })
+      .onConflictDoUpdate({
+        target: rateLimitBucket.key,
+        set: {
+          count: sql`case when ${rateLimitBucket.resetAt} <= now() then 1 else ${rateLimitBucket.count} + 1 end`,
+          resetAt: sql`case when ${rateLimitBucket.resetAt} <= now() then ${windowResetAt} else ${rateLimitBucket.resetAt} end`,
+          updatedAt: now,
+        },
+        // Same atomic "only proceed if still allowed" guard usage_counter's upsert
+        // already uses in entitlements/service.ts — either the window has expired
+        // (always allow, start fresh) or there's still room under the limit. If neither
+        // holds, the row is left untouched and RETURNING yields nothing, which is how
+        // the deny branch below is detected — never a read-then-write race.
+        setWhere: sql`${rateLimitBucket.resetAt} <= now() OR ${rateLimitBucket.count} < ${limit}`,
+      })
+      .returning({ count: rateLimitBucket.count, resetAt: rateLimitBucket.resetAt });
+
+    if (!row) {
+      const [existing] = await db
+        .select({ resetAt: rateLimitBucket.resetAt })
+        .from(rateLimitBucket)
+        .where(eq(rateLimitBucket.key, key))
+        .limit(1);
+
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt: existing?.resetAt.getTime() ?? windowResetAt.getTime(),
+      };
+    }
+
+    return {
+      allowed: true,
+      remaining: Math.max(0, limit - row.count),
+      resetAt: row.resetAt.getTime(),
+    };
+  } catch (error) {
+    // Fails closed — the same convention entitlements/service.ts uses for exactly this
+    // class of problem: a transient DB outage must not silently disable abuse
+    // protection app-wide.
+    logSecurityEvent("error", "rate_limit_check_failed", {
+      key,
+      message: error instanceof Error ? error.message : "unknown",
+    });
+
+    return { allowed: false, remaining: 0, resetAt: windowResetAt.getTime() };
+  }
+}
+
+// Durable when DATABASE_URL is configured; falls back to the original in-memory Map
+// otherwise, so a deployment with no database configured at all — the anonymous-only
+// core product this app started as — keeps working exactly as before. Same "optional
+// everywhere" branching already used by getStripeClient()/email.ts.
+export function checkRateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
+  if (!env.DATABASE_URL) {
+    return Promise.resolve(checkRateLimitInMemory(options));
+  }
+
+  return checkRateLimitDurable(options);
 }
 
 export function securityJson(
@@ -152,7 +248,7 @@ export function logSecurityEvent(
   console.info(payload);
 }
 
-export function enforceApiSecurity(
+export async function enforceApiSecurity(
   request: Request,
   options: {
     route: string;
@@ -163,7 +259,7 @@ export function enforceApiSecurity(
 ) {
   const requestId = createRequestId();
   const fingerprint = getClientFingerprint(request);
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `${options.route}:${fingerprint}`,
     limit: options.limit,
     windowMs: options.windowMs,

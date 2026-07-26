@@ -363,7 +363,7 @@ function createStreamingDownloadResponse({
 }
 
 export async function POST(request: Request) {
-  const security = enforceApiSecurity(request, {
+  const security = await enforceApiSecurity(request, {
     route: "extract-audio.process",
     limit: 6,
     windowMs: 60_000,

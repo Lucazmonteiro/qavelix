@@ -311,7 +311,7 @@ async function streamRequestBodyToDisk(
 }
 
 export async function POST(request: Request) {
-  const security = enforceApiSecurity(request, {
+  const security = await enforceApiSecurity(request, {
     route: "extract-audio.analyze",
     limit: 8,
     windowMs: 60_000,

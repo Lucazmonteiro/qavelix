@@ -5,19 +5,28 @@ import { stripe } from "@better-auth/stripe";
 import { env } from "@/env/server";
 import { getDb } from "@/lib/server/db/client";
 import * as schema from "@/lib/server/db/schema";
+import { sendAuthEmail } from "@/lib/server/email";
 import { setUserPlan } from "@/lib/server/entitlements/service";
 import { logSecurityEvent } from "@/lib/server/security";
 import { getStripeClient } from "@/lib/server/stripe-client";
 import type { Subscription } from "@better-auth/stripe";
 
-// DEV-ONLY STUB. There is no email provider configured in this project yet — these
-// callbacks log the action link via the existing structured logger instead of sending a
-// real email, purely so the Forgot Password / Reset Password / Email Verification UI
-// (Milestone 2) can be exercised end-to-end locally. A real provider (Resend, Postmark,
-// SES, etc.) must replace this before any of these flows are exposed to real users —
-// nothing here is production email delivery.
-function logAuthEmailLink(event: string, email: string, url: string) {
-  logSecurityEvent("info", event, { email, url });
+// Sends the reset-password/verification link through the configured provider
+// (RESEND_API_KEY + EMAIL_FROM_ADDRESS, see src/lib/server/email.ts). Falls back to
+// logging the link via the structured logger whenever email isn't configured or the
+// provider call fails — this project's original dev-only behavior, kept as a safety net
+// so the Forgot Password / Reset Password / Email Verification flows never silently
+// dead-end, rather than removed outright.
+async function deliverAuthEmail(kind: "reset-password" | "verify-email", email: string, url: string) {
+  const sent = await sendAuthEmail(kind, email, url);
+
+  if (!sent) {
+    logSecurityEvent(
+      "info",
+      kind === "reset-password" ? "auth_dev_reset_password_link" : "auth_dev_verification_link",
+      { email, url },
+    );
+  }
 }
 
 // Milestone 5 — Stripe billing, additive on top of Milestone 4's entitlement system.
@@ -102,12 +111,12 @@ function createAuth() {
     emailAndPassword: {
       enabled: true,
       sendResetPassword: async ({ user, url }) => {
-        logAuthEmailLink("auth_dev_reset_password_link", user.email, url);
+        await deliverAuthEmail("reset-password", user.email, url);
       },
     },
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
-        logAuthEmailLink("auth_dev_verification_link", user.email, url);
+        await deliverAuthEmail("verify-email", user.email, url);
       },
       sendOnSignUp: true,
     },

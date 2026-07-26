@@ -1,18 +1,11 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { type ReadStream } from "node:fs";
-import {
-  mkdir,
-  open,
-  readFile,
-  readdir,
-  rename,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, open, rename, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+
+import { eq } from "drizzle-orm";
 
 import {
   buildFfmpegCompressionArguments,
@@ -25,6 +18,8 @@ import {
   type CompressionPresetId,
 } from "@/lib/compression-policy";
 import type { ConsumedAnalyzedUpload } from "@/lib/server/analyzed-upload-registry";
+import { getDb } from "@/lib/server/db/client";
+import { compressionJob as compressionJobTable } from "@/lib/server/db/schema";
 import { confirmUsage, releaseUsage } from "@/lib/server/entitlements/service";
 import { analyzeWithFfprobe } from "@/lib/server/ffprobe";
 import type { UploadValidationError } from "@/lib/upload-policy";
@@ -65,7 +60,6 @@ type CreateJobResult =
     };
 
 const compressionDirectory = path.join(os.tmpdir(), "qavelix-compression");
-const jobMetadataDirectory = path.join(compressionDirectory, "jobs");
 const jobLockDirectory = path.join(compressionDirectory, "locks");
 const maxRetainedJobs = 50;
 const maxQueuedJobs = 10;
@@ -77,10 +71,6 @@ const queue: string[] = [];
 const jobs = new Map<string, CompressionJob>();
 
 let activeJobId: string | null = null;
-
-function jobMetadataPath(id: string) {
-  return path.join(jobMetadataDirectory, `${id}.json`);
-}
 
 function jobLockPath(id: string) {
   return path.join(jobLockDirectory, `${id}.lock`);
@@ -179,10 +169,16 @@ async function releaseJobUsage(job: CompressionJob) {
 }
 
 async function persistCompressionJob(job: CompressionJob) {
-  await mkdir(jobMetadataDirectory, { recursive: true });
-  await writeFile(jobMetadataPath(job.id), JSON.stringify(serializableJob(job)), {
-    mode: 0o600,
-  });
+  const db = getDb();
+  const data = serializableJob(job);
+
+  await db
+    .insert(compressionJobTable)
+    .values({ id: job.id, status: job.status, data })
+    .onConflictDoUpdate({
+      target: compressionJobTable.id,
+      set: { status: job.status, data, updatedAt: new Date() },
+    });
 }
 
 async function acquireJobLock(id: string) {
@@ -215,11 +211,18 @@ async function releaseJobLock(id: string) {
 
 async function readPersistedCompressionJob(id: string) {
   try {
-    const text = await readFile(jobMetadataPath(id), "utf8");
-    const persisted = JSON.parse(text) as Omit<
-      CompressionJob,
-      "process" | "cleanupTimer"
-    >;
+    const db = getDb();
+    const [row] = await db
+      .select({ data: compressionJobTable.data })
+      .from(compressionJobTable)
+      .where(eq(compressionJobTable.id, id))
+      .limit(1);
+
+    if (!row) {
+      return null;
+    }
+
+    const persisted = row.data as Omit<CompressionJob, "process" | "cleanupTimer">;
 
     return {
       ...persisted,
@@ -268,15 +271,12 @@ async function findCompressionJob(id: string) {
 
 async function loadPendingCompressionJobs() {
   try {
-    const files = await readdir(jobMetadataDirectory);
+    const db = getDb();
+    const rows = await db.select({ id: compressionJobTable.id }).from(compressionJobTable);
     const pendingJobs: CompressionJob[] = [];
 
-    for (const file of files) {
-      if (!file.endsWith(".json")) {
-        continue;
-      }
-
-      const id = path.basename(file, ".json");
+    for (const row of rows) {
+      const id = row.id;
       const job = await findCompressionJob(id);
 
       if (job && isInterruptedProcessingStatus(job.status)) {
@@ -466,6 +466,33 @@ function formatCommand(command: string, args: string[]) {
     .join(" ");
 }
 
+// Windows dev-environment observation: a file FFmpeg just finished writing can briefly be
+// invisible to a separately-spawned child process (ffprobe) immediately afterward — most
+// likely real-time antivirus scanning intercepting a freshly-written media file. Every
+// other analyzeWithFfprobe() call site in this app reads a file that already sat on disk
+// through a full upload request/response round trip; this is the one place a file is read
+// moments after a sibling process just finished writing it, so it's the one place that
+// needs a short bounded retry — not a change to analyzeWithFfprobe() itself, which every
+// other caller already uses safely as-is.
+async function analyzeOutputWithRetry(filePath: string) {
+  const maxAttempts = 4;
+  const retryDelayMs = 150;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await analyzeWithFfprobe(filePath);
+    } catch (error) {
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    }
+  }
+
+  throw new Error("analyzeOutputWithRetry exhausted attempts unexpectedly.");
+}
+
 async function runJob(job: CompressionJob) {
   const lockAcquired = await acquireJobLock(job.id);
 
@@ -647,7 +674,7 @@ async function runJob(job: CompressionJob) {
       const outputStats = await stat(job.outputPath);
       const token = randomBytes(32).toString("base64url");
       const expiresAt = new Date(Date.now() + DOWNLOAD_TTL_MS).toISOString();
-      const outputMetadata = await analyzeWithFfprobe(job.outputPath);
+      const outputMetadata = await analyzeOutputWithRetry(job.outputPath);
       const compression = calculateCompressionStats(job.inputSize, outputStats.size, {
         outputWidth: outputMetadata.width,
         outputHeight: outputMetadata.height,
@@ -802,7 +829,6 @@ export async function createCompressionJobFromAnalyzedUpload(
       };
     }
 
-    await mkdir(jobMetadataDirectory, { recursive: true });
     await mkdir(compressionDirectory, { recursive: true });
 
     const id = randomUUID();

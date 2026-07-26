@@ -2,6 +2,13 @@
 
 Date: 2026-07-24
 
+> **Hosting update (2026-07-26):** the Vercel-web/Render-worker split this document
+> designs around (see "Deployment model decision" below) was **not adopted**. See
+> [hosting-decision.md](./hosting-decision.md): production runs as a single Render
+> instance instead. The entitlements/tool-registry/usage-counter design below is
+> unaffected and largely implemented (see `CLAUDE.md`) — only the deployment-split
+> section is superseded.
+
 Scope: the target architecture for subscriptions, authentication, usage limits, processing queues, payments, accounts, analytics, admin tooling, and — critically — a design that lets every future tool inherit Free/Pro limits without touching the subscription system. This is a design document only. **Nothing in this document has been implemented.** No database, auth library, or payment SDK has been added to the codebase. See [business-review.md](./business-review.md) for why this is needed and [infrastructure-compatibility.md](./infrastructure-compatibility.md) for what in the current stack does or doesn't survive the transition.
 
 ---
