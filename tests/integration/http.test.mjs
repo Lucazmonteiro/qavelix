@@ -383,6 +383,21 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
       assert.match(sitemap.text, /<priority>1<\/priority>/);
       assert.match(sitemap.text, /<priority>0\.65<\/priority>/);
       assert.doesNotMatch(sitemap.text, /design-system|readiness/);
+
+      // Extract Audio is a real, indexable public route (src/app/[locale]/tools/
+      // extract-audio/page.tsx) that the sitemap previously omitted entirely — every
+      // supported locale must be present, each with its own hreflang alternate block.
+      assert.match(sitemap.text, /<loc>https?:\/\/.+\/en\/tools\/extract-audio<\/loc>/);
+      assert.match(sitemap.text, /<loc>https?:\/\/.+\/pt-BR\/tools\/extract-audio<\/loc>/);
+      assert.match(sitemap.text, /<loc>https?:\/\/.+\/es\/tools\/extract-audio<\/loc>/);
+      assert.match(
+        sitemap.text,
+        /<xhtml:link rel="alternate" hreflang="pt-BR" href="https?:\/\/.+\/pt-BR\/tools\/extract-audio" \/>/,
+      );
+      assert.match(sitemap.text, /<priority>0\.8<\/priority>/);
+      // The Video Compressor intentionally has no separate route — it lives on the
+      // localized homepage itself — so no /tools/video-compressor URL should ever appear.
+      assert.doesNotMatch(sitemap.text, /video-compressor/);
       assert.match(
         sitemap.response.headers.get("cache-control") ?? "",
         /stale-while-revalidate=86400/,
