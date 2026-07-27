@@ -9,6 +9,7 @@ import test from "node:test";
 // against the real committed source directly instead of a hand-copied duplicate that
 // could drift.
 const source = await readFile("src/components/extract-audio-tool.tsx", "utf8");
+const dictionarySource = await readFile("src/i18n/dictionaries.ts", "utf8");
 
 // Regression coverage for the upload-limit audit's critical finding: this component's
 // client-side pre-check used to hardcode the flat 250MB MAX_UPLOAD_BYTES constant,
@@ -36,15 +37,14 @@ test("extract audio tool's client-side size check resolves the actor's real plan
   assert.doesNotMatch(source, /file\.size > MAX_UPLOAD_BYTES/);
 });
 
-// The displayed upload-size copy (dropzone description, "file too large" validation and
-// processing errors) must reflect the same resolved limit as the validation logic above
-// — a Pro actor must never be shown a message claiming a 250MB ceiling for a file the
-// backend would actually accept.
+// The static dropzone description now states both plans' fixed limits directly (never
+// a single "your limit" claim), so it needs no interpolation — but "file too large"
+// validation and processing errors must still reflect the actor's real resolved limit,
+// since a Pro actor must never be told a file was rejected for exceeding 250MB when the
+// backend would actually accept it.
 test("extract audio tool's displayed upload-limit copy uses the same resolved limit as validation", () => {
-  assert.match(
-    source,
-    /const uploadDescription = copy\.uploadDescription\.replace\(\s*\n\s*"\{maxSize\}",\s*\n\s*formatBytes\(resolvedMaxUploadBytes\),\s*\n\s*\);/,
-  );
+  assert.match(source, /const uploadDescription = copy\.uploadDescription;/);
+  assert.doesNotMatch(source, /uploadDescription\.replace\(\s*\n\s*"\{maxSize\}"/);
   assert.match(source, /\{uploadDescription\}/);
   assert.doesNotMatch(source, /\{copy\.uploadDescription\}/);
   assert.match(
@@ -55,6 +55,57 @@ test("extract audio tool's displayed upload-limit copy uses the same resolved li
     source,
     /copy\.errors\[processingErrorKey\]\.replace\("\{maxSize\}", formatBytes\(resolvedMaxUploadBytes\)\)/,
   );
+});
+
+// Same regression class as compression-panel: confirms file-picker/drag-and-drop wiring
+// stays intact and gated only by isBlocked, so a real future regression here fails a test
+// instead of only surfacing as "the tool stopped working" in a live bug report.
+test("extract audio's file-picker and drag-and-drop selection remain wired to setSelectedFiles(), gated only by isBlocked", () => {
+  assert.match(source, /const isBlocked = gate\.blocked;/);
+  assert.match(source, /onChange=\{\(event\) => setSelectedFiles\(event\.target\.files\)\}/);
+  assert.match(source, /disabled=\{isBlocked\}/);
+  assert.match(
+    source,
+    /onDrop=\{\(event\) => \{\s*\n\s*event\.preventDefault\(\);\s*\n\s*setIsDragging\(false\);\s*\n\s*\n\s*if \(isBlocked\) \{\s*\n\s*return;\s*\n\s*\}\s*\n\s*\n\s*setSelectedFiles\(event\.dataTransfer\.files\);/,
+  );
+});
+
+test("extract audio's upload-limit UI and both modals only render once every limit field they read is defined", () => {
+  assert.match(
+    source,
+    /\{gate\.freeLimits && gate\.proLimits \? \(\s*\n\s*<dl className="upload-limit-comparison">/,
+  );
+  assert.match(
+    source,
+    /\{gate\.plan === "anonymous" && gate\.anonymousLimits && gate\.freeLimits && gate\.proLimits \? \(\s*\n\s*<PlanComparisonModal/,
+  );
+  assert.match(
+    source,
+    /\{gate\.plan === "free" && gate\.freeLimits && gate\.proLimits \? \(\s*\n\s*<UpgradeModal/,
+  );
+});
+
+test("extract audio upload-limit info states both Free and Pro limits, not just the viewer's resolved plan", () => {
+  const uploadDescriptionMatch = dictionarySource.match(
+    /uploadDescription:\s*\n\s*"Choose a supported video file for audio extraction\.\\nAccepted formats: MP4, MOV, AVI, WebM, M4V, MPEG and MPG\.\\nFree plan: 100 KB to 250 MB per file\.\\nPro plan: 100 KB to 500 MB per file\."/,
+  );
+  assert.ok(uploadDescriptionMatch, "extractAudio.uploadDescription should state both plan limits");
+  assert.doesNotMatch(dictionarySource, /Size allowed: 100 KB to \{maxSize\} per video\.",\s*\n\s*privacyMessage/);
+});
+
+// Improvement 4 ("make Free 250MB / Pro 500MB clear everywhere"): the tool's status panel
+// must show both plan ceilings side by side, not just the actor's own resolved number —
+// sourced from the same gate.freeLimits/proLimits the upgrade modal already uses, never a
+// second fetch or a hardcoded pair of numbers.
+test("extract audio tool shows a Free/Pro upload-limit comparison sourced from the entitlement gate", () => {
+  assert.match(source, /className="upload-limit-comparison"/);
+  assert.match(source, /dictionary\.upgradeModal\.freeTierName/);
+  assert.match(source, /dictionary\.upgradeModal\.proTierName/);
+  assert.match(source, /formatBytes\(gate\.freeLimits\.maxUploadBytes\)/);
+  assert.match(source, /formatBytes\(gate\.proLimits\.maxUploadBytes\)/);
+  // The actor's own tier is visually distinguished, not just listed identically to the
+  // other tier.
+  assert.match(source, /upload-limit-comparison__row--current/);
 });
 
 test("extract audio tool's resolved limit is used only for the client-side gate, never sent to the server", () => {

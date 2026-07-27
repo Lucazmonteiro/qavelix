@@ -22,6 +22,8 @@ const errorCodeMap: Partial<Record<string, keyof AuthErrors>> = {
   INVALID_TOKEN: "invalidToken",
   TOKEN_EXPIRED: "tokenExpired",
   EMAIL_ALREADY_VERIFIED: "emailAlreadyVerified",
+  // Wrong current password on the settings page's change-password flow.
+  INVALID_PASSWORD: "invalidPassword",
 };
 
 export function mapAuthErrorCode(code: string | undefined, errors: AuthErrors): string {

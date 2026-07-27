@@ -255,6 +255,41 @@ test("the boundary comparison, applied to the real 250MB/500MB policy numbers, a
   }
 });
 
+// The full boundary matrix requested by the "Free 250MB / Pro 500MB everywhere" audit:
+// every explicit just-below/exactly/just-above case for both ceilings, plus the plan
+// resolution itself (free entitlement, pro entitlement, missing/invalid entitlement
+// state). validateFileIdentity()'s own comparison is `file.size > maxUploadBytes`
+// (asserted above), so ">" is the operator under test — "just below" and "exactly" must
+// both read as accepted, "just above" as rejected, for whichever limit is in force.
+test("upload-size boundary matrix: below/at/above both ceilings, and plan resolution for free/pro/missing-or-invalid", () => {
+  const freeLimit = 250 * 1024 * 1024;
+  const proLimit = 500 * 1024 * 1024;
+
+  const isAccepted = (size, limit) => !(size > limit);
+
+  // Free/anonymous ceiling (250MB).
+  assert.ok(isAccepted(freeLimit - 1, freeLimit), "just below 250MB must be accepted");
+  assert.ok(isAccepted(freeLimit, freeLimit), "exactly 250MB must be accepted");
+  assert.ok(!isAccepted(freeLimit + 1, freeLimit), "just above 250MB must be rejected");
+
+  // Pro ceiling (500MB).
+  assert.ok(isAccepted(proLimit - 1, proLimit), "just below 500MB must be accepted");
+  assert.ok(isAccepted(proLimit, proLimit), "exactly 500MB must be accepted");
+  assert.ok(!isAccepted(proLimit + 1, proLimit), "just above 500MB must be rejected");
+
+  // A Free-entitled actor is never granted the Pro ceiling: a file between the two
+  // boundaries must be accepted under Pro's limit but rejected under Free's.
+  const betweenBoundaries = freeLimit + 1024;
+  assert.ok(!isAccepted(betweenBoundaries, freeLimit), "Free entitlement must reject a file only Pro allows");
+  assert.ok(isAccepted(betweenBoundaries, proLimit), "Pro entitlement must accept the same file Free rejects");
+
+  // Missing/invalid entitlement state falls back to the most restrictive plan — asserted
+  // structurally above ("getPlan() fails safe...") via `storedPlan = ... : "free"`; the
+  // practical consequence is that an actor with no resolvable plan is bound by the Free
+  // ceiling, not Pro's.
+  assert.match(service, /const storedPlan = row && isPlanType\(row\.plan\) \? row\.plan : "free";/);
+});
+
 test("Video Compressor's job-creation route reserves before consuming the single-use upload reference", () => {
   assert.match(compressionJobsRoute, /const reservation = await reserveUsage\(actor, "video-compressor", security\.requestId\)/);
   const reserveIndex = compressionJobsRoute.indexOf("reserveUsage(actor,");

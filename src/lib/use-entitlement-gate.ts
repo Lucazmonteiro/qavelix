@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { UpgradeModalLimits } from "@/components/upgrade-modal";
+import { useSession } from "@/lib/auth-client";
 import type { ToolId } from "@/lib/server/entitlements/policy";
 
 type ActorPlan = "anonymous" | "free" | "pro";
@@ -12,16 +13,20 @@ type EntitlementGateState = {
   plan: ActorPlan | null;
   blocked: boolean;
   reason: BlockingReason | null;
+  anonymousLimits: UpgradeModalLimits | null;
   freeLimits: UpgradeModalLimits | null;
   proLimits: UpgradeModalLimits | null;
   showUpgradeModal: boolean;
 };
+
+type ResolvedGateState = EntitlementGateState & { userId: string | null };
 
 type StatusResponse = {
   ok: boolean;
   plan?: ActorPlan;
   allowed?: boolean;
   reason?: BlockingReason | string;
+  anonymousLimits?: UpgradeModalLimits;
   freeLimits?: UpgradeModalLimits;
   proLimits?: UpgradeModalLimits;
 };
@@ -30,10 +35,24 @@ function isBlockingReason(reason: string | undefined): reason is BlockingReason 
   return reason === "usage_limit_reached" || reason === "account_required";
 }
 
+// The one-time, automatic modal is worth interrupting a visitor for exactly twice: a
+// signed-in Free actor hitting their daily limit (offer Pro), or an anonymous actor
+// hitting the combined lifetime pool (offer creating an account, signing in, or Pro) —
+// never for Pro (already the top tier) and never for any reason other than a genuine
+// usage-limit block (a validation/network/server/FFmpeg error must never trigger this).
+function shouldAutoOpenModal(plan: ActorPlan, reason: BlockingReason | null): boolean {
+  if (reason === "usage_limit_reached" && plan === "free") {
+    return true;
+  }
+
+  return reason === "account_required" && plan === "anonymous";
+}
+
 const initialState: EntitlementGateState = {
   plan: null,
   blocked: false,
   reason: null,
+  anonymousLimits: null,
   freeLimits: null,
   proLimits: null,
   showUpgradeModal: false,
@@ -41,15 +60,26 @@ const initialState: EntitlementGateState = {
 
 // Shared entitlement-lock behavior for every tool UI (CompressionPanel, ExtractAudioTool,
 // and any future tool): fetches the authoritative, read-only entitlement status on mount
-// (see /api/entitlements/status) so a tool that's already at its daily limit renders
-// blocked immediately, and exposes reportDenial() for the reactive path — call it when an
-// actual processing/start attempt is rejected with "usage_limit_reached" or
-// "account_required" so the UI locks even if the mount-time check raced ahead of a
+// AND on every auth-state transition (login, logout, or a plan change picked up by a
+// fresh session) — see /api/entitlements/status — so a former Pro/Free actor's stale
+// plan/blocked state can never linger after logout without a manual page refresh.
+//
+// Resolved state is tagged with the userId it was fetched for (null for anonymous) and
+// only trusted while that still matches the current session — see `state` below. This
+// both avoids a synchronous setState in the effect body for the "auth just changed" case
+// (React's set-state-in-effect rule) and guards against a stale response from a previous
+// user landing after a fast logout/login sequence — the same technique pro-badge.tsx uses
+// for the header badge.
+//
+// reportDenial() remains the reactive path — call it when an actual processing/start
+// attempt is rejected so the UI locks even if the mount-time check raced ahead of a
 // just-consumed slot. This is informational only: reserveUsage() at the real
 // job-creation/processing route remains the sole place that grants or denies a request,
 // so nothing here can be used to bypass enforcement — it only decides what the UI shows.
 export function useEntitlementGate(toolId: ToolId) {
-  const [state, setState] = useState<EntitlementGateState>(initialState);
+  const session = useSession();
+  const userId = session.data?.user.id ?? null;
+  const [resolved, setResolved] = useState<ResolvedGateState | null>(null);
   const hasShownModalRef = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -66,58 +96,71 @@ export function useEntitlementGate(toolId: ToolId) {
       const blocked = payload.allowed === false && isBlockingReason(payload.reason);
       const reason = blocked && isBlockingReason(payload.reason) ? payload.reason : null;
       const shouldOpenModal =
-        reason === "usage_limit_reached" && payload.plan === "free" && !hasShownModalRef.current;
+        shouldAutoOpenModal(payload.plan, reason) && !hasShownModalRef.current;
 
       if (shouldOpenModal) {
         hasShownModalRef.current = true;
       }
 
-      setState((current) => ({
-        plan: payload.plan ?? current.plan,
+      setResolved((current) => ({
+        plan: payload.plan ?? null,
         blocked,
         reason,
-        freeLimits: payload.freeLimits ?? current.freeLimits,
-        proLimits: payload.proLimits ?? current.proLimits,
-        showUpgradeModal: current.showUpgradeModal || shouldOpenModal,
+        anonymousLimits: payload.anonymousLimits ?? current?.anonymousLimits ?? null,
+        freeLimits: payload.freeLimits ?? current?.freeLimits ?? null,
+        proLimits: payload.proLimits ?? current?.proLimits ?? null,
+        showUpgradeModal: (current?.showUpgradeModal ?? false) || shouldOpenModal,
+        userId,
       }));
     } catch {
       // Purely informational — a failed status check must never block the UI.
     }
-  }, [toolId]);
+  }, [toolId, userId]);
 
   useEffect(() => {
+    // A fresh auth state deserves a fresh chance to show the one-time upgrade offer —
+    // the previous user's "already shown" flag must not suppress it for whoever's
+    // signed in (or out) now, relevant on shared devices.
+    hasShownModalRef.current = false;
     void refresh();
   }, [refresh]);
+
+  const state = resolved && resolved.userId === userId ? resolved : initialState;
 
   // Called from a tool's own failed-processing-attempt handler with the exact denial
   // reason the backend just returned. Locks the UI immediately using state already known
   // from the mount-time refresh, without waiting on another round trip.
   function reportDenial(reason: BlockingReason) {
-    setState((current) => {
+    setResolved((current) => {
+      const base = current && current.userId === userId ? current : { ...initialState, userId };
       const shouldOpenModal =
-        reason === "usage_limit_reached" && current.plan === "free" && !hasShownModalRef.current;
+        base.plan !== null && shouldAutoOpenModal(base.plan, reason) && !hasShownModalRef.current;
 
       if (shouldOpenModal) {
         hasShownModalRef.current = true;
       }
 
       return {
-        ...current,
+        ...base,
         blocked: true,
         reason,
-        showUpgradeModal: current.showUpgradeModal || shouldOpenModal,
+        showUpgradeModal: base.showUpgradeModal || shouldOpenModal,
       };
     });
   }
 
   function closeUpgradeModal() {
-    setState((current) => ({ ...current, showUpgradeModal: false }));
+    setResolved((current) =>
+      current && current.userId === userId ? { ...current, showUpgradeModal: false } : current,
+    );
   }
 
   // Lets a blocked tool surface an explicit, always-visible "Upgrade to Pro" affordance
   // that reopens the offer after the user dismissed the automatic one-time modal.
   function openUpgradeModal() {
-    setState((current) => ({ ...current, showUpgradeModal: true }));
+    setResolved((current) =>
+      current && current.userId === userId ? { ...current, showUpgradeModal: true } : current,
+    );
   }
 
   return {

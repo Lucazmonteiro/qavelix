@@ -39,7 +39,7 @@ test("requireSession() redirects unauthenticated visitors to a localized sign-in
   assert.match(sessionHelper, /redirect\(signInUrl as Route\)/);
 });
 
-test("sanitizeCallbackPath is a real allowlist, not a blocklist, and only accepts an internal /dashboard path", () => {
+test("sanitizeCallbackPath is a real allowlist, not a blocklist, and only accepts dashboard/homepage/extract-audio", () => {
   // Extract the real pattern from the source (not a hand-copied duplicate that could
   // drift out of sync with the actual implementation) and test real behavior against it.
   const patternMatch = sessionHelper.match(
@@ -54,14 +54,22 @@ test("sanitizeCallbackPath is a real allowlist, not a blocklist, and only accept
   assert.match("/en/dashboard", pattern);
   assert.match("/pt-BR/dashboard", pattern);
   assert.match("/en/dashboard/billing", pattern);
+  // Safe: the two tool pages the plan-comparison modal can be shown on, so an anonymous
+  // visitor who signs up from a usage-limit block returns to what they were doing.
+  assert.match("/en", pattern);
+  assert.match("/pt-BR", pattern);
+  assert.match("/en/tools/extract-audio", pattern);
+  assert.match("/es/tools/extract-audio", pattern);
 
-  // Unsafe: open-redirect vectors and anything outside /dashboard.
+  // Unsafe: open-redirect vectors and anything outside this fixed set.
   assert.doesNotMatch("//evil.com", pattern);
   assert.doesNotMatch("https://evil.com", pattern);
-  assert.doesNotMatch("/en", pattern);
   assert.doesNotMatch("/en/sign-in", pattern);
+  assert.doesNotMatch("/en/about", pattern);
+  assert.doesNotMatch("/en/tools/video-compressor", pattern);
   assert.doesNotMatch("javascript:alert(1)", pattern);
   assert.doesNotMatch("/en/dashboard/../../etc/passwd", pattern);
+  assert.doesNotMatch("/en/tools/extract-audio/../../etc/passwd", pattern);
 });
 
 test("sign-in reads and sanitizes the callbackURL query param before ever trusting it", () => {
@@ -140,12 +148,29 @@ test("usage and plan pages render real server-computed entitlement data (Milesto
   assert.doesNotMatch(planPage, /from "stripe"/i);
 });
 
-test("billing and settings remain honest 'coming soon' placeholders (out of Milestone 4's scope)", () => {
-  for (const page of [billingPage, settingsPage]) {
-    assert.match(page, /from "@\/components\/dashboard\/dashboard-placeholder"/);
-    assert.match(page, /comingSoonBadge/);
-    assert.doesNotMatch(page, /requireSession/); // layout already gates this segment
-  }
+test("billing remains an honest 'coming soon' placeholder when Stripe isn't configured", () => {
+  assert.match(billingPage, /from "@\/components\/dashboard\/dashboard-placeholder"/);
+  assert.match(billingPage, /comingSoonBadge/);
+});
+
+// Improvement 3: settings is a real, functional page now — profile (name edit,
+// read-only email), appearance (reuses ThemeToggle), language (reuses
+// replaceLocaleInPath), a conditional password-change section, sign-out, and a link to
+// Billing. No DashboardPlaceholder, no fake/decorative controls, no account deletion
+// (deliberately deferred — see the page's own comment on why).
+test("settings is a real functional page, not a placeholder", () => {
+  assert.doesNotMatch(settingsPage, /from "@\/components\/dashboard\/dashboard-placeholder"/);
+  assert.match(settingsPage, /await requireSession\(locale, "\/dashboard"\)/);
+  assert.match(settingsPage, /hasPasswordCredential\(session\.user\.id\)/);
+  assert.match(settingsPage, /from "@\/components\/dashboard\/profile-settings-form"/);
+  assert.match(settingsPage, /from "@\/components\/dashboard\/password-settings-form"/);
+  assert.match(settingsPage, /from "@\/components\/dashboard\/language-settings-links"/);
+  assert.match(settingsPage, /from "@\/components\/dashboard\/settings-sign-out-button"/);
+  assert.match(settingsPage, /from "@\/components\/theme-toggle"/);
+  assert.match(settingsPage, /canChangePassword \?/);
+  assert.match(settingsPage, /href=\{`\/\$\{locale\}\/dashboard\/billing`\}/);
+  // No account-deletion UI — explicitly deferred, not silently missing.
+  assert.doesNotMatch(settingsPage, /delete.*account/i);
 });
 
 test("dashboard nav uses aria-current, not a bespoke active-class toggle, for the current page", () => {

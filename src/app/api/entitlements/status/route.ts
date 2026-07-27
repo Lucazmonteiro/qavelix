@@ -1,4 +1,4 @@
-import { getToolLimits, isToolId } from "@/lib/server/entitlements/policy";
+import { getAnonymousLimits, getToolLimits, isToolId } from "@/lib/server/entitlements/policy";
 import { checkEntitlement, resolveActor } from "@/lib/server/entitlements/service";
 import { enforceApiSecurity, securityJson } from "@/lib/server/security";
 
@@ -35,14 +35,18 @@ export async function GET(request: Request) {
   const actor = await resolveActor(request);
   const check = await checkEntitlement(actor, toolParam);
 
-  // Free/Pro comparison numbers for the upgrade-offer UI — sourced from the same
-  // TOOL_POLICY table every route already enforces, never a client-side duplicate of the
-  // real limits (see upgrade-modal.tsx, which renders these instead of importing
-  // server-only policy data into client bundles).
+  // Free/Pro/Anonymous comparison numbers for the upgrade-offer UI — sourced from the
+  // same TOOL_POLICY table every route already enforces, never a client-side duplicate of
+  // the real limits (see upgrade-modal.tsx and plan-comparison-modal.tsx, which render
+  // these instead of importing server-only policy data into client bundles).
+  // anonymousLimits is the same regardless of toolId (the anonymous pool is combined
+  // across tools — see ANONYMOUS_POOL_TOOL_ID), included for the plan-comparison modal
+  // shown when an anonymous actor hits that pool's limit.
   return securityJson(
     {
       ok: true,
       ...check,
+      anonymousLimits: getAnonymousLimits(),
       freeLimits: getToolLimits("free", toolParam),
       proLimits: getToolLimits("pro", toolParam),
     },

@@ -882,8 +882,12 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
 
         assert.equal(secondPayload.remaining, 5, "a read-only status check must never reserve");
 
-        // Free/Pro comparison numbers come from the same TOOL_POLICY table every
-        // processing route enforces — never a hand-typed duplicate.
+        // Free/Pro/Anonymous comparison numbers come from the same TOOL_POLICY table
+        // every processing route enforces — never a hand-typed duplicate. anonymousLimits
+        // feeds the plan-comparison modal shown when an anonymous actor hits this exact
+        // pool's limit.
+        assert.equal(payload.anonymousLimits.maxUsesPerPeriod, 5);
+        assert.equal(payload.anonymousLimits.maxUploadBytes, 250 * 1024 * 1024);
         assert.equal(payload.freeLimits.maxUsesPerPeriod, 10);
         assert.equal(payload.freeLimits.maxUploadBytes, 250 * 1024 * 1024);
         assert.equal(payload.proLimits.maxUsesPerPeriod, 100);
@@ -903,6 +907,23 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
         assert.equal(payload.ok, false);
       }
     });
+
+    await t.test(
+      "entitlements plan lookup is read-only, tool-agnostic, and reflects the real anonymous actor",
+      async () => {
+        const response = await fetch(`${baseUrl}/api/entitlements/plan`, {
+          headers: {
+            Origin: baseUrl,
+            "X-Forwarded-For": `10.${fingerprintRunSeedA}.${fingerprintRunSeedB}.${++compressionTestFingerprintCounter}`,
+          },
+        });
+        const payload = await response.json();
+
+        assertStatus(response, 200, "entitlements plan for an anonymous fingerprint");
+        assert.equal(payload.ok, true);
+        assert.equal(payload.plan, "anonymous");
+      },
+    );
 
     await t.test("creates a compression job that is immediately pollable", async () => {
       const file = await createGeneratedMp4File("queued.mp4", { durationSeconds: 1 });

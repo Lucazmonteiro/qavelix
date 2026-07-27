@@ -12,6 +12,7 @@ const envSource = await readFile("src/env/server.ts", "utf8");
 const themeScriptSource = await readFile("src/components/theme-script.tsx", "utf8");
 const localeLayoutSource = await readFile("src/app/[locale]/layout.tsx", "utf8");
 const cssSource = await readFile("src/styles/globals.css", "utf8");
+const homepageContentSource = await readFile("src/components/homepage-content.tsx", "utf8");
 
 test("compression panel polling uses a single abortable timeout loop", () => {
   assert.match(source, /window\.setTimeout/);
@@ -231,6 +232,18 @@ test("compression panel constrains long filenames during validation and results"
   assert.match(cssSource, /-webkit-line-clamp: 2/);
 });
 
+// Improvement 4 ("make Free 250MB / Pro 500MB clear everywhere"): the status panel must
+// show both plan ceilings side by side, not just the actor's own resolved number —
+// sourced from the same gate.freeLimits/proLimits the upgrade modal already uses.
+test("compression panel shows a Free/Pro upload-limit comparison sourced from the entitlement gate", () => {
+  assert.match(source, /className="upload-limit-comparison"/);
+  assert.match(source, /dictionary\.upgradeModal\.freeTierName/);
+  assert.match(source, /dictionary\.upgradeModal\.proTierName/);
+  assert.match(source, /formatBytes\(gate\.freeLimits\.maxUploadBytes\)/);
+  assert.match(source, /formatBytes\(gate\.proLimits\.maxUploadBytes\)/);
+  assert.match(source, /upload-limit-comparison__row--current/);
+});
+
 test("compression panel presents oversized upload errors with relevant details only", () => {
   assert.match(source, /uploadLimitExceededLabel: string/);
   assert.match(source, /maximumAllowedLabel: string/);
@@ -413,6 +426,19 @@ test("theme bootstrap uses Next Script instead of a raw rendered script tag", ()
   assert.match(themeScriptSource, /getStoredTheme\(\) \?\? "dark"/);
 });
 
+test("legacy \"system\" (or any invalid) stored theme value is normalized to a concrete light/dark value, never kept active", () => {
+  assert.match(
+    themeScriptSource,
+    /function resolveSystemPreference\(\) \{/,
+  );
+  assert.match(themeScriptSource, /window\.matchMedia\("\(prefers-color-scheme: dark\)"\)\.matches \? "dark" : "light"/);
+  assert.match(themeScriptSource, /if \(isTheme\(storedTheme\)\) \{\s*\n\s*return storedTheme;\s*\n\s*\}/);
+  assert.match(
+    themeScriptSource,
+    /const resolved = resolveSystemPreference\(\);\s*\n\s*persistTheme\(resolved\);\s*\n\s*return resolved;/,
+  );
+});
+
 test("compression panel scrolls settled validation results into reading position", () => {
   assert.match(source, /function scrollCompressionPanelIntoView/);
   assert.ok(source.includes('document.querySelector<HTMLElement>(".site-header")'));
@@ -573,4 +599,80 @@ test("compression panel fully resets after delete and allows same file reselecti
   assert.match(source, /behavior: prefersReducedMotion \? "auto" : "smooth"/);
   assert.match(source, /uploadDropzoneRef\.current\?\.focus\(\{ preventScroll: true \}\)/);
   assert.match(source, /resetToInitialState\(\)/);
+});
+
+// Upload-limit info block: states both plans' fixed limits directly instead of only the
+// viewer's own resolved number, so it needs no {maxSize} interpolation any more — the
+// dynamic, gate-sourced Free/Pro comparison is a separate element (.upload-limit-comparison).
+test("compression panel's upload-limit info states both Free and Pro limits, not just the viewer's resolved plan", () => {
+  assert.match(source, /const dropDescription = copy\.dropDescription;/);
+  assert.doesNotMatch(source, /dropDescription\.replace\(\s*\n\s*"\{maxSize\}"/);
+
+  const dropDescriptionMatch = dictionarySource.match(
+    /dropDescription:\s*\n\s*"Accepted formats: MP4, MOV, AVI, WebM, M4V, MPEG and MPG\.\\nFree plan: 100 KB to 250 MB per file\.\\nPro plan: 100 KB to 500 MB per file\./,
+  );
+  assert.ok(dropDescriptionMatch, "compression.dropDescription should state both plan limits");
+  assert.doesNotMatch(dictionarySource, /Size allowed: 100 KB to \{maxSize\} per video/);
+});
+
+// Improvement 2: the homepage's "Maximum size" stat card must show both Free and Pro
+// numbers (never a single, now-inaccurate "250 MB" universal ceiling), while the other
+// two stat cards (Supported formats, Compression presets) keep their original generic
+// value/label rendering unchanged.
+test("homepage max-size stat card shows both Free and Pro upload ceilings, replacing the old single-number card", () => {
+  assert.match(homepageContentSource, /stat-grid__item--max-size/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.label/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.freeLabel/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.freeValue/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.proLabel/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.proValue/);
+  // Still rendered as a sibling inside the same <dl className="stat-grid">, and the
+  // remaining two generic stats (formats, presets) still map over dictionary.home.stats.
+  assert.match(homepageContentSource, /dictionary\.home\.stats\.map/);
+
+  assert.doesNotMatch(dictionarySource, /\{ value: "250 MB", label: "Maximum file size" \}/);
+  const maxSizeCardMatches = dictionarySource.match(/maxSizeCard: \{\s*\n\s*label: "/g) ?? [];
+  assert.equal(maxSizeCardMatches.length, 3, "maxSizeCard content defined for en/pt-BR/es");
+});
+
+test("stat-grid CSS keeps the max-size card the same height as its siblings via the shared grid row, not a fixed height hack", () => {
+  assert.match(cssSource, /\.stat-grid__item--max-size \{/);
+  assert.doesNotMatch(cssSource, /\.stat-grid__item--max-size \{[^}]*height:/);
+});
+
+// Regression coverage: a reported "the compressor no longer accepts files" bug traced to
+// the shared anonymous entitlement pool being exhausted in local testing, not a code
+// defect — but the file-input wiring itself must stay verifiably intact so a real future
+// regression here (e.g. an accidentally-dropped onChange/onDrop handler, or `disabled`
+// wired to the wrong condition) fails a test instead of only surfacing as a live bug report.
+test("file-picker and drag-and-drop selection remain wired to selectFiles(), gated only by isBlocked", () => {
+  assert.match(source, /const isBlocked = gate\.blocked;/);
+  assert.match(source, /onDrop=\{handleDrop\}/);
+  assert.match(
+    source,
+    /onChange=\{\(event\) => \{\s*\n\s*if \(event\.target\.files\) \{\s*\n\s*selectFiles\(event\.target\.files\);/,
+  );
+  assert.match(source, /disabled=\{isBlocked\}/);
+  assert.match(source, /function selectFiles\(files: FileList \| File\[\]\) \{\s*\n\s*if \(isBlocked\) \{\s*\n\s*return;/);
+  // handleDrop must itself route through selectFiles rather than duplicating validation.
+  assert.match(source, /function handleDrop\(event: DragEvent<HTMLLabelElement>\) \{/);
+  assert.match(source, /selectFiles\(event\.dataTransfer\.files\)/);
+});
+
+// The new PlanComparisonModal/UpgradeModal selection must never render with partially
+// undefined limits (which would be a render-time crash risk taking the whole panel down,
+// looking exactly like "the tool stopped working").
+test("upload-limit UI and both modals only render once every limit field they read is defined", () => {
+  assert.match(
+    source,
+    /\{gate\.freeLimits && gate\.proLimits \? \(\s*\n\s*<dl className="upload-limit-comparison">/,
+  );
+  assert.match(
+    source,
+    /\{gate\.plan === "anonymous" && gate\.anonymousLimits && gate\.freeLimits && gate\.proLimits \? \(\s*\n\s*<PlanComparisonModal/,
+  );
+  assert.match(
+    source,
+    /\{gate\.plan === "free" && gate\.freeLimits && gate\.proLimits \? \(\s*\n\s*<UpgradeModal/,
+  );
 });

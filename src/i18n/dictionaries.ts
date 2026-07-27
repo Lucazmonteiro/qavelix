@@ -41,6 +41,7 @@ export type Dictionary = {
     toolsVideoCategory: string;
     videoCompressorTool: string;
     extractAudioTool: string;
+    proBadgeLabel: string;
     languageLabel: string;
     themeLabel: string;
     lightTheme: string;
@@ -65,6 +66,13 @@ export type Dictionary = {
       value: string;
       label: string;
     }>;
+    maxSizeCard: {
+      label: string;
+      freeLabel: string;
+      freeValue: string;
+      proLabel: string;
+      proValue: string;
+    };
     sections: {
       designSystem: {
         eyebrow: string;
@@ -344,6 +352,8 @@ export type Dictionary = {
       newPasswordPlaceholder: string;
       confirmPasswordLabel: string;
       confirmPasswordPlaceholder: string;
+      currentPasswordLabel: string;
+      currentPasswordPlaceholder: string;
     };
     validation: {
       nameRequired: string;
@@ -361,6 +371,7 @@ export type Dictionary = {
       invalidToken: string;
       tokenExpired: string;
       emailAlreadyVerified: string;
+      invalidPassword: string;
       networkError: string;
       unknown: string;
     };
@@ -444,6 +455,14 @@ export type Dictionary = {
     checkoutErrorMessage: string;
     dismissLabel: string;
     closeLabel: string;
+  };
+  planComparisonModal: {
+    title: string;
+    description: string;
+    anonymousTierName: string;
+    usesLifetime: string;
+    createAccountLabel: string;
+    signInLabel: string;
   };
   dashboard: {
     nav: {
@@ -536,6 +555,70 @@ export type Dictionary = {
     billing: {
       description: string;
     };
+    billingAddress: {
+      title: string;
+      description: string;
+      streetLabel: string;
+      streetPlaceholder: string;
+      numberLabel: string;
+      numberPlaceholder: string;
+      complementLabel: string;
+      complementPlaceholder: string;
+      postalCodeLabel: string;
+      postalCodePlaceholder: string;
+      cityLabel: string;
+      stateLabel: string;
+      countryLabel: string;
+      saveLabel: string;
+      savingLabel: string;
+      successMessage: string;
+      errorMessage: string;
+      notConfiguredMessage: string;
+      lookupLoadingLabel: string;
+      lookupSuccessLabel: string;
+      lookupNotFoundLabel: string;
+      lookupErrorLabel: string;
+    };
+    settings: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      profile: {
+        title: string;
+        nameLabel: string;
+        namePlaceholder: string;
+        emailLabel: string;
+        emailReadOnlyNote: string;
+        saveLabel: string;
+        savingLabel: string;
+        successMessage: string;
+      };
+      appearance: {
+        title: string;
+        description: string;
+      };
+      language: {
+        title: string;
+        description: string;
+      };
+      security: {
+        title: string;
+        changePasswordLabel: string;
+        changingPasswordLabel: string;
+        passwordChangedMessage: string;
+        oauthOnlyNote: string;
+      };
+      account: {
+        title: string;
+        signOutLabel: string;
+        signingOutLabel: string;
+      };
+      billing: {
+        title: string;
+        description: string;
+        manageLabel: string;
+      };
+    };
     placeholder: {
       comingSoonBadge: string;
       billingTitle: string;
@@ -551,6 +634,55 @@ export type Dictionary = {
     };
   };
   pages: Record<ContentPageSlug, ContentPageCopy>;
+  support: {
+    metadataTitle: string;
+    metadataDescription: string;
+    navLabel: string;
+    eyebrow: string;
+    title: string;
+    intro: string;
+    story: {
+      eyebrow: string;
+      title: string;
+      paragraphs: string[];
+    };
+    helps: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      cards: CardCopy[];
+    };
+    transparency: {
+      title: string;
+      items: string[];
+    };
+    amountsTitle: string;
+    customAmountLabel: string;
+    customAmountPlaceholder: string;
+    contributeButtonLabel: string;
+    contributingLabel: string;
+    secureNote: string;
+    errorMessage: string;
+    invalidAmountMessage: string;
+    legalNote: string;
+    closingMessage: string;
+    success: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      amountLabel: string;
+      returnHomeLabel: string;
+      notVerifiedTitle: string;
+      notVerifiedDescription: string;
+    };
+    cancelled: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      tryAgainLabel: string;
+      returnHomeLabel: string;
+    };
+  };
 };
 
 const dictionaries: Record<Locale, Dictionary> = {
@@ -575,6 +707,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       toolsVideoCategory: "Video",
       videoCompressorTool: "Video Compressor",
       extractAudioTool: "Extract Audio",
+      proBadgeLabel: "QAVELIX PRO subscriber",
       languageLabel: "Select language",
       themeLabel: "Theme",
       lightTheme: "Light",
@@ -619,10 +752,16 @@ const dictionaries: Record<Locale, Dictionary> = {
         },
       ],
       stats: [
-        { value: "250 MB", label: "Maximum file size" },
         { value: "5", label: "Supported formats" },
         { value: "3", label: "Compression presets" },
       ],
+      maxSizeCard: {
+        label: "Maximum size",
+        freeLabel: "Free",
+        freeValue: "250 MB",
+        proLabel: "Pro",
+        proValue: "500 MB",
+      },
       sections: {
         designSystem: {
           eyebrow: "Product experience",
@@ -728,7 +867,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Compress one validated video at a time. Progress is shown while the file is prepared, and you can cancel while processing is active.",
       dropTitle: "Drop a video to get started",
       dropDescription:
-        "Formats accepted: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nSize allowed: 100 KB to {maxSize} per video.\nYour video is processed securely and automatically removed after the availability period.",
+        "Accepted formats: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nFree plan: 100 KB to 250 MB per file.\nPro plan: 100 KB to 500 MB per file.\nYour file is processed securely and automatically removed after the retention period.",
       browseLabel: "Choose video",
       validationHelper:
         "Your file has been successfully validated. Review the file information below, choose the compression level that best fits your needs, then start compression.",
@@ -875,7 +1014,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Upload a supported video, review the selected file, and prepare it for MP3 extraction. Processing will be connected in the next development step.",
       uploadTitle: "Drop a video to extract audio",
       uploadDescription:
-        "Choose a supported video file for audio extraction.\nFormats accepted: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nSize allowed: 100 KB to {maxSize} per video.",
+        "Choose a supported video file for audio extraction.\nAccepted formats: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nFree plan: 100 KB to 250 MB per file.\nPro plan: 100 KB to 500 MB per file.",
       privacyMessage:
         "Files are handled temporarily and removed automatically after the availability period.",
       chooseFile: "Choose video",
@@ -1008,6 +1147,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       newPasswordPlaceholder: "Enter a new password",
       confirmPasswordLabel: "Confirm password",
       confirmPasswordPlaceholder: "Enter the password again",
+      currentPasswordLabel: "Current password",
+      currentPasswordPlaceholder: "Enter your current password",
     },
     validation: {
       nameRequired: "Enter your name.",
@@ -1025,6 +1166,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       invalidToken: "This link is invalid. Request a new one.",
       tokenExpired: "This link has expired. Request a new one.",
       emailAlreadyVerified: "This email is already verified.",
+      invalidPassword: "Your current password is incorrect.",
       networkError:
         "The request could not be completed. Check your connection and try again.",
       unknown: "Something went wrong. Try again.",
@@ -1116,6 +1258,15 @@ const dictionaries: Record<Locale, Dictionary> = {
     checkoutErrorMessage: "Could not start checkout. Try again.",
     dismissLabel: "Not now",
     closeLabel: "Close",
+  },
+  planComparisonModal: {
+    title: "You've reached the free trial limit",
+    description:
+      "You've used all of your free anonymous processing runs. Create a free account to keep going today, or explore what QAVELIX PRO adds on top.",
+    anonymousTierName: "Without an account",
+    usesLifetime: "{limit} uses total",
+    createAccountLabel: "Create free account",
+    signInLabel: "Sign in",
   },
   dashboard: {
     nav: {
@@ -1210,6 +1361,72 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
     billing: {
       description: "Manage your subscription, payment method, and invoices.",
+    },
+    billingAddress: {
+      title: "Billing address",
+      description:
+        "This address is stored with Stripe and used for your invoices. Enter a postal code to try prefilling city and state.",
+      streetLabel: "Street address",
+      streetPlaceholder: "Street name",
+      numberLabel: "Number",
+      numberPlaceholder: "House / building number",
+      complementLabel: "Apartment, unit (optional)",
+      complementPlaceholder: "Apt, suite, unit",
+      postalCodeLabel: "Postal code",
+      postalCodePlaceholder: "Postal or ZIP code",
+      cityLabel: "City",
+      stateLabel: "State / province",
+      countryLabel: "Country",
+      saveLabel: "Save address",
+      savingLabel: "Saving...",
+      successMessage: "Your billing address has been saved.",
+      errorMessage: "Could not save your billing address. Try again.",
+      notConfiguredMessage: "Billing isn't configured yet.",
+      lookupLoadingLabel: "Looking up address...",
+      lookupSuccessLabel: "City and state filled in from the postal code.",
+      lookupNotFoundLabel: "No address found for this postal code — enter it manually.",
+      lookupErrorLabel: "Couldn't look up this postal code — enter the address manually.",
+    },
+    settings: {
+      eyebrow: "Settings",
+      title: "Account settings",
+      description: "Manage your profile, appearance, language, and account security.",
+      profile: {
+        title: "Profile",
+        nameLabel: "Name",
+        namePlaceholder: "Your name",
+        emailLabel: "Email",
+        emailReadOnlyNote:
+          "Email changes require verification and aren't available yet — contact support if you need to update it.",
+        saveLabel: "Save changes",
+        savingLabel: "Saving...",
+        successMessage: "Your profile has been updated.",
+      },
+      appearance: {
+        title: "Appearance",
+        description: "Choose how QAVELIX looks on this device.",
+      },
+      language: {
+        title: "Language",
+        description: "Choose your preferred language. This keeps you on the current page.",
+      },
+      security: {
+        title: "Security",
+        changePasswordLabel: "Change password",
+        changingPasswordLabel: "Changing password...",
+        passwordChangedMessage: "Your password has been changed.",
+        oauthOnlyNote: "Your account signs in through an external provider and has no password to change.",
+      },
+      account: {
+        title: "Account",
+        signOutLabel: "Sign out",
+        signingOutLabel: "Signing out...",
+      },
+      billing: {
+        title: "Billing",
+        description: "Manage your subscription and payment details.",
+        manageLabel: "Go to Billing",
+      },
     },
     placeholder: {
       comingSoonBadge: "Coming soon",
@@ -1570,6 +1787,87 @@ const dictionaries: Record<Locale, Dictionary> = {
         ],
       },
     },
+    support: {
+      metadataTitle: "Support QAVELIX",
+      metadataDescription:
+        "Support QAVELIX's development with a voluntary one-time contribution. Completely optional — every tool stays free either way.",
+      navLabel: "Support QAVELIX",
+      eyebrow: "Support QAVELIX",
+      title: "Help QAVELIX keep growing",
+      intro:
+        "QAVELIX exists to make video and audio tasks simpler, faster, and safer. If our tools have saved you time, you're welcome to support the project's development — entirely on a voluntary basis.",
+      story: {
+        eyebrow: "The story behind QAVELIX",
+        title: "Built by an independent developer",
+        paragraphs: [
+          "I'm an independent developer, and I build QAVELIX with the goal of creating tools that are genuinely useful for everyday tasks.",
+          "My aim is a transparent, practical, and respectful platform — no tricks to mislead people or pressure them into paying.",
+          "Every tool stays free to use. Development, hosting, media processing, security, and translation all have real, ongoing costs, and voluntary support helps cover them.",
+        ],
+      },
+      helps: {
+        eyebrow: "Where support helps",
+        title: "What your contribution supports",
+        description: "Every contribution goes toward keeping QAVELIX reliable and improving it over time.",
+        cards: [
+          {
+            title: "Development & improvements",
+            description: "New features, fixes, and a better experience across every tool.",
+          },
+          {
+            title: "Servers & media processing",
+            description: "The compute power behind every compression and audio-extraction job.",
+          },
+          {
+            title: "Security & infrastructure",
+            description: "Keeping uploads, accounts, and payments safe and reliable.",
+          },
+          {
+            title: "Translation & accessibility",
+            description: "Making QAVELIX usable and welcoming in more languages, for more people.",
+          },
+        ],
+      },
+      transparency: {
+        title: "Good to know before you contribute",
+        items: [
+          "Supporting QAVELIX is entirely optional — it never affects your access to any tool.",
+          "A contribution doesn't unlock QAVELIX PRO or change your account's usage limits.",
+          "Free access stays exactly the same, whether or not you contribute.",
+          "This is a voluntary contribution, not a tax-deductible donation to a registered charity or nonprofit — QAVELIX isn't one.",
+        ],
+      },
+      amountsTitle: "Choose an amount",
+      customAmountLabel: "Or enter a custom amount (USD)",
+      customAmountPlaceholder: "Amount",
+      contributeButtonLabel: "Contribute",
+      contributingLabel: "Redirecting to checkout...",
+      secureNote: "Payment is processed securely by Stripe. QAVELIX never sees or stores your card details.",
+      errorMessage: "Could not start checkout. Try again.",
+      invalidAmountMessage: "Enter an amount between $1 and $500.",
+      legalNote:
+        "This is a voluntary contribution, not a charitable donation, and it isn't tax-deductible. Stripe emails a payment receipt after checkout.",
+      closingMessage:
+        "Whether you contribute or not, thank you for using QAVELIX. Every user is part of this project's growth.",
+      success: {
+        eyebrow: "Support QAVELIX",
+        title: "Thank you for your support",
+        description:
+          "Your contribution helps keep QAVELIX running and improving. It doesn't change your account or plan in any way.",
+        amountLabel: "Contribution: {amount}",
+        returnHomeLabel: "Return to QAVELIX",
+        notVerifiedTitle: "We couldn't confirm this payment",
+        notVerifiedDescription:
+          "If you completed checkout, this may just take a moment to confirm — check your email for a receipt from Stripe, or try the support page again.",
+      },
+      cancelled: {
+        eyebrow: "Support QAVELIX",
+        title: "Checkout cancelled",
+        description: "No payment was made. You can try again whenever you'd like.",
+        tryAgainLabel: "Back to Support QAVELIX",
+        returnHomeLabel: "Return to QAVELIX",
+      },
+    },
   },
   "pt-BR": {
    metadata: {
@@ -1592,6 +1890,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       toolsVideoCategory: "Vídeo",
       videoCompressorTool: "Compressor de Vídeo",
       extractAudioTool: "Extrair Áudio",
+      proBadgeLabel: "Assinante QAVELIX PRO",
       languageLabel: "Selecionar idioma",
       themeLabel: "Tema",
       lightTheme: "Claro",
@@ -1636,10 +1935,16 @@ const dictionaries: Record<Locale, Dictionary> = {
         },
       ],
       stats: [
-        { value: "250 MB", label: "Tamanho máximo" },
         { value: "5", label: "Formatos aceitos" },
         { value: "3", label: "Presets de compressão" },
       ],
+      maxSizeCard: {
+        label: "Tamanho máximo",
+        freeLabel: "Free",
+        freeValue: "250 MB",
+        proLabel: "Pro",
+        proValue: "500 MB",
+      },
       sections: {
         designSystem: {
           eyebrow: "Experiência do produto",
@@ -1745,7 +2050,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Comprima um vídeo validado por vez. O progresso aparece enquanto o arquivo é preparado, e você pode cancelar enquanto o processamento estiver ativo.",
       dropTitle: "Solte um vídeo para começar",
       dropDescription:
-        "Formatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nTamanho permitido: 100 KB a {maxSize} por vídeo.\nSeu vídeo é processado com segurança e removido automaticamente após o período de disponibilidade.",
+        "Formatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nPlano Free: 100 KB a 250 MB por arquivo.\nPlano Pro: 100 KB a 500 MB por arquivo.\nSeu arquivo é processado com segurança e removido automaticamente após o período de retenção.",
       browseLabel: "Escolher vídeo",
       validationHelper:
         "Seu arquivo foi validado com sucesso. Confira as informações do arquivo abaixo, escolha o nível de compressão ideal para sua necessidade e inicie a compressão.",
@@ -1895,7 +2200,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           "Envie um vídeo compatível, revise o arquivo selecionado e prepare-o para extração em MP3. O processamento será conectado na próxima etapa de desenvolvimento.",
         uploadTitle: "Solte um vídeo para extrair áudio",
         uploadDescription:
-          "Escolha um arquivo de vídeo compatível para extração de áudio.\nFormatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nTamanho permitido: 100 KB a {maxSize} por vídeo.",
+          "Escolha um arquivo de vídeo compatível para extração de áudio.\nFormatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nPlano Free: 100 KB a 250 MB por arquivo.\nPlano Pro: 100 KB a 500 MB por arquivo.",
         privacyMessage:
           "Os arquivos são tratados temporariamente e removidos automaticamente após o período de disponibilidade.",
         chooseFile: "Escolher vídeo",
@@ -2030,6 +2335,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         newPasswordPlaceholder: "Digite uma nova senha",
         confirmPasswordLabel: "Confirmar senha",
         confirmPasswordPlaceholder: "Digite a senha novamente",
+        currentPasswordLabel: "Senha atual",
+        currentPasswordPlaceholder: "Digite sua senha atual",
       },
       validation: {
         nameRequired: "Digite seu nome.",
@@ -2047,6 +2354,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         invalidToken: "Este link é inválido. Solicite um novo.",
         tokenExpired: "Este link expirou. Solicite um novo.",
         emailAlreadyVerified: "Este email já foi verificado.",
+        invalidPassword: "Sua senha atual está incorreta.",
         networkError:
           "Não foi possível concluir a solicitação. Verifique sua conexão e tente novamente.",
         unknown: "Algo deu errado. Tente novamente.",
@@ -2138,6 +2446,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       checkoutErrorMessage: "Não foi possível iniciar o checkout. Tente novamente.",
       dismissLabel: "Agora não",
       closeLabel: "Fechar",
+    },
+    planComparisonModal: {
+      title: "Você atingiu o limite do teste gratuito",
+      description:
+        "Você já usou todos os processamentos gratuitos anônimos disponíveis. Crie uma conta gratuita para continuar hoje, ou conheça o que o QAVELIX PRO oferece a mais.",
+      anonymousTierName: "Sem conta",
+      usesLifetime: "{limit} usos no total",
+      createAccountLabel: "Criar conta gratuita",
+      signInLabel: "Entrar",
     },
     dashboard: {
       nav: {
@@ -2233,6 +2550,72 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       billing: {
         description: "Gerencie sua assinatura, forma de pagamento e faturas.",
+      },
+      billingAddress: {
+        title: "Endereço de cobrança",
+        description:
+          "Este endereço fica armazenado na Stripe e é usado nas suas faturas. Digite um CEP para tentar preencher cidade e estado automaticamente.",
+        streetLabel: "Endereço",
+        streetPlaceholder: "Nome da rua",
+        numberLabel: "Número",
+        numberPlaceholder: "Número da casa/prédio",
+        complementLabel: "Complemento (opcional)",
+        complementPlaceholder: "Apto, bloco, unidade",
+        postalCodeLabel: "CEP",
+        postalCodePlaceholder: "CEP",
+        cityLabel: "Cidade",
+        stateLabel: "Estado",
+        countryLabel: "País",
+        saveLabel: "Salvar endereço",
+        savingLabel: "Salvando...",
+        successMessage: "Seu endereço de cobrança foi salvo.",
+        errorMessage: "Não foi possível salvar seu endereço de cobrança. Tente novamente.",
+        notConfiguredMessage: "O faturamento ainda não está configurado.",
+        lookupLoadingLabel: "Buscando endereço...",
+        lookupSuccessLabel: "Cidade e estado preenchidos a partir do CEP.",
+        lookupNotFoundLabel: "Nenhum endereço encontrado para este CEP — preencha manualmente.",
+        lookupErrorLabel: "Não foi possível consultar este CEP — preencha o endereço manualmente.",
+      },
+      settings: {
+        eyebrow: "Configurações",
+        title: "Configurações da conta",
+        description: "Gerencie seu perfil, aparência, idioma e segurança da conta.",
+        profile: {
+          title: "Perfil",
+          nameLabel: "Nome",
+          namePlaceholder: "Seu nome",
+          emailLabel: "Email",
+          emailReadOnlyNote:
+            "Alterar o email requer verificação e ainda não está disponível — entre em contato com o suporte se precisar atualizá-lo.",
+          saveLabel: "Salvar alterações",
+          savingLabel: "Salvando...",
+          successMessage: "Seu perfil foi atualizado.",
+        },
+        appearance: {
+          title: "Aparência",
+          description: "Escolha a aparência do QAVELIX neste dispositivo.",
+        },
+        language: {
+          title: "Idioma",
+          description: "Escolha seu idioma preferido. Isso mantém você na página atual.",
+        },
+        security: {
+          title: "Segurança",
+          changePasswordLabel: "Alterar senha",
+          changingPasswordLabel: "Alterando senha...",
+          passwordChangedMessage: "Sua senha foi alterada.",
+          oauthOnlyNote: "Sua conta entra por meio de um provedor externo e não possui senha para alterar.",
+        },
+        account: {
+          title: "Conta",
+          signOutLabel: "Sair",
+          signingOutLabel: "Saindo...",
+        },
+        billing: {
+          title: "Faturamento",
+          description: "Gerencie sua assinatura e dados de pagamento.",
+          manageLabel: "Ir para Faturamento",
+        },
       },
       placeholder: {
         comingSoonBadge: "Em breve",
@@ -2595,6 +2978,87 @@ const dictionaries: Record<Locale, Dictionary> = {
         ],
       },
     },
+    support: {
+      metadataTitle: "Apoie o QAVELIX",
+      metadataDescription:
+        "Apoie o desenvolvimento do QAVELIX com uma contribuição voluntária única. Totalmente opcional — todas as ferramentas continuam gratuitas de qualquer forma.",
+      navLabel: "Apoie o QAVELIX",
+      eyebrow: "Apoie o QAVELIX",
+      title: "Ajude o QAVELIX a continuar crescendo",
+      intro:
+        "O QAVELIX nasceu para tornar tarefas com vídeo e áudio mais simples, rápidas e seguras. Se nossas ferramentas já ajudaram você a economizar tempo, você pode colaborar voluntariamente com a evolução do projeto.",
+      story: {
+        eyebrow: "A história por trás do QAVELIX",
+        title: "Construído por um desenvolvedor independente",
+        paragraphs: [
+          "Sou um desenvolvedor independente e construo o QAVELIX com o objetivo de criar ferramentas realmente úteis para o dia a dia.",
+          "Quero desenvolver uma plataforma transparente, prática e respeitosa, sem truques para enganar usuários ou pressioná-los a pagar.",
+          "Todas as ferramentas continuam gratuitas. Desenvolvimento, hospedagem, processamento de mídia, segurança e tradução têm custos reais e contínuos, e o apoio voluntário ajuda a cobri-los.",
+        ],
+      },
+      helps: {
+        eyebrow: "Onde o apoio ajuda",
+        title: "Para onde vai sua contribuição",
+        description: "Cada contribuição ajuda a manter o QAVELIX confiável e a evoluir com o tempo.",
+        cards: [
+          {
+            title: "Desenvolvimento e melhorias",
+            description: "Novos recursos, correções e uma experiência melhor em todas as ferramentas.",
+          },
+          {
+            title: "Servidores e processamento de mídia",
+            description: "O poder de processamento por trás de cada compressão e extração de áudio.",
+          },
+          {
+            title: "Segurança e infraestrutura",
+            description: "Manter uploads, contas e pagamentos seguros e confiáveis.",
+          },
+          {
+            title: "Traduções e acessibilidade",
+            description: "Tornar o QAVELIX utilizável e acolhedor em mais idiomas, para mais pessoas.",
+          },
+        ],
+      },
+      transparency: {
+        title: "Bom saber antes de contribuir",
+        items: [
+          "Apoiar o QAVELIX é totalmente opcional — isso nunca afeta seu acesso a nenhuma ferramenta.",
+          "Uma contribuição não libera o QAVELIX PRO nem altera os limites de uso da sua conta.",
+          "O acesso gratuito continua exatamente o mesmo, com ou sem contribuição.",
+          "Esta é uma contribuição voluntária, não uma doação dedutível de impostos para uma instituição de caridade registrada — o QAVELIX não é uma.",
+        ],
+      },
+      amountsTitle: "Escolha um valor",
+      customAmountLabel: "Ou digite um valor personalizado (USD)",
+      customAmountPlaceholder: "Valor",
+      contributeButtonLabel: "Contribuir",
+      contributingLabel: "Redirecionando para o checkout...",
+      secureNote: "O pagamento é processado com segurança pela Stripe. O QAVELIX nunca vê nem armazena os dados do seu cartão.",
+      errorMessage: "Não foi possível iniciar o checkout. Tente novamente.",
+      invalidAmountMessage: "Digite um valor entre US$ 1 e US$ 500.",
+      legalNote:
+        "Esta é uma contribuição voluntária, não uma doação beneficente, e não é dedutível de impostos. A Stripe envia um recibo de pagamento por email após o checkout.",
+      closingMessage:
+        "Independentemente de você contribuir ou não, obrigado por usar o QAVELIX. Cada usuário faz parte do crescimento deste projeto.",
+      success: {
+        eyebrow: "Apoie o QAVELIX",
+        title: "Obrigado pelo seu apoio",
+        description:
+          "Sua contribuição ajuda a manter o QAVELIX funcionando e evoluindo. Ela não altera sua conta ou seu plano de forma alguma.",
+        amountLabel: "Contribuição: {amount}",
+        returnHomeLabel: "Voltar ao QAVELIX",
+        notVerifiedTitle: "Não foi possível confirmar este pagamento",
+        notVerifiedDescription:
+          "Se você concluiu o checkout, a confirmação pode levar um instante — verifique seu email em busca de um recibo da Stripe, ou tente novamente na página de apoio.",
+      },
+      cancelled: {
+        eyebrow: "Apoie o QAVELIX",
+        title: "Checkout cancelado",
+        description: "Nenhum pagamento foi feito. Você pode tentar novamente quando quiser.",
+        tryAgainLabel: "Voltar para Apoie o QAVELIX",
+        returnHomeLabel: "Voltar ao QAVELIX",
+      },
+    },
   },
   es: {
     metadata: {
@@ -2617,6 +3081,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       toolsVideoCategory: "Video",
       videoCompressorTool: "Compresor de video",
       extractAudioTool: "Extraer audio",
+      proBadgeLabel: "Suscriptor de QAVELIX PRO",
       languageLabel: "Seleccionar idioma",
       themeLabel: "Tema",
       lightTheme: "Claro",
@@ -2661,10 +3126,16 @@ const dictionaries: Record<Locale, Dictionary> = {
         },
       ],
       stats: [
-        { value: "250 MB", label: "Tamaño máximo" },
         { value: "5", label: "Formatos compatibles" },
         { value: "3", label: "Ajustes de compresión" },
       ],
+      maxSizeCard: {
+        label: "Tamaño máximo",
+        freeLabel: "Free",
+        freeValue: "250 MB",
+        proLabel: "Pro",
+        proValue: "500 MB",
+      },
       sections: {
         designSystem: {
           eyebrow: "Experiencia de producto",
@@ -2770,7 +3241,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Comprime un video validado cada vez. El progreso se muestra mientras se prepara el archivo, y puedes cancelar mientras el procesamiento está activo.",
       dropTitle: "Suelta un video para comenzar",
       dropDescription:
-        "Formatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nTamaño permitido: 100 KB a {maxSize} por video.\nTu video se procesa de forma segura y se elimina automáticamente después del periodo de disponibilidad.",
+        "Formatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nPlan Free: 100 KB a 250 MB por archivo.\nPlan Pro: 100 KB a 500 MB por archivo.\nTu archivo se procesa de forma segura y se elimina automáticamente después del periodo de retención.",
       browseLabel: "Elegir video",
       validationHelper:
         "Tu archivo se ha validado correctamente. Revisa la información del archivo, elige el nivel de compresión que mejor se adapte a lo que necesitas e inicia la compresión.",
@@ -2921,7 +3392,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           "Sube un video compatible, revisa el archivo seleccionado y prepáralo para la extracción en MP3. El procesamiento se conectará en la siguiente fase de desarrollo.",
         uploadTitle: "Suelta un video para extraer el audio",
         uploadDescription:
-          "Elige un archivo de video compatible para extraer el audio.\nFormatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nTamaño permitido: 100 KB a {maxSize} por video.",
+          "Elige un archivo de video compatible para extraer el audio.\nFormatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nPlan Free: 100 KB a 250 MB por archivo.\nPlan Pro: 100 KB a 500 MB por archivo.",
         privacyMessage:
           "Los archivos se gestionan temporalmente y se eliminan automáticamente después del periodo de disponibilidad.",
         chooseFile: "Elegir video",
@@ -3056,6 +3527,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         newPasswordPlaceholder: "Introduce una nueva contraseña",
         confirmPasswordLabel: "Confirmar contraseña",
         confirmPasswordPlaceholder: "Introduce la contraseña de nuevo",
+        currentPasswordLabel: "Contraseña actual",
+        currentPasswordPlaceholder: "Introduce tu contraseña actual",
       },
       validation: {
         nameRequired: "Introduce tu nombre.",
@@ -3073,6 +3546,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         invalidToken: "Este enlace no es válido. Solicita uno nuevo.",
         tokenExpired: "Este enlace ha caducado. Solicita uno nuevo.",
         emailAlreadyVerified: "Este correo electrónico ya está verificado.",
+        invalidPassword: "Tu contraseña actual es incorrecta.",
         networkError:
           "No se ha podido completar la solicitud. Comprueba tu conexión e inténtalo de nuevo.",
         unknown: "Algo salió mal. Inténtalo de nuevo.",
@@ -3164,6 +3638,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       checkoutErrorMessage: "No se pudo iniciar el checkout. Inténtalo de nuevo.",
       dismissLabel: "Ahora no",
       closeLabel: "Cerrar",
+    },
+    planComparisonModal: {
+      title: "Alcanzaste el límite de la prueba gratuita",
+      description:
+        "Ya usaste todos los procesamientos gratuitos anónimos disponibles. Crea una cuenta gratuita para continuar hoy, o descubre lo que ofrece QAVELIX PRO.",
+      anonymousTierName: "Sin cuenta",
+      usesLifetime: "{limit} usos en total",
+      createAccountLabel: "Crear cuenta gratuita",
+      signInLabel: "Iniciar sesión",
     },
     dashboard: {
       nav: {
@@ -3259,6 +3742,72 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       billing: {
         description: "Gestiona tu suscripción, método de pago y facturas.",
+      },
+      billingAddress: {
+        title: "Dirección de facturación",
+        description:
+          "Esta dirección se guarda en Stripe y se usa en tus facturas. Introduce un código postal para intentar completar la ciudad y el estado.",
+        streetLabel: "Dirección",
+        streetPlaceholder: "Nombre de la calle",
+        numberLabel: "Número",
+        numberPlaceholder: "Número de la casa/edificio",
+        complementLabel: "Piso, apartamento (opcional)",
+        complementPlaceholder: "Piso, apto, unidad",
+        postalCodeLabel: "Código postal",
+        postalCodePlaceholder: "Código postal",
+        cityLabel: "Ciudad",
+        stateLabel: "Estado / provincia",
+        countryLabel: "País",
+        saveLabel: "Guardar dirección",
+        savingLabel: "Guardando...",
+        successMessage: "Tu dirección de facturación se ha guardado.",
+        errorMessage: "No se pudo guardar tu dirección de facturación. Inténtalo de nuevo.",
+        notConfiguredMessage: "La facturación aún no está configurada.",
+        lookupLoadingLabel: "Buscando dirección...",
+        lookupSuccessLabel: "Ciudad y estado completados a partir del código postal.",
+        lookupNotFoundLabel: "No se encontró ninguna dirección para este código postal — introdúcela manualmente.",
+        lookupErrorLabel: "No se pudo consultar este código postal — introduce la dirección manualmente.",
+      },
+      settings: {
+        eyebrow: "Configuración",
+        title: "Configuración de la cuenta",
+        description: "Gestiona tu perfil, apariencia, idioma y seguridad de la cuenta.",
+        profile: {
+          title: "Perfil",
+          nameLabel: "Nombre",
+          namePlaceholder: "Tu nombre",
+          emailLabel: "Correo electrónico",
+          emailReadOnlyNote:
+            "Cambiar el correo electrónico requiere verificación y aún no está disponible — contacta con soporte si necesitas actualizarlo.",
+          saveLabel: "Guardar cambios",
+          savingLabel: "Guardando...",
+          successMessage: "Tu perfil se ha actualizado.",
+        },
+        appearance: {
+          title: "Apariencia",
+          description: "Elige cómo se ve QAVELIX en este dispositivo.",
+        },
+        language: {
+          title: "Idioma",
+          description: "Elige tu idioma preferido. Esto te mantiene en la página actual.",
+        },
+        security: {
+          title: "Seguridad",
+          changePasswordLabel: "Cambiar contraseña",
+          changingPasswordLabel: "Cambiando contraseña...",
+          passwordChangedMessage: "Tu contraseña se ha cambiado.",
+          oauthOnlyNote: "Tu cuenta inicia sesión mediante un proveedor externo y no tiene contraseña para cambiar.",
+        },
+        account: {
+          title: "Cuenta",
+          signOutLabel: "Cerrar sesión",
+          signingOutLabel: "Cerrando sesión...",
+        },
+        billing: {
+          title: "Facturación",
+          description: "Gestiona tu suscripción y datos de pago.",
+          manageLabel: "Ir a Facturación",
+        },
       },
       placeholder: {
         comingSoonBadge: "Próximamente",
@@ -3619,6 +4168,87 @@ const dictionaries: Record<Locale, Dictionary> = {
             ],
           },
         ],
+      },
+    },
+    support: {
+      metadataTitle: "Apoya a QAVELIX",
+      metadataDescription:
+        "Apoya el desarrollo de QAVELIX con una contribución voluntaria única. Totalmente opcional — todas las herramientas siguen siendo gratuitas de todos modos.",
+      navLabel: "Apoya a QAVELIX",
+      eyebrow: "Apoya a QAVELIX",
+      title: "Ayuda a que QAVELIX siga creciendo",
+      intro:
+        "QAVELIX nació para hacer que las tareas de video y audio sean más simples, rápidas y seguras. Si nuestras herramientas ya te han ayudado a ahorrar tiempo, puedes colaborar voluntariamente con la evolución del proyecto.",
+      story: {
+        eyebrow: "La historia detrás de QAVELIX",
+        title: "Creado por un desarrollador independiente",
+        paragraphs: [
+          "Soy un desarrollador independiente y construyo QAVELIX con el objetivo de crear herramientas realmente útiles para el día a día.",
+          "Quiero desarrollar una plataforma transparente, práctica y respetuosa, sin trucos para engañar a los usuarios ni presionarlos a pagar.",
+          "Todas las herramientas siguen siendo gratuitas. El desarrollo, el alojamiento, el procesamiento de medios, la seguridad y la traducción tienen costos reales y constantes, y el apoyo voluntario ayuda a cubrirlos.",
+        ],
+      },
+      helps: {
+        eyebrow: "Dónde ayuda tu apoyo",
+        title: "A dónde va tu contribución",
+        description: "Cada contribución ayuda a mantener QAVELIX confiable y a mejorarlo con el tiempo.",
+        cards: [
+          {
+            title: "Desarrollo y mejoras",
+            description: "Nuevas funciones, correcciones y una mejor experiencia en todas las herramientas.",
+          },
+          {
+            title: "Servidores y procesamiento de medios",
+            description: "La capacidad de cómputo detrás de cada compresión y extracción de audio.",
+          },
+          {
+            title: "Seguridad e infraestructura",
+            description: "Mantener seguros y confiables los archivos, las cuentas y los pagos.",
+          },
+          {
+            title: "Traducciones y accesibilidad",
+            description: "Hacer que QAVELIX sea usable y accesible en más idiomas, para más personas.",
+          },
+        ],
+      },
+      transparency: {
+        title: "Antes de contribuir, ten en cuenta",
+        items: [
+          "Apoyar a QAVELIX es totalmente opcional — nunca afecta tu acceso a ninguna herramienta.",
+          "Una contribución no desbloquea QAVELIX PRO ni cambia los límites de uso de tu cuenta.",
+          "El acceso gratuito sigue siendo exactamente el mismo, contribuyas o no.",
+          "Esta es una contribución voluntaria, no una donación deducible de impuestos a una organización benéfica registrada — QAVELIX no lo es.",
+        ],
+      },
+      amountsTitle: "Elige un monto",
+      customAmountLabel: "O introduce un monto personalizado (USD)",
+      customAmountPlaceholder: "Monto",
+      contributeButtonLabel: "Contribuir",
+      contributingLabel: "Redirigiendo al checkout...",
+      secureNote: "El pago se procesa de forma segura con Stripe. QAVELIX nunca ve ni almacena los datos de tu tarjeta.",
+      errorMessage: "No se pudo iniciar el checkout. Inténtalo de nuevo.",
+      invalidAmountMessage: "Introduce un monto entre $1 y $500.",
+      legalNote:
+        "Esta es una contribución voluntaria, no una donación benéfica, y no es deducible de impuestos. Stripe envía un recibo de pago por correo electrónico después del checkout.",
+      closingMessage:
+        "Contribuyas o no, gracias por usar QAVELIX. Cada usuario forma parte del crecimiento de este proyecto.",
+      success: {
+        eyebrow: "Apoya a QAVELIX",
+        title: "Gracias por tu apoyo",
+        description:
+          "Tu contribución ayuda a mantener QAVELIX funcionando y mejorando. No cambia tu cuenta ni tu plan de ninguna manera.",
+        amountLabel: "Contribución: {amount}",
+        returnHomeLabel: "Volver a QAVELIX",
+        notVerifiedTitle: "No pudimos confirmar este pago",
+        notVerifiedDescription:
+          "Si completaste el checkout, la confirmación puede tardar un momento — revisa tu correo en busca de un recibo de Stripe, o inténtalo de nuevo en la página de apoyo.",
+      },
+      cancelled: {
+        eyebrow: "Apoya a QAVELIX",
+        title: "Checkout cancelado",
+        description: "No se realizó ningún pago. Puedes intentarlo de nuevo cuando quieras.",
+        tryAgainLabel: "Volver a Apoya a QAVELIX",
+        returnHomeLabel: "Volver a QAVELIX",
       },
     },
   },

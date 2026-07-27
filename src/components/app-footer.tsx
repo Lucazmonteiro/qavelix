@@ -12,10 +12,13 @@ type AppFooterProps = {
 
 export function AppFooter({ locale, dictionary }: AppFooterProps) {
   const currentYear = new Date().getFullYear();
-  const links = contentPageSlugs.map((slug) => ({
-    href: `/${locale}/${slug}`,
-    label: dictionary.pages[slug].label,
-  }));
+  const links = [
+    ...contentPageSlugs.map((slug) => ({
+      href: `/${locale}/${slug}`,
+      label: dictionary.pages[slug].label,
+    })),
+    { href: `/${locale}/support`, label: dictionary.support.navLabel },
+  ];
 
   return (
     <footer className="site-footer">

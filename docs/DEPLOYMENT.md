@@ -297,6 +297,46 @@ Never commit the values `stripe listen`/`stripe login` print, and never commit a
 `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` — `.env.local` is already git-ignored; keep it
 that way.
 
+### Required: production webhook event subscription must exclude `checkout.session.completed`
+
+**This is a required manual configuration step, not optional.** When configuring the
+production webhook endpoint in the Stripe Dashboard (Developers → Webhooks → the endpoint
+pointing at `https://qavelix.com/api/auth/stripe/webhook`), subscribe it to exactly:
+
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+**Do not subscribe `checkout.session.completed`.** `@better-auth/stripe`'s webhook handler
+(`onCheckoutSessionCompleted`, inside `node_modules/@better-auth/stripe`) only skips
+`mode: "setup"` sessions — for any other session type it unconditionally calls
+`client.subscriptions.retrieve(checkoutSession.subscription)`, which throws when the
+session has no `subscription` field. The one-time "Support QAVELIX" contribution checkout
+(`src/app/api/support/checkout/route.ts`) creates its sessions with `mode: "payment"`,
+which has no `subscription` field by design — a `checkout.session.completed` event for a
+contribution would make this shared endpoint throw and return a non-2xx response to
+Stripe, which Stripe then retries on its own schedule (up to several days), producing
+persistent failed-webhook noise in the Stripe Dashboard for an endpoint this app doesn't
+actually need that event type for: this app's own plan-sync hooks
+(`onSubscriptionCreated`/`onSubscriptionUpdate`/`onSubscriptionDeleted` in
+`src/lib/server/auth/auth.ts`) are driven entirely by the three `customer.subscription.*`
+events above, not by `checkout.session.completed`.
+
+This is a third-party-plugin limitation (confirmed by reading its source, not modified
+here) — the correct fix is this endpoint configuration, not a code change to the plugin.
+The "Support QAVELIX" flow doesn't depend on this webhook either way: its own success page
+verifies payment directly via `stripeClient.checkout.sessions.retrieve(session_id)`, never
+via a webhook.
+
+Locally, `stripe listen` (used above) forwards every event type by default regardless of
+this guidance — if you test a contribution checkout while `stripe listen` is running,
+expect a harmless `checkout.session.completed` failure logged in that terminal (`stripe
+listen`'s local forwarding failures don't trigger Stripe's real retry/alerting behavior
+the way a Dashboard-configured production endpoint's failures do). Add
+`--events customer.subscription.created,customer.subscription.updated,customer.subscription.deleted`
+to the `stripe listen` command above if you want local testing to exactly mirror the
+recommended production subscription list.
+
 ## Manual deployment checklist
 
 Before the first production deployment:

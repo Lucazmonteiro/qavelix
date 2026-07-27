@@ -1,8 +1,11 @@
 import type { Route } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { and, eq, isNotNull } from "drizzle-orm";
 
 import { getAuth } from "@/lib/server/auth/auth";
+import { getDb } from "@/lib/server/db/client";
+import { account } from "@/lib/server/db/schema";
 import type { Locale } from "@/i18n/locales";
 
 // Server-side session read for use inside Server Components (page.tsx). Wraps
@@ -16,15 +19,17 @@ export async function getOptionalSession() {
   return getAuth().api.getSession({ headers: requestHeaders });
 }
 
-// Only accepts an internal, locale-prefixed /dashboard path. This is intentionally an
-// allowlist, not a generic "starts with / and doesn't start with //" check — the
-// callback value arrives via a query string an attacker fully controls
-// (?callbackURL=...), and the only legitimate destination this flow ever needs to
-// produce is a page inside the dashboard, so there is no reason to accept anything
-// broader. Rejects protocol-relative URLs (//evil.com), absolute URLs, and anything
-// outside /dashboard outright by construction, not by trying to blocklist every way to
-// smuggle one past a looser check.
-const SAFE_CALLBACK_PATTERN = /^\/[a-z]{2}(-[A-Z]{2})?\/dashboard(\/[a-zA-Z0-9/_-]*)?$/;
+// Only accepts an internal, locale-prefixed /dashboard path, the bare localized
+// homepage, or the Extract Audio tool page. This is intentionally an allowlist, not a
+// generic "starts with / and doesn't start with //" check — the callback value arrives
+// via a query string an attacker fully controls (?callbackURL=...), and these are the
+// only legitimate destinations any flow in this app produces a callback for: the
+// dashboard (post-sign-in), and the two tool pages (the plan-comparison modal shown when
+// an anonymous visitor hits their usage limit needs to return them to whichever tool
+// page they were using, not just the dashboard). Rejects protocol-relative URLs
+// (//evil.com), absolute URLs, and anything outside this fixed set outright by
+// construction, not by trying to blocklist every way to smuggle one past a looser check.
+const SAFE_CALLBACK_PATTERN = /^\/[a-z]{2}(-[A-Z]{2})?(\/dashboard(\/[a-zA-Z0-9/_-]*)?|\/tools\/extract-audio)?$/;
 
 export function sanitizeCallbackPath(value: string | undefined | null): string | null {
   if (!value) {
@@ -56,4 +61,27 @@ export async function requireSession(locale: Locale, callbackPath: string) {
   }
 
   return session;
+}
+
+// Whether this user can change a password at all — true only if they have a credential
+// (email/password) account row with a non-null password. No OAuth provider is configured
+// in this app today (see auth.ts — only emailAndPassword is wired up), so this is
+// currently always true for any real user, but the settings page checks it explicitly
+// rather than assuming, so it doesn't show a broken password-change control the moment an
+// OAuth provider is ever added.
+export async function hasPasswordCredential(userId: string): Promise<boolean> {
+  const db = getDb();
+  const [row] = await db
+    .select({ id: account.id })
+    .from(account)
+    .where(
+      and(
+        eq(account.userId, userId),
+        eq(account.providerId, "credential"),
+        isNotNull(account.password),
+      ),
+    )
+    .limit(1);
+
+  return Boolean(row);
 }

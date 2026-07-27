@@ -7,12 +7,11 @@ export const themeScript = `
     return themes.includes(value);
   }
 
-  function getStoredTheme() {
+  function resolveSystemPreference() {
     try {
-      const storedTheme = window.localStorage.getItem(storageKey);
-      return isTheme(storedTheme) ? storedTheme : null;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     } catch {
-      return null;
+      return "dark";
     }
   }
 
@@ -21,6 +20,26 @@ export const themeScript = `
       window.localStorage.setItem(storageKey, theme);
     } catch {
       return;
+    }
+  }
+
+  // One-time migration for visitors with a legacy "system" (or any other invalid) value
+  // stored from before QAVELIX supported only Light/Dark: resolve it to a concrete value
+  // via the OS preference and persist that, so "system" is never read as an active value
+  // again on subsequent loads.
+  function getStoredTheme() {
+    try {
+      const storedTheme = window.localStorage.getItem(storageKey);
+
+      if (isTheme(storedTheme)) {
+        return storedTheme;
+      }
+
+      const resolved = resolveSystemPreference();
+      persistTheme(resolved);
+      return resolved;
+    } catch {
+      return null;
     }
   }
 

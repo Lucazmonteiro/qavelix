@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { BillingAddressForm } from "@/components/dashboard/billing-address-form";
 import { BillingPortalButton } from "@/components/dashboard/billing-portal-button";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
@@ -67,6 +68,9 @@ export default async function DashboardBillingPage({ params }: DashboardBillingP
           pendingLabel={planCopy.portalPendingLabel}
           returnPath="/dashboard/billing"
         />
+      </div>
+      <div className="foundation-card">
+        <BillingAddressForm dictionary={dictionary} locale={locale} />
       </div>
     </>
   );

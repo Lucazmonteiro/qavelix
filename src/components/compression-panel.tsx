@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 
+import { PlanComparisonModal } from "@/components/plan-comparison-modal";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { useLocaleState } from "@/i18n/locale-context";
 import {
@@ -1275,10 +1276,10 @@ export function CompressionPanel({
   const isCurrentValidationComplete =
     validation.status === "validating" && validation.stage === "complete";
   const shouldShowValidationComplete = validation.status === "valid" && !job;
-  const dropDescription = copy.dropDescription.replace(
-    "{maxSize}",
-    formatBytes(resolvedMaxUploadBytes),
-  );
+  // dropDescription now states both plans' fixed limits directly (never the viewer's
+  // single resolved value) so it needs no interpolation — see .upload-limit-comparison
+  // below for the dynamic, gate-sourced Free/Pro comparison.
+  const dropDescription = copy.dropDescription;
 
   useEffect(() => {
     onValidatedChange?.(hasValidatedFile);
@@ -1506,6 +1507,30 @@ export function CompressionPanel({
           aria-live="polite"
         >
           <h3>{getStatusLabel(copy, validation, job)}</h3>
+          {gate.freeLimits && gate.proLimits ? (
+            <dl className="upload-limit-comparison">
+              <div
+                className={
+                  gate.plan !== "pro"
+                    ? "upload-limit-comparison__row upload-limit-comparison__row--current"
+                    : "upload-limit-comparison__row"
+                }
+              >
+                <dt>{dictionary.upgradeModal.freeTierName}</dt>
+                <dd>{formatBytes(gate.freeLimits.maxUploadBytes)}</dd>
+              </div>
+              <div
+                className={
+                  gate.plan === "pro"
+                    ? "upload-limit-comparison__row upload-limit-comparison__row--current"
+                    : "upload-limit-comparison__row"
+                }
+              >
+                <dt>{dictionary.upgradeModal.proTierName}</dt>
+                <dd>{formatBytes(gate.proLimits.maxUploadBytes)}</dd>
+              </div>
+            </dl>
+          ) : null}
           {validation.status === "validating" ? (
             <div
               className={`compression-status__validation${
@@ -1764,7 +1789,17 @@ export function CompressionPanel({
         </aside>
       </div>
 
-      {gate.freeLimits && gate.proLimits ? (
+      {gate.plan === "anonymous" && gate.anonymousLimits && gate.freeLimits && gate.proLimits ? (
+        <PlanComparisonModal
+          anonymousLimits={gate.anonymousLimits}
+          freeLimits={gate.freeLimits}
+          onClose={gate.closeUpgradeModal}
+          open={gate.showUpgradeModal}
+          proLimits={gate.proLimits}
+          returnPath={pathname}
+        />
+      ) : null}
+      {gate.plan === "free" && gate.freeLimits && gate.proLimits ? (
         <UpgradeModal
           cancelPath={pathname}
           freeLimits={gate.freeLimits}

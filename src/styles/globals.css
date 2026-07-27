@@ -188,8 +188,19 @@ h6,
   padding-block: 0.55rem;
 }
 
-.brand {
+/* Wraps the brand link and the (conditionally rendered) PRO badge so the badge can sit
+   beside the brand without breaking site-header__inner's 3-area grid — .brand itself no
+   longer needs its own grid-area now that this wrapper carries it. */
+.brand-group {
   grid-area: brand;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.brand {
   display: inline-flex;
   align-items: center;
   gap: 0.7rem;
@@ -197,6 +208,55 @@ h6,
   max-width: 100%;
   min-width: 0;
   font-weight: 800;
+}
+
+/* Only rendered (see pro-badge.tsx) once a confirmed Pro entitlement is resolved
+   server-side — the base pill is always solid, legible, and static; the shimmer is a
+   purely decorative overlay confined to prefers-reduced-motion: no-preference, so
+   reduced-motion users see the exact same badge with zero animation. */
+.pro-badge {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-foreground);
+  background: var(--accent);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pro-badge::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, white 65%, transparent) 50%,
+      transparent 70%
+    );
+    transform: translateX(-120%);
+    animation: pro-badge-shimmer 5s ease-in-out infinite;
+  }
+
+  @keyframes pro-badge-shimmer {
+    0%,
+    65% {
+      transform: translateX(-120%);
+    }
+
+    85%,
+    100% {
+      transform: translateX(120%);
+    }
+  }
 }
 
 .brand__mark {
@@ -386,13 +446,25 @@ button.tools-menu__item:disabled {
 }
 
 /* Logged-out header CTAs: registration is the primary action, sign-in stays a secondary
-   text link beside it — matches every other primary-nav__link's sizing so it doesn't
-   introduce a second, differently-scaled button style into the header. */
+   action beside it. It keeps primary-nav__link's sizing/typography so it doesn't
+   introduce a second, differently-scaled button style into the header, but adds a visible
+   border (guest-nav-actions__signin) so it reads as an identifiable control rather than a
+   plain text link that can wash out against the page background in either theme — without
+   the fully-filled .button--secondary treatment, which would compete too directly with the
+   adjacent primary "Sign up" button. */
 .guest-nav-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.4rem;
+}
+
+.guest-nav-actions__signin {
+  border: 1px solid var(--border-strong);
+}
+
+.guest-nav-actions__signin:hover {
+  border-color: var(--accent);
 }
 
 .guest-nav-actions__signup {
@@ -446,6 +518,19 @@ button.tools-menu__item:disabled {
 .theme-toggle__button[aria-pressed="true"] {
   background: var(--foreground);
   color: var(--background);
+}
+
+/* Settings-page reuse of the same ThemeToggle component (data-theme-option mechanism
+   unchanged) — a roomier variant matched to a settings-form row instead of the compact
+   header slot. */
+.theme-toggle--expanded {
+  padding: 0.3rem;
+}
+
+.theme-toggle--expanded .theme-toggle__button {
+  min-height: 2.5rem;
+  padding-inline: 1.1rem;
+  font-weight: 700;
 }
 
 .navigation-controls {
@@ -707,6 +792,54 @@ button.tools-menu__item:disabled {
   opacity: 0.94;
 }
 
+/* Compact Free/Pro upload-size comparison shown in each tool's status panel — never a
+   fetch of its own, always driven by useEntitlementGate()'s already-resolved
+   freeLimits/proLimits so it can never drift from what the backend actually enforces.
+   The current actor's own tier is highlighted; the other tier stays visible but muted, so
+   a Free/anonymous visitor understands the 250MB ceiling without being misled about
+   Pro's 500MB, and a Pro user sees their own 500MB is what's actually active. */
+.upload-limit-comparison {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.upload-limit-comparison__row {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+}
+
+.upload-limit-comparison__row dt {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.upload-limit-comparison__row dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.upload-limit-comparison__row--current {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.upload-limit-comparison__row--current dt {
+  color: var(--accent);
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -732,6 +865,48 @@ button.tools-menu__item:disabled {
   margin: 0.3rem 0 0;
   font-size: 1.7rem;
   font-weight: 900;
+}
+
+/* "Maximum size" stat card — the other two .stat-grid__item cards show one big number;
+   this one has to hold two (Free/Pro), so it uses a compact two-row layout instead of
+   the shared dd font-size. CSS Grid stretches every item in the row to match the
+   tallest sibling by default, so this stays the same height as its neighbors without
+   any extra rule. */
+.stat-grid__item--max-size {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-grid__max-size-rows {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.55rem 0 0;
+}
+
+.stat-grid__max-size-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.stat-grid__max-size-plan {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.stat-grid__max-size-value {
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.stat-grid__max-size-row--pro .stat-grid__max-size-plan,
+.stat-grid__max-size-row--pro .stat-grid__max-size-value {
+  color: var(--accent);
 }
 
 .product-preview {
@@ -865,6 +1040,13 @@ button.tools-menu__item:disabled {
 .foundation-card p {
   margin: 0.8rem 0 0;
   font-size: 0.95rem;
+}
+
+.foundation-card__icon {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .upload-section {
@@ -1965,6 +2147,38 @@ button.tools-menu__item:disabled {
   opacity: 0.6;
 }
 
+.auth-field select {
+  width: 100%;
+  min-height: 2.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--foreground);
+  font: inherit;
+  padding-inline: 0.85rem;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.auth-field select:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.auth-field select:focus-visible {
+  background: var(--background-elevated);
+  border-color: var(--focus);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent);
+}
+
+.auth-field select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .auth-field__error {
   margin: 0;
   color: var(--warning);
@@ -2113,6 +2327,147 @@ button.tools-menu__item:disabled {
 .dashboard-card__title {
   margin: 0 0 0.9rem;
   font-size: 1.05rem;
+}
+
+/* Settings page (src/app/[locale]/dashboard/settings/page.tsx) — reuses .auth-field for
+   individual inputs and .form-status__error/__success for feedback; these are just the
+   form-level layout and the plain descriptive notes under each section heading. */
+.settings-form {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.settings-form__note {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.settings-language-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-language-list__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding-inline: 1rem;
+  color: var(--foreground);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.settings-language-list__link:hover {
+  border-color: var(--accent);
+}
+
+.settings-language-list__link[aria-current="page"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Support QAVELIX page (src/app/[locale]/support/page.tsx) — reuses .content-page__hero
+   (already the toned-down institutional-page hero used by About/FAQ/Contact) instead of
+   the large homepage .hero-section, plus .content-page__section and .card-grid for the
+   story/help sections, so this page shares the same visual language as every other
+   content page rather than introducing a parallel layout system. */
+.support-hero__mark {
+  display: inline-block;
+  margin-right: 0.4rem;
+  color: var(--accent);
+  font-size: 0.75em;
+  vertical-align: middle;
+}
+
+.support-helps-grid {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  margin-top: 1.25rem;
+}
+
+.support-notice {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 52rem;
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface));
+  padding: clamp(1.1rem, 3vw, 1.5rem);
+}
+
+.support-notice__title {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.support-notice ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.support-form-card {
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.support-closing {
+  max-width: 52rem;
+  margin: clamp(2.5rem, 6vw, 4rem) auto 0;
+  border-top: 1px solid var(--border);
+  padding-top: clamp(1.5rem, 4vw, 2rem);
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* Support QAVELIX contribution form (src/components/support-checkout-form.tsx). */
+.support-form {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.support-form__amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.support-form__amount-button {
+  min-height: 2.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--foreground);
+  font-weight: 700;
+  padding-inline: 1.1rem;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.support-form__amount-button:hover {
+  border-color: var(--accent);
+}
+
+.support-form__amount-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--foreground);
 }
 
 .dashboard-summary-row {
@@ -2521,6 +2876,19 @@ button.tools-menu__item:disabled {
   flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 0.5rem;
+}
+
+/* Plan-comparison modal (src/components/plan-comparison-modal.tsx) — a three-tier
+   variant of .upgrade-modal, shown to anonymous visitors instead of the two-tier
+   Free/Pro upgrade-modal shown to signed-in Free actors. Slightly wider than the base
+   modal, and its comparison grid uses a smaller minmax so three tiers can sit side by
+   side on typical desktop widths while still wrapping gracefully on narrow viewports. */
+.plan-comparison-modal {
+  width: min(100%, 40rem);
+}
+
+.plan-comparison-modal__comparison {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
 }
 
 /* Pro welcome experience (src/components/dashboard/pro-welcome-modal.tsx). */

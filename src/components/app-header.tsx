@@ -7,6 +7,7 @@ import type { Locale } from "@/i18n/locales";
 
 import { AccountMenu } from "@/components/account-menu";
 import { LanguageSelector } from "@/components/language-selector";
+import { ProBadge } from "@/components/pro-badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { getDictionary } from "@/i18n/dictionaries";
 
@@ -74,16 +75,19 @@ export function AppHeader({ locale, dictionary }: AppHeaderProps) {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <a
-          className="brand"
-          href={`/${locale}`}
-          aria-label={dictionary.navigation.homeLabel}
-        >
-          <span className="brand__mark" aria-hidden="true">
-            Q
-          </span>
-          <span className="brand__text">QAVELIX</span>
-        </a>
+        <div className="brand-group">
+          <a
+            className="brand"
+            href={`/${locale}`}
+            aria-label={dictionary.navigation.homeLabel}
+          >
+            <span className="brand__mark" aria-hidden="true">
+              Q
+            </span>
+            <span className="brand__text">QAVELIX</span>
+          </a>
+          <ProBadge dictionary={dictionary} />
+        </div>
 
         <nav
           id="primary-navigation"

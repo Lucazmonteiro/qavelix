@@ -72,3 +72,56 @@ test("every terminal-state orphan-recovery path is unchanged: interrupted jobs s
   assert.match(compressionQueue, /await persistStatus\(job, "failed", "Compression interrupted\."\)/);
   assert.match(compressionQueue, /await releaseJobUsage\(job\)/);
 });
+
+// Regression coverage for a reported "Download could not be started" investigation: the
+// live download pipeline (job creation → completion → GET .../download) was proven
+// working end-to-end by tests/integration/compression-download.test.mjs (real HTTP,
+// real FFmpeg, real file bytes) — no defect was found there. This test instead locks
+// down the authorization/expiry logic itself at the source level, since exercising real
+// TTL expiry (30 minutes) or a genuine cross-actor token swap is impractical to run as a
+// fast integration test but the logic must not silently regress.
+test("download authorization is a single, once-assigned, constant-time-compared signed token — never re-derived per request and never fingerprint/session based", () => {
+  // Token + signature are generated exactly once, at the moment a job first reaches a
+  // terminal completed state — never regenerated on later reads, so an already-issued
+  // download URL can't be silently invalidated by a subsequent status poll.
+  assert.match(
+    compressionQueue,
+    /const token = randomBytes\(32\)\.toString\("base64url"\);/,
+  );
+  assert.match(
+    compressionQueue,
+    /job\.downloadToken = token;\s*\n\s*job\.downloadSignature = createDownloadSignature\(job\.id, token, expiresAt\);/,
+  );
+
+  // readCompressionDownload() must compare the caller-supplied token/signature against
+  // the exact values stored on the job (constant-time, to avoid a timing side-channel),
+  // not recompute or trust anything the client sends beyond that.
+  assert.match(
+    compressionQueue,
+    /!constantTimeEqual\(token, job\.downloadToken\) \|\|\s*\n\s*!constantTimeEqual\(signature, job\.downloadSignature\)/,
+  );
+  assert.match(
+    compressionQueue,
+    /function constantTimeEqual\(left: string, right: string\) \{/,
+  );
+  assert.match(compressionQueue, /timingSafeEqual\(leftBuffer, rightBuffer\)/);
+});
+
+test("an expired or missing download fails closed: expiry is checked before the file is ever opened, and a missing output file never crashes the route", () => {
+  assert.match(
+    compressionQueue,
+    /if \(new Date\(job\.expiresAt\)\.getTime\(\) <= Date\.now\(\)\) \{\s*\n\s*await expireCompressionJob\(id\);\s*\n\s*return null;/,
+  );
+  // A deleted/missing output file must resolve to null (→ 404 at the route), not throw
+  // and crash the request — open() failing is caught explicitly.
+  assert.match(
+    compressionQueue,
+    /try \{\s*\n\s*outputFile = await open\(job\.outputPath, "r"\);\s*\n\s*outputStats = await outputFile\.stat\(\);\s*\n\s*\} catch \{\s*\n\s*return null;/,
+  );
+  // A malformed/incomplete job (no expiresAt, no token, no signature, or a
+  // non-downloadable status) is rejected before either the expiry or file check runs.
+  assert.match(
+    compressionQueue,
+    /!job \|\|\s*\n\s*!isDownloadableCompressionStatus\(job\.status\) \|\|\s*\n\s*!job\.expiresAt \|\|\s*\n\s*!job\.downloadToken \|\|\s*\n\s*!job\.downloadSignature/,
+  );
+});
