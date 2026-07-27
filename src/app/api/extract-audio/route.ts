@@ -389,7 +389,7 @@ export async function POST(request: Request) {
       size: metadata.declaredSize,
       type: metadata.fileType,
     };
-    const earlyValidationError = validateFileIdentity(identity, new Uint8Array());
+    const earlyValidationError = validateFileIdentity(identity, new Uint8Array(), limits.maxUploadBytes);
 
     if (
       earlyValidationError &&
@@ -432,7 +432,7 @@ export async function POST(request: Request) {
       limits.maxUploadBytes,
     );
     const signaturePrefix = await readSignaturePrefix(inputPath);
-    const validationError = validateFileIdentity(identity, signaturePrefix);
+    const validationError = validateFileIdentity(identity, signaturePrefix, limits.maxUploadBytes);
 
     if (validationError) {
       logSecurityEvent("warn", "extract_audio_validation_rejected", {

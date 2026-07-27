@@ -4,6 +4,8 @@ Date: 2026-07-23
 
 Scope: capacity planning for the current QAVELIX production architecture. This is an analysis report only. No application code was modified.
 
+> **Update note (post-Milestone: plan-based upload limits):** every disk/RAM/network burst-capacity figure in this report — including the worst-case multi-upload calculations below — was modeled against a flat 250MB upload ceiling for every actor. That ceiling now applies only to Free and anonymous actors; QAVELIX PRO's real ceiling is 500MB (`PRO_MAX_UPLOAD_BYTES` in `src/lib/server/entitlements/policy.ts`, doubling both the per-upload disk/network footprint and, potentially, FFmpeg processing time for Pro-tier jobs). This report's specific byte totals below are historical and were not recalculated for the new ceiling — treat them as the pre-Pro baseline, and revalidate the burst-capacity and FFmpeg-timeout assumptions (`ffmpegTimeoutMs` in `compression-queue.ts`/`extract-audio.ts`) against real 500MB-class jobs before relying on them for production capacity planning.
+
 ## Executive Summary
 
 QAVELIX currently runs a conservative single-worker video compression architecture on Render Standard: 1 vCPU, 2 GB RAM, Docker, Next.js, FFmpeg, Cloudflare, and temporary local disk. The implementation is intentionally safer than it is scalable: uploads are streamed to disk, compression jobs are queued, and only one FFmpeg job runs at a time.

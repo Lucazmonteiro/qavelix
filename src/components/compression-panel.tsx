@@ -491,6 +491,17 @@ export function CompressionPanel({
   const pathname = usePathname();
   const gate = useEntitlementGate("video-compressor");
   const isBlocked = gate.blocked;
+  // The entitlement gate resolves the actor's real plan (and the Free/Pro comparison
+  // numbers) asynchronously on mount — see useEntitlementGate(). Until that resolves,
+  // MAX_UPLOAD_BYTES (Free/anonymous, 250MB) is the only safe default: it can never
+  // let an anonymous or Free actor through the client-side check early. Once resolved,
+  // a confirmed Pro actor's own limit (500MB) takes over — this must never stay pinned
+  // at the flat constant for a Pro user, or the client blocks files the server would
+  // accept.
+  const resolvedMaxUploadBytes =
+    gate.plan === "pro" && gate.proLimits
+      ? gate.proLimits.maxUploadBytes
+      : (gate.freeLimits?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadDropzoneRef = useRef<HTMLLabelElement>(null);
   const compressionPanelRef = useRef<HTMLDivElement>(null);
@@ -804,7 +815,7 @@ export function CompressionPanel({
       return copy.errors.empty;
     }
 
-    if (selectedFile.size > MAX_UPLOAD_BYTES) {
+    if (selectedFile.size > resolvedMaxUploadBytes) {
       return copy.errors.tooLarge;
     }
 
@@ -835,17 +846,17 @@ export function CompressionPanel({
       setValidation({
         status: "invalid",
         message:
-          selectedFile.size > MAX_UPLOAD_BYTES
-            ? formatOversizedFileMessage(copy, selectedFile.size, MAX_UPLOAD_BYTES)
+          selectedFile.size > resolvedMaxUploadBytes
+            ? formatOversizedFileMessage(copy, selectedFile.size, resolvedMaxUploadBytes)
             : clientError,
         code:
-          selectedFile.size > MAX_UPLOAD_BYTES
+          selectedFile.size > resolvedMaxUploadBytes
             ? "file_too_large"
             : selectedFile.size === 0
               ? "empty_file"
               : undefined,
         fileSize:
-          selectedFile.size > MAX_UPLOAD_BYTES ? selectedFile.size : undefined,
+          selectedFile.size > resolvedMaxUploadBytes ? selectedFile.size : undefined,
       });
       return;
     }
@@ -900,7 +911,7 @@ export function CompressionPanel({
           status: "invalid",
           message:
             payload.error.code === "file_too_large"
-              ? formatOversizedFileMessage(copy, selectedFile.size, MAX_UPLOAD_BYTES)
+              ? formatOversizedFileMessage(copy, selectedFile.size, resolvedMaxUploadBytes)
               : getValidationErrorMessage(copy, payload.error),
           code: payload.error.code,
           fileSize:
@@ -988,7 +999,10 @@ export function CompressionPanel({
       const payload = (await response.json()) as JobResponse;
 
       if (!payload.ok) {
-        const message = getCompressionErrorMessage(copy, payload.error);
+        const message =
+          payload.error.code === "file_too_large" && file
+            ? formatOversizedFileMessage(copy, file.size, resolvedMaxUploadBytes)
+            : getCompressionErrorMessage(copy, payload.error);
 
         if (
           payload.error.code === "missing_reference" ||
@@ -1261,6 +1275,10 @@ export function CompressionPanel({
   const isCurrentValidationComplete =
     validation.status === "validating" && validation.stage === "complete";
   const shouldShowValidationComplete = validation.status === "valid" && !job;
+  const dropDescription = copy.dropDescription.replace(
+    "{maxSize}",
+    formatBytes(resolvedMaxUploadBytes),
+  );
 
   useEffect(() => {
     onValidatedChange?.(hasValidatedFile);
@@ -1321,7 +1339,7 @@ export function CompressionPanel({
               <span className="upload-dropzone__description">
                 {validation.status === "validating"
                   ? copy.validationStages[validation.stage]
-                  : copy.dropDescription}
+                  : dropDescription}
               </span>
               {validation.status === "validating" ? (
                 <>
@@ -1531,7 +1549,7 @@ export function CompressionPanel({
                   </div>
                   <div>
                     <dt>{copy.maximumAllowedLabel}</dt>
-                    <dd>{formatBytes(MAX_UPLOAD_BYTES)}</dd>
+                    <dd>{formatBytes(resolvedMaxUploadBytes)}</dd>
                   </div>
                 </dl>
               ) : (

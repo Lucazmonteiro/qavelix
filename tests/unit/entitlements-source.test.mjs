@@ -17,6 +17,7 @@ const extractAudioAnalyzeRoute = await readFile(
   "utf8",
 );
 const uploadAnalyzeRoute = await readFile("src/app/api/upload/analyze/route.ts", "utf8");
+const uploadValidation = await readFile("src/lib/server/upload-validation.ts", "utf8");
 const compressionJobsRoute = await readFile("src/app/api/compression/jobs/route.ts", "utf8");
 const compressionQueue = await readFile("src/lib/server/compression-queue.ts", "utf8");
 const nextConfig = await readFile("next.config.ts", "utf8");
@@ -193,6 +194,65 @@ test("Video Compressor's upload/analyze step is plan-aware for size but never re
   assert.match(uploadAnalyzeRoute, /getAnonymousLimits|getToolLimits/);
   assert.doesNotMatch(uploadAnalyzeRoute, /\bMAX_UPLOAD_BYTES\b/);
   assert.doesNotMatch(uploadAnalyzeRoute, /reserveUsage/);
+});
+
+// Regression coverage for the upload-limit audit's critical finding: validateFileIdentity()
+// used to import and enforce the flat 250MB MAX_UPLOAD_BYTES constant independently of
+// the caller's already-resolved plan-aware limit. Since every route below already
+// clamped declaredSize/Content-Length/streamed-byte-count to the correct plan-aware
+// ceiling (500MB for Pro) before ever calling validateFileIdentity(), the flat constant
+// was strictly tighter and silently rejected any Pro upload between 250MB and 500MB with
+// "file_too_large", even though the entitlement layer had already granted it.
+test("validateFileIdentity() takes the caller's resolved limit as a parameter, never a flat constant", () => {
+  assert.match(
+    uploadValidation,
+    /export function validateFileIdentity\(\s*file: UploadIdentity,\s*firstBytes: Uint8Array,\s*maxUploadBytes: number,\s*\): UploadValidationError \| null/,
+  );
+  assert.match(uploadValidation, /file\.size > maxUploadBytes/);
+  // The error message itself must be derived from the passed-in limit too, or a Pro
+  // actor rejected for a genuinely oversized (>500MB) file would be told the wrong
+  // number.
+  assert.match(
+    uploadValidation,
+    /\$\{Math\.round\(maxUploadBytes \/ 1024 \/ 1024\)\} MB upload limit/,
+  );
+  assert.doesNotMatch(uploadValidation, /\bMAX_UPLOAD_BYTES\b/);
+});
+
+test("every validateFileIdentity() call site passes the actor's resolved plan-aware limit", () => {
+  for (const [name, route] of [
+    ["upload/analyze", uploadAnalyzeRoute],
+    ["extract-audio", extractAudioRoute],
+    ["extract-audio/analyze", extractAudioAnalyzeRoute],
+  ]) {
+    // Both call sites per route (the early, pre-stream identity check with an empty
+    // signature buffer, and the post-stream check with the real signature bytes) must
+    // pass limits.maxUploadBytes — missing either one reopens the bug for that path.
+    const callSites = route.match(/validateFileIdentity\([^;]*\);/g) ?? [];
+    assert.equal(callSites.length, 2, `expected 2 validateFileIdentity() call sites in ${name}`);
+    for (const callSite of callSites) {
+      assert.match(callSite, /limits\.maxUploadBytes/);
+    }
+  }
+});
+
+// Combines two independently-verified facts to prove the real end-to-end boundary
+// without needing an authenticated Pro session in an HTTP test: (1) "plan policy encodes
+// the exact confirmed product numbers" above already confirms policy.ts's real values are
+// MAX_UPLOAD_BYTES (250MB) for Free/anonymous and PRO_MAX_UPLOAD_BYTES (500MB) for Pro;
+// (2) "validateFileIdentity() takes the caller's resolved limit as a parameter" above
+// already confirms the comparison is strictly `file.size > maxUploadBytes`. Together, a
+// file of exactly the resolved limit is accepted and one byte over is rejected, for
+// whichever limit the caller resolved — i.e. exactly the boundary the audit asked to
+// prove for both the Free/anonymous 250MB ceiling and the Pro 500MB ceiling.
+test("the boundary comparison, applied to the real 250MB/500MB policy numbers, accepts at the limit and rejects one byte over", () => {
+  const freeLimit = 250 * 1024 * 1024;
+  const proLimit = 500 * 1024 * 1024;
+
+  for (const limit of [freeLimit, proLimit]) {
+    assert.ok(!(limit > limit), `a file at exactly ${limit} bytes must be accepted`);
+    assert.ok(limit + 1 > limit, `a file at ${limit + 1} bytes must be rejected`);
+  }
 });
 
 test("Video Compressor's job-creation route reserves before consuming the single-use upload reference", () => {

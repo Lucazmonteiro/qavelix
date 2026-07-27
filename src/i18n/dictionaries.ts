@@ -713,7 +713,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       clientErrors: {
         unsupportedExtension: "This file extension is not supported.",
         unsupportedMime: "This MIME type is not supported.",
-        tooLarge: "This file exceeds the 250 MB upload limit.",
+        tooLarge: "This file exceeds your plan's upload limit.",
         empty: "This file is empty.",
         multiple: "Upload one file at a time.",
         invalidSignature: "The file signature does not match the selected file type.",
@@ -728,7 +728,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Compress one validated video at a time. Progress is shown while the file is prepared, and you can cancel while processing is active.",
       dropTitle: "Drop a video to get started",
       dropDescription:
-        "Formats accepted: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nSize allowed: 100 KB to 250 MB per video.\nYour video is processed securely and automatically removed after the availability period.",
+        "Formats accepted: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nSize allowed: 100 KB to {maxSize} per video.\nYour video is processed securely and automatically removed after the availability period.",
       browseLabel: "Choose video",
       validationHelper:
         "Your file has been successfully validated. Review the file information below, choose the compression level that best fits your needs, then start compression.",
@@ -837,7 +837,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       errors: {
         noFile: "Choose one supported video file before starting compression.",
         empty: "The selected file is empty.",
-        tooLarge: "The selected file exceeds the 250 MB upload limit.",
+        tooLarge: "The selected file exceeds your plan's upload limit.",
         unsupportedExtension: "The selected file extension is not supported.",
         unsupportedMime: "The selected file MIME type is not supported.",
         invalidSignature: "The selected file signature does not match its declared type.",
@@ -875,7 +875,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Upload a supported video, review the selected file, and prepare it for MP3 extraction. Processing will be connected in the next development step.",
       uploadTitle: "Drop a video to extract audio",
       uploadDescription:
-        "Choose a supported video file for audio extraction.\nFormats accepted: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nSize allowed: 100 KB to 250 MB per video.",
+        "Choose a supported video file for audio extraction.\nFormats accepted: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nSize allowed: 100 KB to {maxSize} per video.",
       privacyMessage:
         "Files are handled temporarily and removed automatically after the availability period.",
       chooseFile: "Choose video",
@@ -951,7 +951,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         fileTooSmall:
           "This video is too small to process. Choose a video of at least 100 KB.",
         fileTooLarge:
-          "This video exceeds the 250 MB upload limit. Choose a smaller video to continue.",
+          "This video exceeds the {maxSize} upload limit. Choose a smaller video to continue.",
         invalidExtension:
           "This file extension is not supported. Choose MP4, M4V, MOV, WebM, AVI, MPG, or MPEG.",
         invalidMime:
@@ -963,7 +963,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         fileTooSmall:
           "This video is too small to process. Choose a video of at least 100 KB.",
         fileTooLarge:
-          "This video exceeds the 250 MB upload limit. Choose a smaller video to continue.",
+          "This video exceeds the {maxSize} upload limit. Choose a smaller video to continue.",
         unsupportedFormat:
           "This video format is not supported. Choose MP4, MOV, AVI, WebM, M4V, MPEG, or MPG.",
         invalidMedia:
@@ -1730,7 +1730,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       clientErrors: {
         unsupportedExtension: "Esta extensão de arquivo não é aceita.",
         unsupportedMime: "Este tipo MIME não é aceito.",
-        tooLarge: "Este arquivo excede o limite de upload de 250 MB.",
+        tooLarge: "Este arquivo excede o limite de upload do seu plano.",
         empty: "Este arquivo está vazio.",
         multiple: "Envie um arquivo por vez.",
         invalidSignature: "A assinatura do arquivo não corresponde ao tipo selecionado.",
@@ -1745,7 +1745,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Comprima um vídeo validado por vez. O progresso aparece enquanto o arquivo é preparado, e você pode cancelar enquanto o processamento estiver ativo.",
       dropTitle: "Solte um vídeo para começar",
       dropDescription:
-        "Formatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nTamanho permitido: 100 KB a 250 MB por vídeo.\nSeu vídeo é processado com segurança e removido automaticamente após o período de disponibilidade.",
+        "Formatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nTamanho permitido: 100 KB a {maxSize} por vídeo.\nSeu vídeo é processado com segurança e removido automaticamente após o período de disponibilidade.",
       browseLabel: "Escolher vídeo",
       validationHelper:
         "Seu arquivo foi validado com sucesso. Confira as informações do arquivo abaixo, escolha o nível de compressão ideal para sua necessidade e inicie a compressão.",
@@ -1855,7 +1855,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       errors: {
         noFile: "Escolha um vídeo aceito antes de iniciar a compressão.",
         empty: "O arquivo selecionado está vazio.",
-        tooLarge: "O arquivo selecionado excede o limite de upload de 250 MB.",
+        tooLarge: "O arquivo selecionado excede o limite de upload do seu plano.",
         unsupportedExtension: "A extensão do arquivo selecionado não é aceita.",
         unsupportedMime: "O tipo MIME do arquivo selecionado não é aceito.",
         invalidSignature:
@@ -1895,7 +1895,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           "Envie um vídeo compatível, revise o arquivo selecionado e prepare-o para extração em MP3. O processamento será conectado na próxima etapa de desenvolvimento.",
         uploadTitle: "Solte um vídeo para extrair áudio",
         uploadDescription:
-          "Escolha um arquivo de vídeo compatível para extração de áudio.\nFormatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nTamanho permitido: 100 KB a 250 MB por vídeo.",
+          "Escolha um arquivo de vídeo compatível para extração de áudio.\nFormatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nTamanho permitido: 100 KB a {maxSize} por vídeo.",
         privacyMessage:
           "Os arquivos são tratados temporariamente e removidos automaticamente após o período de disponibilidade.",
         chooseFile: "Escolher vídeo",
@@ -1971,7 +1971,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           fileTooSmall:
             "Este vídeo é pequeno demais para processamento. Escolha um vídeo de pelo menos 100 KB.",
           fileTooLarge:
-            "Este vídeo excede o limite de upload de 250 MB. Escolha um vídeo menor para continuar.",
+            "Este vídeo excede o limite de upload de {maxSize}. Escolha um vídeo menor para continuar.",
           invalidExtension:
             "Esta extensão de arquivo não é aceita. Escolha MP4, M4V, MOV, WebM, AVI, MPG ou MPEG.",
           invalidMime:
@@ -1984,7 +1984,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           fileTooSmall:
             "Este vídeo é pequeno demais para processamento. Escolha um vídeo de pelo menos 100 KB.",
           fileTooLarge:
-            "Este vídeo excede o limite de upload de 250 MB. Escolha um vídeo menor para continuar.",
+            "Este vídeo excede o limite de upload de {maxSize}. Escolha um vídeo menor para continuar.",
           unsupportedFormat:
             "Este formato de vídeo não é aceito. Escolha MP4, MOV, AVI, WebM, M4V, MPEG ou MPG.",
           invalidMedia:
@@ -2755,7 +2755,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       clientErrors: {
         unsupportedExtension: "Esta extensión de archivo no está admitida.",
         unsupportedMime: "Este tipo MIME no está admitido.",
-        tooLarge: "Este archivo supera el límite de carga de 250 MB.",
+        tooLarge: "Este archivo supera el límite de carga de tu plan.",
         empty: "Este archivo está vacío.",
         multiple: "Sube un solo archivo cada vez.",
         invalidSignature: "La firma del archivo no coincide con el tipo seleccionado.",
@@ -2770,7 +2770,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Comprime un video validado cada vez. El progreso se muestra mientras se prepara el archivo, y puedes cancelar mientras el procesamiento está activo.",
       dropTitle: "Suelta un video para comenzar",
       dropDescription:
-        "Formatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nTamaño permitido: 100 KB a 250 MB por video.\nTu video se procesa de forma segura y se elimina automáticamente después del periodo de disponibilidad.",
+        "Formatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nTamaño permitido: 100 KB a {maxSize} por video.\nTu video se procesa de forma segura y se elimina automáticamente después del periodo de disponibilidad.",
       browseLabel: "Elegir video",
       validationHelper:
         "Tu archivo se ha validado correctamente. Revisa la información del archivo, elige el nivel de compresión que mejor se adapte a lo que necesitas e inicia la compresión.",
@@ -2880,7 +2880,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       errors: {
         noFile: "Elige un vídeo admitido antes de iniciar la compresión.",
         empty: "El archivo seleccionado está vacío.",
-        tooLarge: "El archivo seleccionado supera el límite de carga de 250 MB.",
+        tooLarge: "El archivo seleccionado supera el límite de carga de tu plan.",
         unsupportedExtension: "La extensión del archivo seleccionado no está admitida.",
         unsupportedMime: "El tipo MIME del archivo seleccionado no está admitido.",
         invalidSignature:
@@ -2921,7 +2921,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           "Sube un video compatible, revisa el archivo seleccionado y prepáralo para la extracción en MP3. El procesamiento se conectará en la siguiente fase de desarrollo.",
         uploadTitle: "Suelta un video para extraer el audio",
         uploadDescription:
-          "Elige un archivo de video compatible para extraer el audio.\nFormatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nTamaño permitido: 100 KB a 250 MB por video.",
+          "Elige un archivo de video compatible para extraer el audio.\nFormatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nTamaño permitido: 100 KB a {maxSize} por video.",
         privacyMessage:
           "Los archivos se gestionan temporalmente y se eliminan automáticamente después del periodo de disponibilidad.",
         chooseFile: "Elegir video",
@@ -2997,7 +2997,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           fileTooSmall:
             "Este video es demasiado pequeño para procesarlo. Elige un video de al menos 100 KB.",
           fileTooLarge:
-            "Este video supera el límite de subida de 250 MB. Elige un video más pequeño para continuar.",
+            "Este video supera el límite de subida de {maxSize}. Elige un video más pequeño para continuar.",
           invalidExtension:
             "Esta extensión de archivo no es compatible. Elige MP4, M4V, MOV, WebM, AVI, MPG o MPEG.",
           invalidMime:
@@ -3010,7 +3010,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           fileTooSmall:
             "Este video es demasiado pequeño para procesarlo. Elige un video de al menos 100 KB.",
           fileTooLarge:
-            "Este video supera el límite de subida de 250 MB. Elige un video más pequeño para continuar.",
+            "Este video supera el límite de subida de {maxSize}. Elige un video más pequeño para continuar.",
           unsupportedFormat:
             "Este formato de video no es compatible. Elige MP4, MOV, AVI, WebM, M4V, MPEG o MPG.",
           invalidMedia:

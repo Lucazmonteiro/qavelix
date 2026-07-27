@@ -60,7 +60,10 @@ function hasAcceptedExtension(fileName: string) {
   return acceptedExtensions.some((extension) => lowerName.endsWith(extension));
 }
 
-function validateFile(file: File): ValidationErrorKey | null {
+// maxUploadBytes must be the caller's already-resolved, plan-aware ceiling — this
+// function has no notion of plan itself (see the same convention in
+// validateFileIdentity() on the server).
+function validateFile(file: File, maxUploadBytes: number): ValidationErrorKey | null {
   if (file.size === 0) {
     return "emptyFile";
   }
@@ -69,7 +72,7 @@ function validateFile(file: File): ValidationErrorKey | null {
     return "fileTooSmall";
   }
 
-  if (file.size > MAX_UPLOAD_BYTES) {
+  if (file.size > maxUploadBytes) {
     return "fileTooLarge";
   }
 
@@ -196,6 +199,13 @@ export function ExtractAudioTool() {
   const pathname = usePathname();
   const gate = useEntitlementGate("extract-audio");
   const isBlocked = gate.blocked;
+  // Same resolution as CompressionPanel: MAX_UPLOAD_BYTES (250MB) is the safe default
+  // until the entitlement gate resolves the actor's real plan, after which a confirmed
+  // Pro actor's own limit (500MB) takes over.
+  const resolvedMaxUploadBytes =
+    gate.plan === "pro" && gate.proLimits
+      ? gate.proLimits.maxUploadBytes
+      : (gate.freeLimits?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const analysisControllerRef = useRef<AbortController | null>(null);
@@ -217,7 +227,7 @@ export function ExtractAudioTool() {
   const selectedFile = fileState?.file ?? null;
   const validationErrorKey = fileState?.errorKey ?? null;
   const validationError = validationErrorKey
-    ? copy.validation[validationErrorKey]
+    ? copy.validation[validationErrorKey].replace("{maxSize}", formatBytes(resolvedMaxUploadBytes))
     : null;
   const hasValidFile = Boolean(selectedFile && !validationError);
   const canExtract =
@@ -227,7 +237,7 @@ export function ExtractAudioTool() {
     processingState === "idle" &&
     !isBlocked;
   const processingError = processingErrorKey
-    ? copy.errors[processingErrorKey]
+    ? copy.errors[processingErrorKey].replace("{maxSize}", formatBytes(resolvedMaxUploadBytes))
     : null;
   const isProcessing =
     processingState === "validating" ||
@@ -294,6 +304,10 @@ export function ExtractAudioTool() {
 
     return selectedFile ? copy.statusReady : copy.statusWaiting;
   })();
+  const uploadDescription = copy.uploadDescription.replace(
+    "{maxSize}",
+    formatBytes(resolvedMaxUploadBytes),
+  );
 
   useEffect(() => {
     return () => {
@@ -423,7 +437,7 @@ export function ExtractAudioTool() {
 
     setFileState({
       file,
-      errorKey: validateFile(file),
+      errorKey: validateFile(file, resolvedMaxUploadBytes),
     });
   }
 
@@ -665,7 +679,7 @@ export function ExtractAudioTool() {
                 </span>
                 <span className="upload-dropzone__title">{copy.uploadTitle}</span>
                 <span className="upload-dropzone__description">
-                  {copy.uploadDescription}
+                  {uploadDescription}
                 </span>
                 <button
                   className="button button--primary"

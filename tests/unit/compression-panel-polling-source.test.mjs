@@ -240,14 +240,14 @@ test("compression panel presents oversized upload errors with relevant details o
   assert.match(source, /validation\.code === "file_too_large"/);
   assert.match(
     source,
-    /formatOversizedFileMessage\(copy, selectedFile\.size, MAX_UPLOAD_BYTES\)/,
+    /formatOversizedFileMessage\(copy, selectedFile\.size, resolvedMaxUploadBytes\)/,
   );
   assert.match(source, /const isOversizedFile =/);
   assert.match(source, /\{isOversizedFile \? \(/);
   assert.match(source, /return copy\.uploadLimitExceededLabel/);
   assert.doesNotMatch(source, /<dt>\{copy\.statusLabel\}<\/dt>\s*<dd>\{copy\.uploadLimitExceededLabel\}<\/dd>/);
   assert.match(source, /<dt>\{copy\.maximumAllowedLabel\}<\/dt>/);
-  assert.match(source, /<dd>\{formatBytes\(MAX_UPLOAD_BYTES\)\}<\/dd>/);
+  assert.match(source, /<dd>\{formatBytes\(resolvedMaxUploadBytes\)\}<\/dd>/);
   assert.match(dictionarySource, /uploadLimitExceededLabel: "Upload limit exceeded"/);
   assert.match(dictionarySource, /uploadLimitExceededLabel: "Limite de upload excedido"/);
   assert.match(dictionarySource, /uploadLimitExceededLabel: "Límite de carga excedido"/);
@@ -257,6 +257,25 @@ test("compression panel presents oversized upload errors with relevant details o
     dictionarySource,
     /El archivo seleccionado tiene un tamaño de \{fileSize\}/,
   );
+});
+
+// Regression coverage for the upload-limit audit's critical finding: the client-side
+// pre-check used to hardcode the flat 250MB MAX_UPLOAD_BYTES constant, which silently
+// blocked a confirmed Pro actor from ever selecting a 250-500MB file in the browser even
+// though the backend correctly allowed it. resolvedMaxUploadBytes must be derived from
+// the entitlement gate's own resolved plan/limits, and MAX_UPLOAD_BYTES may only remain
+// as the safe pre-resolution fallback (anonymous/Free's real ceiling anyway), never as
+// the value actually enforced once a Pro actor's plan is known.
+test("compression panel's client-side size check resolves the actor's real plan limit instead of a flat constant", () => {
+  assert.match(
+    source,
+    /const resolvedMaxUploadBytes =\s*\n\s*gate\.plan === "pro" && gate\.proLimits\s*\n\s*\? gate\.proLimits\.maxUploadBytes\s*\n\s*: \(gate\.freeLimits\?\.maxUploadBytes \?\? MAX_UPLOAD_BYTES\);/,
+  );
+  assert.match(source, /selectedFile\.size > resolvedMaxUploadBytes/);
+  // MAX_UPLOAD_BYTES must survive only as the loading-state fallback inside the
+  // resolution expression above — never as the size actually compared against a
+  // selected file once the gate has resolved.
+  assert.doesNotMatch(source, /selectedFile\.size > MAX_UPLOAD_BYTES/);
 });
 
 test("compression panel removes the upload dropzone after successful validation", () => {

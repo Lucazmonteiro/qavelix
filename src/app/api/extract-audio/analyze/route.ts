@@ -335,7 +335,7 @@ export async function POST(request: Request) {
       size: metadata.declaredSize,
       type: metadata.fileType,
     };
-    const earlyValidationError = validateFileIdentity(identity, new Uint8Array());
+    const earlyValidationError = validateFileIdentity(identity, new Uint8Array(), limits.maxUploadBytes);
 
     if (
       earlyValidationError &&
@@ -355,7 +355,7 @@ export async function POST(request: Request) {
     await streamRequestBodyToDisk(request, inputPath, metadata.declaredSize, limits.maxUploadBytes);
 
     const signaturePrefix = await readSignaturePrefix(inputPath);
-    const validationError = validateFileIdentity(identity, signaturePrefix);
+    const validationError = validateFileIdentity(identity, signaturePrefix, limits.maxUploadBytes);
 
     if (validationError) {
       return resultResponse(
