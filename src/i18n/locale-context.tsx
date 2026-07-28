@@ -28,7 +28,11 @@ type LocaleProviderProps = {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
-function replaceLocaleInPath(pathname: string, nextLocale: Locale) {
+// Exported for reuse by any component that needs a plain, locale-swapped href without
+// LanguageSelector's client-side interception behavior (e.g. the settings page's
+// language links, which are ordinary server-rendered navigation, not the
+// homepage/tool-page fast path switchLocale() below is for).
+export function replaceLocaleInPath(pathname: string, nextLocale: Locale) {
   const segments = pathname.split("/");
   const currentLocale = segments[1];
 

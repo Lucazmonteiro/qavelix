@@ -1,7 +1,11 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 
+import { PlanComparisonModal } from "@/components/plan-comparison-modal";
+import { UpgradeModal } from "@/components/upgrade-modal";
+import { useLocaleState } from "@/i18n/locale-context";
 import {
   compressionPresets,
   getCompressionDisplayProgress,
@@ -23,6 +27,7 @@ import {
   MAX_UPLOAD_BYTES,
   type UploadAnalysis,
 } from "@/lib/upload-policy";
+import { useEntitlementGate } from "@/lib/use-entitlement-gate";
 
 type CompressionCopy = {
   eyebrow: string;
@@ -129,6 +134,10 @@ type CompressionCopy = {
     cancelFailed: string;
     sourceUnavailable: string;
     predictedIncrease: string;
+    accountRequired: string;
+    usageLimitReached: string;
+    toolUnavailableForPlan: string;
+    serviceUnavailable: string;
   };
   oversizedFileMessage: string;
 };
@@ -441,6 +450,15 @@ function getCompressionErrorMessage(
       return copy.errors.invalidSignature;
     case "queue_full":
       return copy.errors.queueFull;
+    case "account_required":
+      return copy.errors.accountRequired;
+    case "usage_limit_reached":
+      return copy.errors.usageLimitReached;
+    case "tool_unavailable_for_plan":
+      return copy.errors.toolUnavailableForPlan;
+    case "invalid_entitlement_state":
+    case "usage_service_unavailable":
+      return copy.errors.serviceUnavailable;
     default:
       return copy.errors.uploadFailed;
   }
@@ -470,6 +488,21 @@ export function CompressionPanel({
   copy,
   onValidatedChange,
 }: CompressionPanelProps) {
+  const { dictionary } = useLocaleState();
+  const pathname = usePathname();
+  const gate = useEntitlementGate("video-compressor");
+  const isBlocked = gate.blocked;
+  // The entitlement gate resolves the actor's real plan (and the Free/Pro comparison
+  // numbers) asynchronously on mount — see useEntitlementGate(). Until that resolves,
+  // MAX_UPLOAD_BYTES (Free/anonymous, 250MB) is the only safe default: it can never
+  // let an anonymous or Free actor through the client-side check early. Once resolved,
+  // a confirmed Pro actor's own limit (500MB) takes over — this must never stay pinned
+  // at the flat constant for a Pro user, or the client blocks files the server would
+  // accept.
+  const resolvedMaxUploadBytes =
+    gate.plan === "pro" && gate.proLimits
+      ? gate.proLimits.maxUploadBytes
+      : (gate.freeLimits?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadDropzoneRef = useRef<HTMLLabelElement>(null);
   const compressionPanelRef = useRef<HTMLDivElement>(null);
@@ -747,6 +780,10 @@ export function CompressionPanel({
   }
 
   function selectFiles(files: FileList | File[]) {
+    if (isBlocked) {
+      return;
+    }
+
     const selectedFile = Array.from(files)[0];
 
     if (uploadReference) {
@@ -779,7 +816,7 @@ export function CompressionPanel({
       return copy.errors.empty;
     }
 
-    if (selectedFile.size > MAX_UPLOAD_BYTES) {
+    if (selectedFile.size > resolvedMaxUploadBytes) {
       return copy.errors.tooLarge;
     }
 
@@ -810,17 +847,17 @@ export function CompressionPanel({
       setValidation({
         status: "invalid",
         message:
-          selectedFile.size > MAX_UPLOAD_BYTES
-            ? formatOversizedFileMessage(copy, selectedFile.size, MAX_UPLOAD_BYTES)
+          selectedFile.size > resolvedMaxUploadBytes
+            ? formatOversizedFileMessage(copy, selectedFile.size, resolvedMaxUploadBytes)
             : clientError,
         code:
-          selectedFile.size > MAX_UPLOAD_BYTES
+          selectedFile.size > resolvedMaxUploadBytes
             ? "file_too_large"
             : selectedFile.size === 0
               ? "empty_file"
               : undefined,
         fileSize:
-          selectedFile.size > MAX_UPLOAD_BYTES ? selectedFile.size : undefined,
+          selectedFile.size > resolvedMaxUploadBytes ? selectedFile.size : undefined,
       });
       return;
     }
@@ -875,7 +912,7 @@ export function CompressionPanel({
           status: "invalid",
           message:
             payload.error.code === "file_too_large"
-              ? formatOversizedFileMessage(copy, selectedFile.size, MAX_UPLOAD_BYTES)
+              ? formatOversizedFileMessage(copy, selectedFile.size, resolvedMaxUploadBytes)
               : getValidationErrorMessage(copy, payload.error),
           code: payload.error.code,
           fileSize:
@@ -963,7 +1000,10 @@ export function CompressionPanel({
       const payload = (await response.json()) as JobResponse;
 
       if (!payload.ok) {
-        const message = getCompressionErrorMessage(copy, payload.error);
+        const message =
+          payload.error.code === "file_too_large" && file
+            ? formatOversizedFileMessage(copy, file.size, resolvedMaxUploadBytes)
+            : getCompressionErrorMessage(copy, payload.error);
 
         if (
           payload.error.code === "missing_reference" ||
@@ -972,6 +1012,13 @@ export function CompressionPanel({
         ) {
           setUploadReference(null);
           setDownloadStarted(false);
+        }
+
+        if (
+          payload.error.code === "usage_limit_reached" ||
+          payload.error.code === "account_required"
+        ) {
+          gate.reportDenial(payload.error.code);
         }
 
         setError(message);
@@ -1075,6 +1122,11 @@ export function CompressionPanel({
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setIsDragging(false);
+
+    if (isBlocked) {
+      return;
+    }
+
     selectFiles(event.dataTransfer.files);
   }
 
@@ -1171,11 +1223,17 @@ export function CompressionPanel({
     !isSourceUnavailable &&
     !isCancelling &&
     !isDeleting &&
-    !isPrecheckBlocked;
+    !isPrecheckBlocked &&
+    !isBlocked;
   const canCancelCompression = isPolling && !isCancelling && !isDeleting;
-  const canDeleteCompression = Boolean(file || job) && !isPolling && !isCancelling && !isDeleting;
+  // Explicitly excluded once the backend has confirmed the daily limit is reached — the
+  // user must upgrade or wait for the reset rather than clearing state to retry the same
+  // day (see useEntitlementGate's comment on this being the informational, not
+  // enforcing, layer — the real limit is still enforced at job-creation time regardless).
+  const canDeleteCompression =
+    Boolean(file || job) && !isPolling && !isCancelling && !isDeleting && !isBlocked;
   const arePresetButtonsDisabled =
-    isSourceUnavailable || isPolling || isCancelling || isDeleting;
+    isSourceUnavailable || isPolling || isCancelling || isDeleting || isBlocked;
   const hasSelectedFileOrJob = Boolean(file || job);
   const shouldShowUploadDropzone = !hasValidatedFile;
   const shouldShowPresets = hasValidatedFile || Boolean(job);
@@ -1218,6 +1276,10 @@ export function CompressionPanel({
   const isCurrentValidationComplete =
     validation.status === "validating" && validation.stage === "complete";
   const shouldShowValidationComplete = validation.status === "valid" && !job;
+  // dropDescription now states both plans' fixed limits directly (never the viewer's
+  // single resolved value) so it needs no interpolation — see .upload-limit-comparison
+  // below for the dynamic, gate-sourced Free/Pro comparison.
+  const dropDescription = copy.dropDescription;
 
   useEffect(() => {
     onValidatedChange?.(hasValidatedFile);
@@ -1242,10 +1304,13 @@ export function CompressionPanel({
             <label
               className={`upload-dropzone${isDragging ? " upload-dropzone--active" : ""}${
                 validation.status === "validating" ? " upload-dropzone--validating" : ""
-              }`}
+              }${isBlocked ? " upload-dropzone--blocked" : ""}`}
+              aria-disabled={isBlocked}
               onDragEnter={(event) => {
                 event.preventDefault();
-                setIsDragging(true);
+                if (!isBlocked) {
+                  setIsDragging(true);
+                }
               }}
               onDragLeave={(event) => {
                 event.preventDefault();
@@ -1259,6 +1324,7 @@ export function CompressionPanel({
               <input
                 accept={acceptedMimeTypes.join(",")}
                 className="upload-dropzone__input"
+                disabled={isBlocked}
                 onChange={(event) => {
                   if (event.target.files) {
                     selectFiles(event.target.files);
@@ -1274,7 +1340,7 @@ export function CompressionPanel({
               <span className="upload-dropzone__description">
                 {validation.status === "validating"
                   ? copy.validationStages[validation.stage]
-                  : copy.dropDescription}
+                  : dropDescription}
               </span>
               {validation.status === "validating" ? (
                 <>
@@ -1290,8 +1356,31 @@ export function CompressionPanel({
                   </span>
                 </>
               ) : null}
-              <span className="button button--primary">{copy.browseLabel}</span>
+              <span
+                className={`button button--primary${isBlocked ? " button--disabled-look" : ""}`}
+              >
+                {copy.browseLabel}
+              </span>
             </label>
+          ) : null}
+
+          {isBlocked && shouldShowUploadDropzone ? (
+            <div className="entitlement-lock-notice" role="status">
+              <p>
+                {gate.reason === "account_required"
+                  ? copy.errors.accountRequired
+                  : copy.errors.usageLimitReached}
+              </p>
+              {gate.reason === "usage_limit_reached" && gate.plan === "free" ? (
+                <button
+                  className="button button--primary"
+                  onClick={gate.openUpgradeModal}
+                  type="button"
+                >
+                  {dictionary.upgradeModal.upgradeButtonLabel}
+                </button>
+              ) : null}
+            </div>
           ) : null}
 
           {validation.status === "valid" ? (
@@ -1418,6 +1507,30 @@ export function CompressionPanel({
           aria-live="polite"
         >
           <h3>{getStatusLabel(copy, validation, job)}</h3>
+          {gate.freeLimits && gate.proLimits ? (
+            <dl className="upload-limit-comparison">
+              <div
+                className={
+                  gate.plan !== "pro"
+                    ? "upload-limit-comparison__row upload-limit-comparison__row--current"
+                    : "upload-limit-comparison__row"
+                }
+              >
+                <dt>{dictionary.upgradeModal.freeTierName}</dt>
+                <dd>{formatBytes(gate.freeLimits.maxUploadBytes)}</dd>
+              </div>
+              <div
+                className={
+                  gate.plan === "pro"
+                    ? "upload-limit-comparison__row upload-limit-comparison__row--current"
+                    : "upload-limit-comparison__row"
+                }
+              >
+                <dt>{dictionary.upgradeModal.proTierName}</dt>
+                <dd>{formatBytes(gate.proLimits.maxUploadBytes)}</dd>
+              </div>
+            </dl>
+          ) : null}
           {validation.status === "validating" ? (
             <div
               className={`compression-status__validation${
@@ -1461,7 +1574,7 @@ export function CompressionPanel({
                   </div>
                   <div>
                     <dt>{copy.maximumAllowedLabel}</dt>
-                    <dd>{formatBytes(MAX_UPLOAD_BYTES)}</dd>
+                    <dd>{formatBytes(resolvedMaxUploadBytes)}</dd>
                   </div>
                 </dl>
               ) : (
@@ -1675,6 +1788,26 @@ export function CompressionPanel({
           ) : null}
         </aside>
       </div>
+
+      {gate.plan === "anonymous" && gate.anonymousLimits && gate.freeLimits && gate.proLimits ? (
+        <PlanComparisonModal
+          anonymousLimits={gate.anonymousLimits}
+          freeLimits={gate.freeLimits}
+          onClose={gate.closeUpgradeModal}
+          open={gate.showUpgradeModal}
+          proLimits={gate.proLimits}
+          returnPath={pathname}
+        />
+      ) : null}
+      {gate.plan === "free" && gate.freeLimits && gate.proLimits ? (
+        <UpgradeModal
+          cancelPath={pathname}
+          freeLimits={gate.freeLimits}
+          onClose={gate.closeUpgradeModal}
+          open={gate.showUpgradeModal}
+          proLimits={gate.proLimits}
+        />
+      ) : null}
     </section>
   );
 }

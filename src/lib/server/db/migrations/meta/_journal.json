@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1784981383417,
+      "tag": "0000_thick_shatterstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784984725739,
+      "tag": "0001_fluffy_vapor",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784996405052,
+      "tag": "0002_orange_human_cannonball",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784996700820,
+      "tag": "0003_open_absorbing_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785010881693,
+      "tag": "0004_numerous_annihilus",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785072068185,
+      "tag": "0005_spicy_roughhouse",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785073057030,
+      "tag": "0006_modern_korg",
+      "breakpoints": true
+    }
+  ]
+}

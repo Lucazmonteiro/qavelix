@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-import { MAX_UPLOAD_REQUEST_BYTES } from "./src/lib/upload-policy";
+import { PRO_MAX_UPLOAD_REQUEST_BYTES } from "./src/lib/server/entitlements/policy";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 const scriptSource = isDevelopment
@@ -85,7 +85,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   experimental: {
-    proxyClientMaxBodySize: MAX_UPLOAD_REQUEST_BYTES,
+    // Sized for the largest plan (Pro), not just the Free/anonymous default — see the
+    // comment on PRO_MAX_UPLOAD_REQUEST_BYTES.
+    proxyClientMaxBodySize: PRO_MAX_UPLOAD_REQUEST_BYTES,
   },
   async headers() {
     return [

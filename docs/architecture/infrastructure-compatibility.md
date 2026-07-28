@@ -2,6 +2,13 @@
 
 Date: 2026-07-24
 
+> **Hosting update (2026-07-26):** see [hosting-decision.md](./hosting-decision.md) —
+> production runs as a single Render instance, not the Vercel/Render split this document
+> issues verdicts against. The per-component verdicts below (e.g., "Next.js compression
+> execution path: incompatible with Vercel serverless") remain technically accurate and
+> are exactly why Render was chosen instead — they just no longer describe a split that's
+> being built.
+
 Scope: whether [platform-architecture.md](./platform-architecture.md)'s recommended design is compatible with the current QAVELIX stack — Next.js, the FFmpeg pipeline, Render, Cloudflare, and the current upload/queue/storage implementations. This document only issues verdicts; it doesn't propose new design (that's the previous document's job).
 
 ## Purpose & method

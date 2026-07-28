@@ -12,6 +12,7 @@ const envSource = await readFile("src/env/server.ts", "utf8");
 const themeScriptSource = await readFile("src/components/theme-script.tsx", "utf8");
 const localeLayoutSource = await readFile("src/app/[locale]/layout.tsx", "utf8");
 const cssSource = await readFile("src/styles/globals.css", "utf8");
+const homepageContentSource = await readFile("src/components/homepage-content.tsx", "utf8");
 
 test("compression panel polling uses a single abortable timeout loop", () => {
   assert.match(source, /window\.setTimeout/);
@@ -84,7 +85,19 @@ test("compression panel derives button states from lifecycle rules", () => {
   );
   assert.match(source, /const isSourceUnavailable =\s*hasValidatedFile && !uploadReference && !isDownloadable && !isPolling/);
   assert.match(source, /const canCancelCompression = isPolling && !isCancelling && !isDeleting/);
-  assert.match(source, /const canDeleteCompression = Boolean\(file \|\| job\) && !isPolling && !isCancelling && !isDeleting/);
+  // Milestone: Stripe/entitlement audit — a backend-confirmed daily limit ("isBlocked",
+  // from useEntitlementGate) additionally excludes both starting a new job and deleting/
+  // clearing the current attempt, so a blocked user can't sidestep the lock by clearing
+  // state and retrying the same day.
+  assert.match(source, /!isPrecheckBlocked &&\s*!isBlocked;/);
+  assert.match(
+    source,
+    /const canDeleteCompression =\s*Boolean\(file \|\| job\) && !isPolling && !isCancelling && !isDeleting && !isBlocked;/,
+  );
+  assert.match(
+    source,
+    /const arePresetButtonsDisabled =\s*isSourceUnavailable \|\| isPolling \|\| isCancelling \|\| isDeleting \|\| isBlocked;/,
+  );
   assert.match(source, /disabled=\{!canStartCompression\}/);
   assert.match(source, /disabled=\{!canCancelCompression\}/);
   assert.match(source, /disabled=\{!canDeleteCompression\}/);
@@ -219,6 +232,18 @@ test("compression panel constrains long filenames during validation and results"
   assert.match(cssSource, /-webkit-line-clamp: 2/);
 });
 
+// Improvement 4 ("make Free 250MB / Pro 500MB clear everywhere"): the status panel must
+// show both plan ceilings side by side, not just the actor's own resolved number —
+// sourced from the same gate.freeLimits/proLimits the upgrade modal already uses.
+test("compression panel shows a Free/Pro upload-limit comparison sourced from the entitlement gate", () => {
+  assert.match(source, /className="upload-limit-comparison"/);
+  assert.match(source, /dictionary\.upgradeModal\.freeTierName/);
+  assert.match(source, /dictionary\.upgradeModal\.proTierName/);
+  assert.match(source, /formatBytes\(gate\.freeLimits\.maxUploadBytes\)/);
+  assert.match(source, /formatBytes\(gate\.proLimits\.maxUploadBytes\)/);
+  assert.match(source, /upload-limit-comparison__row--current/);
+});
+
 test("compression panel presents oversized upload errors with relevant details only", () => {
   assert.match(source, /uploadLimitExceededLabel: string/);
   assert.match(source, /maximumAllowedLabel: string/);
@@ -228,14 +253,14 @@ test("compression panel presents oversized upload errors with relevant details o
   assert.match(source, /validation\.code === "file_too_large"/);
   assert.match(
     source,
-    /formatOversizedFileMessage\(copy, selectedFile\.size, MAX_UPLOAD_BYTES\)/,
+    /formatOversizedFileMessage\(copy, selectedFile\.size, resolvedMaxUploadBytes\)/,
   );
   assert.match(source, /const isOversizedFile =/);
   assert.match(source, /\{isOversizedFile \? \(/);
   assert.match(source, /return copy\.uploadLimitExceededLabel/);
   assert.doesNotMatch(source, /<dt>\{copy\.statusLabel\}<\/dt>\s*<dd>\{copy\.uploadLimitExceededLabel\}<\/dd>/);
   assert.match(source, /<dt>\{copy\.maximumAllowedLabel\}<\/dt>/);
-  assert.match(source, /<dd>\{formatBytes\(MAX_UPLOAD_BYTES\)\}<\/dd>/);
+  assert.match(source, /<dd>\{formatBytes\(resolvedMaxUploadBytes\)\}<\/dd>/);
   assert.match(dictionarySource, /uploadLimitExceededLabel: "Upload limit exceeded"/);
   assert.match(dictionarySource, /uploadLimitExceededLabel: "Limite de upload excedido"/);
   assert.match(dictionarySource, /uploadLimitExceededLabel: "Límite de carga excedido"/);
@@ -245,6 +270,25 @@ test("compression panel presents oversized upload errors with relevant details o
     dictionarySource,
     /El archivo seleccionado tiene un tamaño de \{fileSize\}/,
   );
+});
+
+// Regression coverage for the upload-limit audit's critical finding: the client-side
+// pre-check used to hardcode the flat 250MB MAX_UPLOAD_BYTES constant, which silently
+// blocked a confirmed Pro actor from ever selecting a 250-500MB file in the browser even
+// though the backend correctly allowed it. resolvedMaxUploadBytes must be derived from
+// the entitlement gate's own resolved plan/limits, and MAX_UPLOAD_BYTES may only remain
+// as the safe pre-resolution fallback (anonymous/Free's real ceiling anyway), never as
+// the value actually enforced once a Pro actor's plan is known.
+test("compression panel's client-side size check resolves the actor's real plan limit instead of a flat constant", () => {
+  assert.match(
+    source,
+    /const resolvedMaxUploadBytes =\s*\n\s*gate\.plan === "pro" && gate\.proLimits\s*\n\s*\? gate\.proLimits\.maxUploadBytes\s*\n\s*: \(gate\.freeLimits\?\.maxUploadBytes \?\? MAX_UPLOAD_BYTES\);/,
+  );
+  assert.match(source, /selectedFile\.size > resolvedMaxUploadBytes/);
+  // MAX_UPLOAD_BYTES must survive only as the loading-state fallback inside the
+  // resolution expression above — never as the size actually compared against a
+  // selected file once the gate has resolved.
+  assert.doesNotMatch(source, /selectedFile\.size > MAX_UPLOAD_BYTES/);
 });
 
 test("compression panel removes the upload dropzone after successful validation", () => {
@@ -348,13 +392,13 @@ test("compression panel presents prominent preset decision cards after validatio
 
 test("homepage compressor stays high enough for immediate result review", () => {
   assert.match(cssSource, /\.hero-section--tool/);
-  assert.match(cssSource, /gap: clamp\(0\.7rem, 1\.4vw, 1\.1rem\)/);
+  assert.match(cssSource, /gap: clamp\(0\.45rem, 1vw, 0\.8rem\)/);
   assert.match(
     cssSource,
-    /padding-block: clamp\(0\.25rem, 0\.9vw, 0\.65rem\) clamp\(3rem, 6vw, 5rem\)/,
+    /padding-block: clamp\(0\.1rem, 0\.45vw, 0\.35rem\) clamp\(3rem, 6vw, 5rem\)/,
   );
   assert.match(cssSource, /\.homepage-tool \.upload-dropzone/);
-  assert.match(cssSource, /min-height: clamp\(16rem, 31vw, 23rem\)/);
+  assert.match(cssSource, /min-height: clamp\(15rem, 27vw, 20rem\)/);
 });
 
 test("working states reposition the entire workspace without changing the landing layout", () => {
@@ -382,6 +426,19 @@ test("theme bootstrap uses Next Script instead of a raw rendered script tag", ()
   assert.match(themeScriptSource, /getStoredTheme\(\) \?\? "dark"/);
 });
 
+test("legacy \"system\" (or any invalid) stored theme value is normalized to a concrete light/dark value, never kept active", () => {
+  assert.match(
+    themeScriptSource,
+    /function resolveSystemPreference\(\) \{/,
+  );
+  assert.match(themeScriptSource, /window\.matchMedia\("\(prefers-color-scheme: dark\)"\)\.matches \? "dark" : "light"/);
+  assert.match(themeScriptSource, /if \(isTheme\(storedTheme\)\) \{\s*\n\s*return storedTheme;\s*\n\s*\}/);
+  assert.match(
+    themeScriptSource,
+    /const resolved = resolveSystemPreference\(\);\s*\n\s*persistTheme\(resolved\);\s*\n\s*return resolved;/,
+  );
+});
+
 test("compression panel scrolls settled validation results into reading position", () => {
   assert.match(source, /function scrollCompressionPanelIntoView/);
   assert.ok(source.includes('document.querySelector<HTMLElement>(".site-header")'));
@@ -395,7 +452,9 @@ test("compression panel scrolls settled validation results into reading position
 });
 
 test("footer keeps only useful content and legal links", () => {
-  assert.match(headerSource, /dictionary\.navigation\.compressVideo/);
+  assert.match(headerSource, /dictionary\.navigation\.tools/);
+  assert.match(headerSource, /dictionary\.navigation\.videoCompressorTool/);
+  assert.match(headerSource, /dictionary\.navigation\.extractAudioTool/);
   assert.match(headerSource, /dictionary\.pages\.about\.label/);
   assert.match(headerSource, /dictionary\.pages\.faq\.label/);
   assert.match(headerSource, /dictionary\.pages\.contact\.label/);
@@ -416,17 +475,20 @@ test("footer keeps only useful content and legal links", () => {
 });
 
 test("public pages expose release-ready SEO and deterministic compressor return links", () => {
-  assert.match(contentPageSource, /className="content-page__back-link"/);
-  assert.match(contentPageSource, /dictionary\.navigation\.backToCompressor/);
-  assert.match(contentPageSource, /href=\{`\/\$\{validLocale\}`\}/);
+  // The compressor return link is shell-owned (see NavigationControls in
+  // navigation-controls-source.test.mjs), not a per-page element, so content pages
+  // must not render their own copy of it.
+  assert.doesNotMatch(contentPageSource, /content-page__back-link/);
   assert.match(contentPageSource, /siteConfig\.supportEmail/);
   assert.match(contentPageSource, /mailto:\$\{siteConfig\.supportEmail\}/);
   assert.match(dictionarySource, /Last updated/);
   assert.match(dictionarySource, /Última atualização/);
   assert.match(envSource, /NEXT_PUBLIC_SUPPORT_EMAIL/);
-  assert.doesNotMatch(dictionarySource, /placeholder/i);
+  // Excludes "xPlaceholder" dictionary keys (form-field placeholder copy, e.g.
+  // namePlaceholder) and the "placeholder: {" group key — only flags the word used as
+  // literal rendered prose, which is the actual stale-content risk this guards against.
+  assert.doesNotMatch(dictionarySource, /(?<![A-Za-z])placeholder(?!\s*:)/i);
   assert.doesNotMatch(dictionarySource, /Phase 7/i);
-  assert.match(cssSource, /\.content-page__back-link/);
 });
 
 test("compression result hierarchy has clearer titles and warning spacing", () => {
@@ -498,7 +560,10 @@ test("pre-check blocks starting a compression predicted to increase file size", 
     source,
     /const precheckRecommendedPresetIds = getRecommendedPresetIds\(preset\)\.filter\(\(id\) =>\s*precheckSafePresetIds\.includes\(id\),\s*\);/,
   );
-  assert.match(source, /!isPrecheckBlocked;/);
+  // Milestone: Stripe/entitlement audit appended "&& !isBlocked" after this clause (the
+  // backend-confirmed daily-limit lock), so the precheck condition itself is no longer
+  // the last clause before the semicolon — see the entitlement-lock assertions above.
+  assert.match(source, /!isPrecheckBlocked &&\s*!isBlocked;/);
   assert.match(
     source,
     /if \(isPrecheckBlocked\) \{\s*setError\(copy\.errors\.predictedIncrease\);\s*return;\s*\}/,
@@ -534,4 +599,80 @@ test("compression panel fully resets after delete and allows same file reselecti
   assert.match(source, /behavior: prefersReducedMotion \? "auto" : "smooth"/);
   assert.match(source, /uploadDropzoneRef\.current\?\.focus\(\{ preventScroll: true \}\)/);
   assert.match(source, /resetToInitialState\(\)/);
+});
+
+// Upload-limit info block: states both plans' fixed limits directly instead of only the
+// viewer's own resolved number, so it needs no {maxSize} interpolation any more — the
+// dynamic, gate-sourced Free/Pro comparison is a separate element (.upload-limit-comparison).
+test("compression panel's upload-limit info states both Free and Pro limits, not just the viewer's resolved plan", () => {
+  assert.match(source, /const dropDescription = copy\.dropDescription;/);
+  assert.doesNotMatch(source, /dropDescription\.replace\(\s*\n\s*"\{maxSize\}"/);
+
+  const dropDescriptionMatch = dictionarySource.match(
+    /dropDescription:\s*\n\s*"Accepted formats: MP4, MOV, AVI, WebM, M4V, MPEG and MPG\.\\nFree plan: 100 KB to 250 MB per file\.\\nPro plan: 100 KB to 500 MB per file\./,
+  );
+  assert.ok(dropDescriptionMatch, "compression.dropDescription should state both plan limits");
+  assert.doesNotMatch(dictionarySource, /Size allowed: 100 KB to \{maxSize\} per video/);
+});
+
+// Improvement 2: the homepage's "Maximum size" stat card must show both Free and Pro
+// numbers (never a single, now-inaccurate "250 MB" universal ceiling), while the other
+// two stat cards (Supported formats, Compression presets) keep their original generic
+// value/label rendering unchanged.
+test("homepage max-size stat card shows both Free and Pro upload ceilings, replacing the old single-number card", () => {
+  assert.match(homepageContentSource, /stat-grid__item--max-size/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.label/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.freeLabel/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.freeValue/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.proLabel/);
+  assert.match(homepageContentSource, /dictionary\.home\.maxSizeCard\.proValue/);
+  // Still rendered as a sibling inside the same <dl className="stat-grid">, and the
+  // remaining two generic stats (formats, presets) still map over dictionary.home.stats.
+  assert.match(homepageContentSource, /dictionary\.home\.stats\.map/);
+
+  assert.doesNotMatch(dictionarySource, /\{ value: "250 MB", label: "Maximum file size" \}/);
+  const maxSizeCardMatches = dictionarySource.match(/maxSizeCard: \{\s*\n\s*label: "/g) ?? [];
+  assert.equal(maxSizeCardMatches.length, 3, "maxSizeCard content defined for en/pt-BR/es");
+});
+
+test("stat-grid CSS keeps the max-size card the same height as its siblings via the shared grid row, not a fixed height hack", () => {
+  assert.match(cssSource, /\.stat-grid__item--max-size \{/);
+  assert.doesNotMatch(cssSource, /\.stat-grid__item--max-size \{[^}]*height:/);
+});
+
+// Regression coverage: a reported "the compressor no longer accepts files" bug traced to
+// the shared anonymous entitlement pool being exhausted in local testing, not a code
+// defect — but the file-input wiring itself must stay verifiably intact so a real future
+// regression here (e.g. an accidentally-dropped onChange/onDrop handler, or `disabled`
+// wired to the wrong condition) fails a test instead of only surfacing as a live bug report.
+test("file-picker and drag-and-drop selection remain wired to selectFiles(), gated only by isBlocked", () => {
+  assert.match(source, /const isBlocked = gate\.blocked;/);
+  assert.match(source, /onDrop=\{handleDrop\}/);
+  assert.match(
+    source,
+    /onChange=\{\(event\) => \{\s*\n\s*if \(event\.target\.files\) \{\s*\n\s*selectFiles\(event\.target\.files\);/,
+  );
+  assert.match(source, /disabled=\{isBlocked\}/);
+  assert.match(source, /function selectFiles\(files: FileList \| File\[\]\) \{\s*\n\s*if \(isBlocked\) \{\s*\n\s*return;/);
+  // handleDrop must itself route through selectFiles rather than duplicating validation.
+  assert.match(source, /function handleDrop\(event: DragEvent<HTMLLabelElement>\) \{/);
+  assert.match(source, /selectFiles\(event\.dataTransfer\.files\)/);
+});
+
+// The new PlanComparisonModal/UpgradeModal selection must never render with partially
+// undefined limits (which would be a render-time crash risk taking the whole panel down,
+// looking exactly like "the tool stopped working").
+test("upload-limit UI and both modals only render once every limit field they read is defined", () => {
+  assert.match(
+    source,
+    /\{gate\.freeLimits && gate\.proLimits \? \(\s*\n\s*<dl className="upload-limit-comparison">/,
+  );
+  assert.match(
+    source,
+    /\{gate\.plan === "anonymous" && gate\.anonymousLimits && gate\.freeLimits && gate\.proLimits \? \(\s*\n\s*<PlanComparisonModal/,
+  );
+  assert.match(
+    source,
+    /\{gate\.plan === "free" && gate\.freeLimits && gate\.proLimits \? \(\s*\n\s*<UpgradeModal/,
+  );
 });

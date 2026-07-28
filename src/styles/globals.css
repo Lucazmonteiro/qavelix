@@ -111,6 +111,28 @@ textarea {
   color: var(--accent-foreground);
 }
 
+/* Cursor behavior: browsers default hovering directly over selectable text glyphs to the
+   text-selection (I-beam) cursor, even for headings, labels, and status text that aren't
+   editable — which reads as "this looks like an input" in application chrome. This only
+   forces the arrow cursor back for non-editable UI text/labels; it never touches
+   `user-select`, so legitimate text selection (including in article/legal/help content,
+   which is deliberately left alone here) keeps working exactly as before — only the cursor
+   icon changes, not what's selectable. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.eyebrow,
+.dashboard-status,
+.dashboard-summary-row dt,
+.dashboard-summary-row dd,
+.auth-field label,
+.brand__text {
+  cursor: default;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -166,8 +188,19 @@ textarea {
   padding-block: 0.55rem;
 }
 
-.brand {
+/* Wraps the brand link and the (conditionally rendered) PRO badge so the badge can sit
+   beside the brand without breaking site-header__inner's 3-area grid — .brand itself no
+   longer needs its own grid-area now that this wrapper carries it. */
+.brand-group {
   grid-area: brand;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.brand {
   display: inline-flex;
   align-items: center;
   gap: 0.7rem;
@@ -175,6 +208,55 @@ textarea {
   max-width: 100%;
   min-width: 0;
   font-weight: 800;
+}
+
+/* Only rendered (see pro-badge.tsx) once a confirmed Pro entitlement is resolved
+   server-side — the base pill is always solid, legible, and static; the shimmer is a
+   purely decorative overlay confined to prefers-reduced-motion: no-preference, so
+   reduced-motion users see the exact same badge with zero animation. */
+.pro-badge {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-foreground);
+  background: var(--accent);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pro-badge::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, white 65%, transparent) 50%,
+      transparent 70%
+    );
+    transform: translateX(-120%);
+    animation: pro-badge-shimmer 5s ease-in-out infinite;
+  }
+
+  @keyframes pro-badge-shimmer {
+    0%,
+    65% {
+      transform: translateX(-120%);
+    }
+
+    85%,
+    100% {
+      transform: translateX(120%);
+    }
+  }
 }
 
 .brand__mark {
@@ -329,6 +411,22 @@ textarea {
   transform: translateY(-1px);
 }
 
+/* AccountMenu's sign-out item is a <button>, not an <a> like the tools-menu items —
+   reset native button chrome so it renders identically to the anchor-based items. */
+button.tools-menu__item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.tools-menu__item:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .tools-menu__icon {
   display: grid;
   width: 2rem;
@@ -345,6 +443,34 @@ textarea {
   justify-content: flex-end;
   gap: 0.55rem;
   min-width: 0;
+}
+
+/* Logged-out header CTAs: registration is the primary action, sign-in stays a secondary
+   action beside it. It keeps primary-nav__link's sizing/typography so it doesn't
+   introduce a second, differently-scaled button style into the header, but adds a visible
+   border (guest-nav-actions__signin) so it reads as an identifiable control rather than a
+   plain text link that can wash out against the page background in either theme — without
+   the fully-filled .button--secondary treatment, which would compete too directly with the
+   adjacent primary "Sign up" button. */
+.guest-nav-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.guest-nav-actions__signin {
+  border: 1px solid var(--border-strong);
+}
+
+.guest-nav-actions__signin:hover {
+  border-color: var(--accent);
+}
+
+.guest-nav-actions__signup {
+  min-height: 2.35rem;
+  padding-inline: 0.9rem;
+  font-size: 0.92rem;
 }
 
 .language-selector,
@@ -392,6 +518,19 @@ textarea {
 .theme-toggle__button[aria-pressed="true"] {
   background: var(--foreground);
   color: var(--background);
+}
+
+/* Settings-page reuse of the same ThemeToggle component (data-theme-option mechanism
+   unchanged) — a roomier variant matched to a settings-form row instead of the compact
+   header slot. */
+.theme-toggle--expanded {
+  padding: 0.3rem;
+}
+
+.theme-toggle--expanded .theme-toggle__button {
+  min-height: 2.5rem;
+  padding-inline: 1.1rem;
+  font-weight: 700;
 }
 
 .navigation-controls {
@@ -653,6 +792,54 @@ textarea {
   opacity: 0.94;
 }
 
+/* Compact Free/Pro upload-size comparison shown in each tool's status panel — never a
+   fetch of its own, always driven by useEntitlementGate()'s already-resolved
+   freeLimits/proLimits so it can never drift from what the backend actually enforces.
+   The current actor's own tier is highlighted; the other tier stays visible but muted, so
+   a Free/anonymous visitor understands the 250MB ceiling without being misled about
+   Pro's 500MB, and a Pro user sees their own 500MB is what's actually active. */
+.upload-limit-comparison {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.upload-limit-comparison__row {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+}
+
+.upload-limit-comparison__row dt {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.upload-limit-comparison__row dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.upload-limit-comparison__row--current {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.upload-limit-comparison__row--current dt {
+  color: var(--accent);
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -678,6 +865,48 @@ textarea {
   margin: 0.3rem 0 0;
   font-size: 1.7rem;
   font-weight: 900;
+}
+
+/* "Maximum size" stat card — the other two .stat-grid__item cards show one big number;
+   this one has to hold two (Free/Pro), so it uses a compact two-row layout instead of
+   the shared dd font-size. CSS Grid stretches every item in the row to match the
+   tallest sibling by default, so this stays the same height as its neighbors without
+   any extra rule. */
+.stat-grid__item--max-size {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-grid__max-size-rows {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.55rem 0 0;
+}
+
+.stat-grid__max-size-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.stat-grid__max-size-plan {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.stat-grid__max-size-value {
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.stat-grid__max-size-row--pro .stat-grid__max-size-plan,
+.stat-grid__max-size-row--pro .stat-grid__max-size-value {
+  color: var(--accent);
 }
 
 .product-preview {
@@ -811,6 +1040,13 @@ textarea {
 .foundation-card p {
   margin: 0.8rem 0 0;
   font-size: 0.95rem;
+}
+
+.foundation-card__icon {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .upload-section {
@@ -1811,6 +2047,566 @@ textarea {
   font-size: 0.9rem;
 }
 
+/* Authentication (Milestone 2) — no new design tokens, no new component patterns.
+   Text-input styling didn't exist anywhere in the app before this; everything below is
+   built from the same custom-property tokens (--surface, --border, --accent, ...) and
+   the same .button classes every other page already uses. */
+
+.auth-page {
+  display: grid;
+  place-items: center;
+  padding-block: clamp(3rem, 8vw, 6rem);
+}
+
+.auth-form-shell {
+  width: min(100%, 26rem);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--strong-shadow);
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.auth-form-shell__header {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.auth-form-shell__header h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 1.85rem);
+  line-height: 1.15;
+}
+
+.auth-form-shell__header p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.auth-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.auth-field label {
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.auth-field input {
+  width: 100%;
+  min-height: 2.85rem;
+  /* --border-strong (not --border) and --surface-muted (not --background-elevated,
+     identical to the card's own background in light mode) — the original pairing gave
+     the field zero background contrast against its own card, leaving only a faint
+     low-contrast border to indicate it was editable at all. */
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--foreground);
+  font: inherit;
+  padding-inline: 0.85rem;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.auth-field input:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.auth-field input::placeholder {
+  color: var(--muted);
+}
+
+.auth-field input:focus-visible {
+  background: var(--background-elevated);
+  border-color: var(--focus);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent);
+}
+
+.auth-field input[aria-invalid="true"] {
+  border-color: var(--warning);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--warning) 40%, transparent);
+}
+
+.auth-field input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.auth-field select {
+  width: 100%;
+  min-height: 2.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--foreground);
+  font: inherit;
+  padding-inline: 0.85rem;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.auth-field select:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.auth-field select:focus-visible {
+  background: var(--background-elevated);
+  border-color: var(--focus);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent);
+}
+
+.auth-field select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.auth-field__error {
+  margin: 0;
+  color: var(--warning);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.auth-form__submit {
+  width: 100%;
+}
+
+.auth-form__footer {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.auth-form__footer a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.auth-form__footer a:hover {
+  text-decoration: underline;
+}
+
+/* Same visual language as .compression-status__error/__success — a shared, generically
+   named alias rather than reusing the compression-specific class name on an unrelated
+   form. */
+.form-status__error,
+.compression-status__error {
+  border-radius: 8px;
+  color: var(--foreground);
+  font-weight: 700;
+  line-height: 1.55;
+  padding: 0.9rem;
+  background: var(--warning-soft);
+}
+
+.form-status__success,
+.compression-status__success {
+  border-radius: 8px;
+  color: var(--foreground);
+  font-weight: 700;
+  line-height: 1.55;
+  padding: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--success) 45%, var(--border));
+  background: var(--success-soft);
+}
+
+/* Account menu reuses .tools-menu/.tools-menu__button/.tools-menu__panel/
+   .tools-menu__item verbatim (src/components/app-header.tsx's existing dropdown) — same
+   markup shape, same interaction behavior, so no dropdown CSS is duplicated here. Only
+   the one row those panels don't already have. */
+.account-menu__identity {
+  margin: 0 0 0.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.6rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.account-menu__identity strong {
+  display: block;
+  color: var(--foreground);
+  font-size: 0.92rem;
+}
+
+/* Dashboard (Milestone 3) — the cards below deliberately reuse .foundation-card
+   (border/radius/background/shadow already defined for it) rather than a new card
+   class; only the dashboard-specific layout/nav/status pieces are new here. */
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  padding-block: clamp(2rem, 5vw, 3.5rem);
+}
+
+.dashboard-nav {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  position: sticky;
+  top: 5.5rem;
+}
+
+.dashboard-nav__link {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+  border-radius: 8px;
+  padding-inline: 0.9rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.dashboard-nav__link:hover {
+  color: var(--foreground);
+  background: var(--surface-muted);
+}
+
+.dashboard-nav__link[aria-current="page"] {
+  color: var(--accent-foreground);
+  background: var(--accent);
+}
+
+.dashboard-content {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2rem);
+  min-width: 0;
+}
+
+.dashboard-header {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  line-height: 1.15;
+}
+
+.dashboard-header p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.dashboard-card__title {
+  margin: 0 0 0.9rem;
+  font-size: 1.05rem;
+}
+
+/* Settings page (src/app/[locale]/dashboard/settings/page.tsx) — reuses .auth-field for
+   individual inputs and .form-status__error/__success for feedback; these are just the
+   form-level layout and the plain descriptive notes under each section heading. */
+.settings-form {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.settings-form__note {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.settings-language-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-language-list__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding-inline: 1rem;
+  color: var(--foreground);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.settings-language-list__link:hover {
+  border-color: var(--accent);
+}
+
+.settings-language-list__link[aria-current="page"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Support QAVELIX page (src/app/[locale]/support/page.tsx) — reuses .content-page__hero
+   (already the toned-down institutional-page hero used by About/FAQ/Contact) instead of
+   the large homepage .hero-section, plus .content-page__section and .card-grid for the
+   story/help sections, so this page shares the same visual language as every other
+   content page rather than introducing a parallel layout system. */
+.support-hero__mark {
+  display: inline-block;
+  margin-right: 0.4rem;
+  color: var(--accent);
+  font-size: 0.75em;
+  vertical-align: middle;
+}
+
+.support-helps-grid {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  margin-top: 1.25rem;
+}
+
+.support-notice {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 52rem;
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface));
+  padding: clamp(1.1rem, 3vw, 1.5rem);
+}
+
+.support-notice__title {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.support-notice ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.support-form-card {
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.support-closing {
+  max-width: 52rem;
+  margin: clamp(2.5rem, 6vw, 4rem) auto 0;
+  border-top: 1px solid var(--border);
+  padding-top: clamp(1.5rem, 4vw, 2rem);
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* Support QAVELIX contribution form (src/components/support-checkout-form.tsx). */
+.support-form {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.support-form__amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.support-form__amount-button {
+  min-height: 2.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--foreground);
+  font-weight: 700;
+  padding-inline: 1.1rem;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.support-form__amount-button:hover {
+  border-color: var(--accent);
+}
+
+.support-form__amount-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--foreground);
+}
+
+.dashboard-summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-summary-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dashboard-summary-row dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.dashboard-summary-row dd {
+  margin: 0;
+  color: var(--foreground);
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.dashboard-status--positive {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.dashboard-status--neutral {
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+/* Same warning visual language already used for form/compression alerts
+   (.form-status__error, --warning/--warning-soft) — a "limit reached" state is a warning,
+   not a neutral fact, and should not share the same muted-gray treatment as an informational
+   badge. Both tokens are tuned per theme (see :root/:root[data-theme="dark"]) so contrast
+   holds in light and dark mode. */
+.dashboard-status--warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+/* Same warning visual language as .dashboard-status--warning/.form-status__error, just in
+   a full-width banner shape for the Plan/Billing pages' "verify your email" notice. */
+.dashboard-verification-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: var(--warning-soft);
+  padding: 0.9rem 1rem;
+}
+
+.dashboard-verification-banner p {
+  margin: 0;
+  color: var(--foreground);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.dashboard-verification-banner a {
+  color: var(--warning);
+  font-weight: 800;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.dashboard-tool-card {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.dashboard-tool-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.dashboard-placeholder {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}
+
+.dashboard-placeholder__badge {
+  display: inline-flex;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.6rem;
+  text-transform: uppercase;
+}
+
+.dashboard-placeholder p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.dashboard-loading {
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  padding-block: clamp(3rem, 8vw, 6rem);
+  color: var(--muted);
+}
+
+.dashboard-error {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+  padding-block: clamp(2rem, 5vw, 3rem);
+}
+
 @media (max-width: 980px) {
   .site-header__inner {
     grid-template-areas:
@@ -1868,6 +2664,18 @@ textarea {
 
   .site-footer__links {
     justify-content: flex-start;
+  }
+
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-nav {
+    position: static;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
   }
 }
 
@@ -1992,4 +2800,283 @@ textarea {
     opacity: 0.64;
     transform: translate3d(54%, 0, 0);
   }
+}
+
+/* Stripe/entitlement audit: subscription-entitlement UX (upgrade modal, Pro welcome
+   experience, activation status, entitlement-locked tool controls, Free/Pro plan
+   comparison). Reuses existing tokens/classes (.button, .foundation-card,
+   .dashboard-status, .form-status__error) throughout rather than inventing a parallel
+   visual language. */
+
+/* Shared modal primitive (src/components/modal.tsx) — the one place backdrop, dialog
+   surface, and close-button styling live, so the upgrade-offer modal and the Pro welcome
+   experience look and behave identically. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgb(21 21 21 / 0.55);
+  padding: 1rem;
+}
+
+.modal-dialog {
+  position: relative;
+  width: min(100%, 32rem);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--strong-shadow);
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.modal-dialog__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--foreground);
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.modal-dialog__close:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.modal-dialog h2 {
+  margin: 0 0 0.75rem;
+  padding-right: 2.5rem;
+}
+
+.modal-dialog p {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Upgrade-offer modal (src/components/upgrade-modal.tsx). */
+.upgrade-modal__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin-block: 1rem;
+}
+
+.upgrade-modal__tier {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem;
+}
+
+.upgrade-modal__tier--pro {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.upgrade-modal__tier-name {
+  margin: 0 0 0.5rem;
+  color: var(--foreground);
+  font-weight: 800;
+}
+
+.upgrade-modal__tier ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.upgrade-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+/* Plan-comparison modal (src/components/plan-comparison-modal.tsx) — a three-tier
+   variant of .upgrade-modal, shown to anonymous visitors instead of the two-tier
+   Free/Pro upgrade-modal shown to signed-in Free actors. Slightly wider than the base
+   modal, and its comparison grid uses a smaller minmax so three tiers can sit side by
+   side on typical desktop widths while still wrapping gracefully on narrow viewports. */
+.plan-comparison-modal {
+  width: min(100%, 40rem);
+}
+
+.plan-comparison-modal__comparison {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+/* Pro welcome experience (src/components/dashboard/pro-welcome-modal.tsx). */
+.pro-welcome-modal__benefits {
+  border-radius: 8px;
+  background: var(--surface-muted);
+  margin-block: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.pro-welcome-modal__benefits-title {
+  margin: 0 0 0.5rem;
+  color: var(--foreground);
+  font-weight: 800;
+}
+
+.pro-welcome-modal__benefits ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Activation-pending state (src/components/dashboard/subscription-activation-status.tsx)
+   — shown on /dashboard/plan?checkout=success while getPlan() hasn't resolved to "pro"
+   yet, never a false success message. */
+.subscription-activation-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.subscription-activation-status__title {
+  margin: 0 0 0.3rem;
+  color: var(--foreground);
+  font-weight: 800;
+}
+
+.subscription-activation-status p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Entitlement-locked tool controls (CompressionPanel, ExtractAudioTool) — shown once the
+   backend has confirmed the daily limit is reached; reuses the warning visual language,
+   never a fabricated third alert style. */
+.entitlement-lock-notice {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+  border-radius: 8px;
+  background: var(--warning-soft);
+  margin-top: 0.75rem;
+  padding: 0.9rem;
+}
+
+.entitlement-lock-notice p {
+  margin: 0;
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.upload-dropzone--blocked {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.upload-dropzone--blocked:hover {
+  border-color: var(--border-strong);
+  transform: none;
+}
+
+/* A decorative <span> styled to look like a button inside the dropzone <label> — it can
+   never itself be disabled (it isn't a real control), so this only mirrors .button's own
+   :disabled treatment visually. */
+.button--disabled-look {
+  cursor: not-allowed;
+  filter: none;
+  opacity: 0.46;
+}
+
+/* Free/Pro plan comparison (dashboard/plan/page.tsx). */
+.plan-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.plan-comparison__tier {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
+  padding: 1.25rem;
+}
+
+.plan-comparison__tier--current {
+  border-color: var(--success);
+}
+
+.plan-comparison__tier--pro {
+  border-color: var(--accent);
+}
+
+.plan-comparison__tier--pro.plan-comparison__tier--current {
+  border-color: var(--success);
+}
+
+.plan-comparison__tier-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.plan-comparison__tier-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.plan-comparison__price {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.plan-comparison__features {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-comparison__features li {
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+}
+
+.plan-comparison__features li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.plan-comparison__features p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.plan-comparison__tool-name {
+  color: var(--foreground);
+  font-weight: 800;
 }

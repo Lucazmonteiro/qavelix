@@ -5,6 +5,8 @@ import { mkdir, open, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
+import { getAnonymousLimits, getToolLimits } from "@/lib/server/entitlements/policy";
+import { resolveActor } from "@/lib/server/entitlements/service";
 import {
   analyzeAudibleAudio,
   ExtractAudioError,
@@ -16,11 +18,7 @@ import {
   securityJson,
 } from "@/lib/server/security";
 import { validateFileIdentity } from "@/lib/server/upload-validation";
-import {
-  MAX_UPLOAD_BYTES,
-  MIN_UPLOAD_BYTES,
-  type UploadValidationError,
-} from "@/lib/upload-policy";
+import { MIN_UPLOAD_BYTES, type UploadValidationError } from "@/lib/upload-policy";
 
 export const runtime = "nodejs";
 
@@ -106,7 +104,7 @@ function mapValidationResult(code: UploadValidationError["code"]) {
   }
 }
 
-function getUploadMetadata(request: Request) {
+function getUploadMetadata(request: Request, maxUploadBytes: number) {
   const rawFileName = request.headers.get(fileNameHeader);
   const fileType = request.headers.get(fileTypeHeader)?.trim() ?? "";
   const declaredSize = parseDeclaredSize(request.headers.get(fileSizeHeader));
@@ -168,7 +166,7 @@ function getUploadMetadata(request: Request) {
     );
   }
 
-  if (declaredSize > MAX_UPLOAD_BYTES) {
+  if (declaredSize > maxUploadBytes) {
     throw new ExtractAudioAnalysisRouteError(
       "extract_audio_analysis_declared_size_rejected",
       {
@@ -205,6 +203,7 @@ async function streamRequestBodyToDisk(
   request: Request,
   filePath: string,
   declaredSize: number,
+  maxUploadBytes: number,
 ) {
   if (!request.body) {
     throw new ExtractAudioAnalysisRouteError(
@@ -262,7 +261,7 @@ async function streamRequestBodyToDisk(
 
       receivedBytes += value.byteLength;
 
-      if (receivedBytes > MAX_UPLOAD_BYTES) {
+      if (receivedBytes > maxUploadBytes) {
         throw new ExtractAudioAnalysisRouteError(
           "extract_audio_analysis_real_size_rejected",
           {
@@ -312,7 +311,7 @@ async function streamRequestBodyToDisk(
 }
 
 export async function POST(request: Request) {
-  const security = enforceApiSecurity(request, {
+  const security = await enforceApiSecurity(request, {
     route: "extract-audio.analyze",
     limit: 8,
     windowMs: 60_000,
@@ -326,13 +325,17 @@ export async function POST(request: Request) {
   let workDirectory: string | null = null;
 
   try {
-    const metadata = getUploadMetadata(request);
+    const actor = await resolveActor(request);
+    const limits =
+      actor.type === "anonymous" ? getAnonymousLimits() : getToolLimits(actor.plan, "extract-audio");
+
+    const metadata = getUploadMetadata(request, limits.maxUploadBytes);
     const identity = {
       name: metadata.fileName,
       size: metadata.declaredSize,
       type: metadata.fileType,
     };
-    const earlyValidationError = validateFileIdentity(identity, new Uint8Array());
+    const earlyValidationError = validateFileIdentity(identity, new Uint8Array(), limits.maxUploadBytes);
 
     if (
       earlyValidationError &&
@@ -349,10 +352,10 @@ export async function POST(request: Request) {
     await mkdir(workDirectory, { recursive: true });
 
     const inputPath = path.join(workDirectory, `input${metadata.extension}`);
-    await streamRequestBodyToDisk(request, inputPath, metadata.declaredSize);
+    await streamRequestBodyToDisk(request, inputPath, metadata.declaredSize, limits.maxUploadBytes);
 
     const signaturePrefix = await readSignaturePrefix(inputPath);
-    const validationError = validateFileIdentity(identity, signaturePrefix);
+    const validationError = validateFileIdentity(identity, signaturePrefix, limits.maxUploadBytes);
 
     if (validationError) {
       return resultResponse(

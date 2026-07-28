@@ -7,6 +7,18 @@ const PUBLIC_FILE = /\.(.*)$/;
 const PRODUCTION_HOST = "qavelix.com";
 const RENDER_HOST = "qavelix.onrender.com";
 
+// Guest-only redirects for sign-in/sign-up/forgot-password are handled entirely by
+// getOptionalSession() (src/lib/server/auth/session.ts) on each of those 3 pages, not
+// here. An earlier version of this file added a cheap cookie-*presence* check at this
+// layer as a "fast path" — but presence isn't validity: a session revoked from another
+// device/tab (or any other client/server desync) leaves the cookie physically present
+// while the server-side session is gone. Because that check ran before the accurate
+// page-level one, it could permanently redirect a visitor with a stale cookie away from
+// all 3 guest-only pages — a dead end with no in-app recovery, since there'd be no way
+// back to sign-in. Removed rather than patched: getOptionalSession() is already correct,
+// already server-side (so there's no client-visible flash either way), and is the only
+// check that actually needs to exist.
+
 export function proxy(request: NextRequest) {
   const host =
     request.headers.get("x-forwarded-host") ??

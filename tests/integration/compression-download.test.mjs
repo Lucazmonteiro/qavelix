@@ -11,14 +11,19 @@ import { promisify } from "node:util";
 import { assertStatus, withNextServer } from "../helpers/next-server.mjs";
 
 const execFileAsync = promisify(execFile);
-let requestFingerprintCounter = 80;
+// Randomized per process run so repeated local runs against the same persistent dev
+// database don't replay the same synthetic IP sequence — see the matching comment in
+// tests/integration/http.test.mjs for why a fixed starting value caused accumulating
+// anonymous-quota exhaustion (401 account_required) across reruns.
+const fingerprintRunSeed = Math.floor(Math.random() * 254) + 1;
+let requestFingerprintCounter = 0;
 
 function compressionRequestHeaders(baseUrl) {
   requestFingerprintCounter += 1;
 
   return {
     Origin: baseUrl,
-    "X-Forwarded-For": `203.0.113.${requestFingerprintCounter}`,
+    "X-Forwarded-For": `10.${fingerprintRunSeed}.99.${requestFingerprintCounter}`,
     "Content-Type": "application/json",
   };
 }
@@ -228,6 +233,35 @@ test("compression download route serves completed outputs and rejects unsafe req
     );
     assert.ok((await stat(outputPath)).isFile());
 
+    // Two real, completed jobs from two different simulated actors (each call to
+    // createAnalyzedUploadReference()/createCompressionJobAndWait() gets its own
+    // fingerprint via compressionRequestHeaders()'s counter) — proves an actor's real,
+    // valid token+signature for their own job cannot be reused to fetch a *different*
+    // actor's job, not just that a garbage token is rejected.
+    const aviFile = await createGeneratedVideoFile("download-source.avi", {
+      container: "avi",
+      mimeType: "video/avi",
+      videoCodec: "mpeg4",
+      audioCodec: "mp3",
+    });
+    const aviJob = await createCompressionJobAndWait(baseUrl, aviFile);
+
+    await assertDownloadWorks(
+      baseUrl,
+      aviJob,
+      "download-source.qavelix-compressed.mp4",
+    );
+
+    const crossActorUrl = mp4Job.downloadUrl.replace(mp4Job.id, aviJob.id);
+    const crossActorResponse = await fetch(`${baseUrl}${crossActorUrl}`);
+    const crossActorPayload = await readJson(
+      crossActorResponse,
+      "cross-actor download (mp4Job's token against aviJob's id)",
+    );
+
+    assertStatus(crossActorResponse, 404, "cross-actor compression download");
+    assert.equal(crossActorPayload.ok, false);
+
     const invalidTokenUrl = mp4Job.downloadUrl.replace(
       /token=[^&]+/,
       "token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -262,27 +296,13 @@ test("compression download route serves completed outputs and rejects unsafe req
     assertStatus(missingOutputResponse, 404, "missing compression output");
     assert.equal(missingOutputPayload.ok, false);
 
-    const aviFile = await createGeneratedVideoFile("download-source.avi", {
-      container: "avi",
-      mimeType: "video/avi",
-      videoCodec: "mpeg4",
-      audioCodec: "mp3",
-    });
-    const aviJob = await createCompressionJobAndWait(baseUrl, aviFile);
-
-    await assertDownloadWorks(
-      baseUrl,
-      aviJob,
-      "download-source.qavelix-compressed.mp4",
-    );
-
     const extractAudioFile = await createGeneratedVideoFile("extract-check.mp4", {
       durationSeconds: 8,
     });
     const extractAudioResponse = await fetch(`${baseUrl}/api/extract-audio`, {
       method: "POST",
       headers: {
-        Origin: baseUrl,
+        ...compressionRequestHeaders(baseUrl),
         "X-Qavelix-File-Name": encodeURIComponent(extractAudioFile.name),
         "X-Qavelix-File-Size": String(extractAudioFile.size),
         "X-Qavelix-File-Type": extractAudioFile.type,

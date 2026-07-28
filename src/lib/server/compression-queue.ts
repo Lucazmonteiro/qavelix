@@ -1,18 +1,11 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { type ReadStream } from "node:fs";
-import {
-  mkdir,
-  open,
-  readFile,
-  readdir,
-  rename,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, open, rename, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+
+import { eq } from "drizzle-orm";
 
 import {
   buildFfmpegCompressionArguments,
@@ -25,6 +18,9 @@ import {
   type CompressionPresetId,
 } from "@/lib/compression-policy";
 import type { ConsumedAnalyzedUpload } from "@/lib/server/analyzed-upload-registry";
+import { getDb } from "@/lib/server/db/client";
+import { compressionJob as compressionJobTable } from "@/lib/server/db/schema";
+import { confirmUsage, releaseUsage } from "@/lib/server/entitlements/service";
 import { analyzeWithFfprobe } from "@/lib/server/ffprobe";
 import type { UploadValidationError } from "@/lib/upload-policy";
 
@@ -35,6 +31,13 @@ type CompressionJob = CompressionJobSnapshot & {
   downloadToken: string | null;
   downloadSignature: string | null;
   cleanupTimer: ReturnType<typeof setTimeout> | null;
+  // The entitlement reservation this job was created against (null for a job created
+  // before this milestone's data was migrated — treated as "nothing to confirm/release").
+  // usageConfirmed flips true exactly once, when the job reaches a real success state;
+  // every other terminal path (failure, timeout, cancellation, orphaned-on-restart)
+  // releases the reservation instead — see confirmJobUsage()/releaseJobUsage() below.
+  usageEventId: string | null;
+  usageConfirmed: boolean;
 };
 
 type CreateJobResult =
@@ -57,7 +60,6 @@ type CreateJobResult =
     };
 
 const compressionDirectory = path.join(os.tmpdir(), "qavelix-compression");
-const jobMetadataDirectory = path.join(compressionDirectory, "jobs");
 const jobLockDirectory = path.join(compressionDirectory, "locks");
 const maxRetainedJobs = 50;
 const maxQueuedJobs = 10;
@@ -69,10 +71,6 @@ const queue: string[] = [];
 const jobs = new Map<string, CompressionJob>();
 
 let activeJobId: string | null = null;
-
-function jobMetadataPath(id: string) {
-  return path.join(jobMetadataDirectory, `${id}.json`);
-}
 
 function jobLockPath(id: string) {
   return path.join(jobLockDirectory, `${id}.lock`);
@@ -144,14 +142,43 @@ function serializableJob(job: CompressionJob) {
     outputPath: job.outputPath,
     downloadToken: job.downloadToken,
     downloadSignature: job.downloadSignature,
+    usageEventId: job.usageEventId,
+    usageConfirmed: job.usageConfirmed,
   };
 }
 
+// Marks the reservation as successfully spent — called exactly once, on the one path
+// where the job actually produced usable output. Idempotent via the usageConfirmed
+// guard, so a re-entrant call (there shouldn't be one) can't double-confirm.
+async function confirmJobUsage(job: CompressionJob) {
+  if (job.usageEventId && !job.usageConfirmed) {
+    await confirmUsage(job.usageEventId);
+    job.usageConfirmed = true;
+    await persistCompressionJob(job);
+  }
+}
+
+// Gives back the reservation for any job that will never produce output — failure,
+// timeout, cancellation, or an orphaned job discovered after a process restart. Safe to
+// call from multiple sites for the same job: releaseUsage() itself is idempotent
+// (guarded by the ledger row's status), and this additionally no-ops once confirmed.
+async function releaseJobUsage(job: CompressionJob) {
+  if (job.usageEventId && !job.usageConfirmed) {
+    await releaseUsage(job.usageEventId);
+  }
+}
+
 async function persistCompressionJob(job: CompressionJob) {
-  await mkdir(jobMetadataDirectory, { recursive: true });
-  await writeFile(jobMetadataPath(job.id), JSON.stringify(serializableJob(job)), {
-    mode: 0o600,
-  });
+  const db = getDb();
+  const data = serializableJob(job);
+
+  await db
+    .insert(compressionJobTable)
+    .values({ id: job.id, status: job.status, data })
+    .onConflictDoUpdate({
+      target: compressionJobTable.id,
+      set: { status: job.status, data, updatedAt: new Date() },
+    });
 }
 
 async function acquireJobLock(id: string) {
@@ -184,11 +211,18 @@ async function releaseJobLock(id: string) {
 
 async function readPersistedCompressionJob(id: string) {
   try {
-    const text = await readFile(jobMetadataPath(id), "utf8");
-    const persisted = JSON.parse(text) as Omit<
-      CompressionJob,
-      "process" | "cleanupTimer"
-    >;
+    const db = getDb();
+    const [row] = await db
+      .select({ data: compressionJobTable.data })
+      .from(compressionJobTable)
+      .where(eq(compressionJobTable.id, id))
+      .limit(1);
+
+    if (!row) {
+      return null;
+    }
+
+    const persisted = row.data as Omit<CompressionJob, "process" | "cleanupTimer">;
 
     return {
       ...persisted,
@@ -215,6 +249,7 @@ async function findCompressionJob(id: string) {
 
     await persistStatus(persistedJob, "failed", "Compression interrupted.");
     await cleanupJobFiles(persistedJob);
+    await releaseJobUsage(persistedJob);
     jobs.set(id, persistedJob);
     logCompressionError("compression_orphaned_processing_job_failed", {
       jobId: persistedJob.id,
@@ -236,20 +271,18 @@ async function findCompressionJob(id: string) {
 
 async function loadPendingCompressionJobs() {
   try {
-    const files = await readdir(jobMetadataDirectory);
+    const db = getDb();
+    const rows = await db.select({ id: compressionJobTable.id }).from(compressionJobTable);
     const pendingJobs: CompressionJob[] = [];
 
-    for (const file of files) {
-      if (!file.endsWith(".json")) {
-        continue;
-      }
-
-      const id = path.basename(file, ".json");
+    for (const row of rows) {
+      const id = row.id;
       const job = await findCompressionJob(id);
 
       if (job && isInterruptedProcessingStatus(job.status)) {
         await persistStatus(job, "failed", "Compression interrupted.");
         await cleanupJobFiles(job);
+        await releaseJobUsage(job);
         logCompressionError("compression_stale_processing_job_failed", {
           jobId: job.id,
           status: job.status,
@@ -433,6 +466,33 @@ function formatCommand(command: string, args: string[]) {
     .join(" ");
 }
 
+// Windows dev-environment observation: a file FFmpeg just finished writing can briefly be
+// invisible to a separately-spawned child process (ffprobe) immediately afterward — most
+// likely real-time antivirus scanning intercepting a freshly-written media file. Every
+// other analyzeWithFfprobe() call site in this app reads a file that already sat on disk
+// through a full upload request/response round trip; this is the one place a file is read
+// moments after a sibling process just finished writing it, so it's the one place that
+// needs a short bounded retry — not a change to analyzeWithFfprobe() itself, which every
+// other caller already uses safely as-is.
+async function analyzeOutputWithRetry(filePath: string) {
+  const maxAttempts = 4;
+  const retryDelayMs = 150;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await analyzeWithFfprobe(filePath);
+    } catch (error) {
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    }
+  }
+
+  throw new Error("analyzeOutputWithRetry exhausted attempts unexpectedly.");
+}
+
 async function runJob(job: CompressionJob) {
   const lockAcquired = await acquireJobLock(job.id);
 
@@ -614,7 +674,7 @@ async function runJob(job: CompressionJob) {
       const outputStats = await stat(job.outputPath);
       const token = randomBytes(32).toString("base64url");
       const expiresAt = new Date(Date.now() + DOWNLOAD_TTL_MS).toISOString();
-      const outputMetadata = await analyzeWithFfprobe(job.outputPath);
+      const outputMetadata = await analyzeOutputWithRetry(job.outputPath);
       const compression = calculateCompressionStats(job.inputSize, outputStats.size, {
         outputWidth: outputMetadata.width,
         outputHeight: outputMetadata.height,
@@ -628,6 +688,7 @@ async function runJob(job: CompressionJob) {
       job.downloadToken = token;
       job.downloadSignature = createDownloadSignature(job.id, token, expiresAt);
       await persistStatus(job, getCompressionOutcomeStatus(compression));
+      await confirmJobUsage(job);
       logCompressionStage("compression_output_verified", {
         jobId: job.id,
         inputSize: job.inputSize,
@@ -669,6 +730,12 @@ async function runJob(job: CompressionJob) {
     if (!isDownloadableCompressionStatus(job.status)) {
       await cleanupJobFiles(job);
     }
+    // Covers every terminal path that isn't the success branch above: failure, timeout,
+    // and cancellation-while-running (cancelCompressionJob() sets status to "cancelled"
+    // and kills the process, but this is the finally block that actually runs after that
+    // — see the shared job-reference note on cancelCompressionJob()). No-ops if
+    // confirmJobUsage() already ran.
+    await releaseJobUsage(job);
     await releaseJobLock(job.id);
     void processNextJob();
   }
@@ -720,106 +787,120 @@ function pruneTerminalJobs() {
 export async function createCompressionJobFromAnalyzedUpload(
   upload: ConsumedAnalyzedUpload,
   preset: CompressionPresetId,
+  usageEventId: string | null,
 ): Promise<CreateJobResult> {
-  pruneTerminalJobs();
-
-  if (queue.length >= maxQueuedJobs) {
-    return {
-      ok: false,
-      error: {
-        code: "queue_full",
-        message: "The compression queue is full. Try again later.",
-      },
-    };
-  }
-
-  let sourceStats;
+  let jobCreated = false;
 
   try {
-    sourceStats = await stat(upload.inputPath);
-  } catch {
-    return {
-      ok: false,
-      error: {
-        code: "missing_file",
-        message: "The analyzed upload is no longer available.",
-      },
-    };
-  }
+    pruneTerminalJobs();
 
-  if (!sourceStats.isFile() || sourceStats.size !== upload.size) {
-    await rm(upload.inputPath, { force: true });
-    return {
-      ok: false,
-      error: {
-        code: "metadata_mismatch",
-        message: "The analyzed upload metadata no longer matches the stored file.",
-      },
-    };
-  }
+    if (queue.length >= maxQueuedJobs) {
+      return {
+        ok: false,
+        error: {
+          code: "queue_full",
+          message: "The compression queue is full. Try again later.",
+        },
+      };
+    }
 
-  await mkdir(jobMetadataDirectory, { recursive: true });
-  await mkdir(compressionDirectory, { recursive: true });
+    let sourceStats;
 
-  const id = randomUUID();
-  const inputPath = path.join(
-    compressionDirectory,
-    `${id}${sanitizeExtension(upload.originalName)}`,
-  );
-  const outputPath = path.join(compressionDirectory, `${id}.compressed.mp4`);
-  let ownsInputPath = false;
+    try {
+      sourceStats = await stat(upload.inputPath);
+    } catch {
+      return {
+        ok: false,
+        error: {
+          code: "missing_file",
+          message: "The analyzed upload is no longer available.",
+        },
+      };
+    }
 
-  try {
-    await rename(upload.inputPath, inputPath);
-    ownsInputPath = true;
+    if (!sourceStats.isFile() || sourceStats.size !== upload.size) {
+      await rm(upload.inputPath, { force: true });
+      return {
+        ok: false,
+        error: {
+          code: "metadata_mismatch",
+          message: "The analyzed upload metadata no longer matches the stored file.",
+        },
+      };
+    }
 
-    const job: CompressionJob = {
-      id,
-      status: "queued",
-      preset,
-      originalName: upload.originalName,
-      inputSize: upload.size,
-      outputSize: null,
-      compression: null,
-      progress: 0,
-      createdAt: new Date().toISOString(),
-      startedAt: null,
-      completedAt: null,
-      expiresAt: null,
-      downloadUrl: null,
-      error: null,
-      inputPath,
-      outputPath,
-      process: null,
-      downloadToken: null,
-      downloadSignature: null,
-      cleanupTimer: null,
-    };
+    await mkdir(compressionDirectory, { recursive: true });
 
-    jobs.set(id, job);
-    await persistCompressionJob(job);
-    logCompressionStage("compression_job_created", {
-      jobId: id,
-      preset,
-      inputSize: upload.size,
-    });
-    enqueueJob(id);
-    void ensureCompressionWorker();
+    const id = randomUUID();
+    const inputPath = path.join(
+      compressionDirectory,
+      `${id}${sanitizeExtension(upload.originalName)}`,
+    );
+    const outputPath = path.join(compressionDirectory, `${id}.compressed.mp4`);
+    let ownsInputPath = false;
 
-    return {
-      ok: true,
-      job: snapshot(job),
-    };
-  } catch {
-    await rm(ownsInputPath ? inputPath : upload.inputPath, { force: true });
-    await rm(outputPath, { force: true });
-    return {
-      ok: false,
-      error: {
-        code: "missing_file",
-        message: "The analyzed upload could not be prepared for compression.",
-      },
-    };
+    try {
+      await rename(upload.inputPath, inputPath);
+      ownsInputPath = true;
+
+      const job: CompressionJob = {
+        id,
+        status: "queued",
+        preset,
+        originalName: upload.originalName,
+        inputSize: upload.size,
+        outputSize: null,
+        compression: null,
+        progress: 0,
+        createdAt: new Date().toISOString(),
+        startedAt: null,
+        completedAt: null,
+        expiresAt: null,
+        downloadUrl: null,
+        error: null,
+        inputPath,
+        outputPath,
+        process: null,
+        downloadToken: null,
+        downloadSignature: null,
+        cleanupTimer: null,
+        usageEventId,
+        usageConfirmed: false,
+      };
+
+      jobs.set(id, job);
+      await persistCompressionJob(job);
+      logCompressionStage("compression_job_created", {
+        jobId: id,
+        preset,
+        inputSize: upload.size,
+      });
+      enqueueJob(id);
+      void ensureCompressionWorker();
+
+      jobCreated = true;
+
+      return {
+        ok: true,
+        job: snapshot(job),
+      };
+    } catch {
+      await rm(ownsInputPath ? inputPath : upload.inputPath, { force: true });
+      await rm(outputPath, { force: true });
+      return {
+        ok: false,
+        error: {
+          code: "missing_file",
+          message: "The analyzed upload could not be prepared for compression.",
+        },
+      };
+    }
+  } finally {
+    // Every early return above means no job was created — the reservation this call
+    // was given must be handed back rather than left permanently counted.
+    if (!jobCreated && usageEventId) {
+      await releaseUsage(usageEventId);
+    }
   }
 }
 
@@ -850,6 +931,9 @@ export async function cancelCompressionJob(id: string) {
 
     await persistStatus(job, "cancelled");
     await cleanupJobFiles(job);
+    // Unlike the "starting"/"running" branch below, a queued job never reaches
+    // runJob()'s finally block, so nothing else will release this reservation.
+    await releaseJobUsage(job);
     return snapshot(job);
   }
 

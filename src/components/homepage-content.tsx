@@ -30,6 +30,27 @@ export function HomepageContent() {
         </div>
 
         <dl className="stat-grid" aria-label={dictionary.home.statusLabel}>
+          <div className="stat-grid__item stat-grid__item--max-size">
+            <dt>{dictionary.home.maxSizeCard.label}</dt>
+            <dd className="stat-grid__max-size-rows">
+              <span className="stat-grid__max-size-row">
+                <span className="stat-grid__max-size-plan">
+                  {dictionary.home.maxSizeCard.freeLabel}
+                </span>
+                <span className="stat-grid__max-size-value">
+                  {dictionary.home.maxSizeCard.freeValue}
+                </span>
+              </span>
+              <span className="stat-grid__max-size-row stat-grid__max-size-row--pro">
+                <span className="stat-grid__max-size-plan">
+                  {dictionary.home.maxSizeCard.proLabel}
+                </span>
+                <span className="stat-grid__max-size-value">
+                  {dictionary.home.maxSizeCard.proValue}
+                </span>
+              </span>
+            </dd>
+          </div>
           {dictionary.home.stats.map((stat) => (
             <div className="stat-grid__item" key={stat.label}>
               <dt>{stat.label}</dt>

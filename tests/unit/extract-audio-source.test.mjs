@@ -16,7 +16,10 @@ test("Extract Audio API streams uploads, enforces policy, and preserves CSRF pro
     assert.match(source, /request\.body\.getReader\(\)/);
     assert.match(source, /createWriteStream/);
     assert.match(source, /MIN_UPLOAD_BYTES/);
-    assert.match(source, /MAX_UPLOAD_BYTES/);
+    // Upload size is plan-aware (Free/anonymous 250MB, Pro 500MB) rather than a single
+    // flat MAX_UPLOAD_BYTES constant — see entitlements/policy.ts.
+    assert.match(source, /getAnonymousLimits|getToolLimits/);
+    assert.match(source, /maxUploadBytes/);
     assert.match(source, /requireSameOrigin:\s*true/);
     assert.match(source, /validateFileIdentity/);
     assert.match(source, /analyzeWithFfprobe/);

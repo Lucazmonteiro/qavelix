@@ -16,7 +16,7 @@ type JobRouteProps = {
 
 export async function GET(_request: Request, { params }: JobRouteProps) {
   const { id } = await params;
-  const security = enforceApiSecurity(_request, {
+  const security = await enforceApiSecurity(_request, {
     route: "compression.status",
     limit: 120,
     windowMs: 60_000,
@@ -47,7 +47,7 @@ export async function GET(_request: Request, { params }: JobRouteProps) {
 
 export async function DELETE(request: Request, { params }: JobRouteProps) {
   const { id } = await params;
-  const security = enforceApiSecurity(request, {
+  const security = await enforceApiSecurity(request, {
     route: "compression.delete",
     limit: 30,
     windowMs: 60_000,

@@ -3,7 +3,6 @@ import path from "node:path";
 import {
   acceptedExtensions,
   isAcceptedMimeType,
-  MAX_UPLOAD_BYTES,
   type UploadValidationError,
 } from "@/lib/upload-policy";
 
@@ -43,9 +42,14 @@ function hasMpegSignature(bytes: Uint8Array) {
   );
 }
 
+// maxUploadBytes must be the caller's already-resolved, plan-aware ceiling (see
+// getAnonymousLimits()/getToolLimits() in entitlements/policy.ts) — this function has no
+// notion of plan itself and must never fall back to a flat constant, or a Pro actor's
+// 500MB allowance silently gets clipped back down to the Free/anonymous ceiling.
 export function validateFileIdentity(
   file: UploadIdentity,
   firstBytes: Uint8Array,
+  maxUploadBytes: number,
 ): UploadValidationError | null {
   if (file.size === 0) {
     return {
@@ -54,10 +58,10 @@ export function validateFileIdentity(
     };
   }
 
-  if (file.size > MAX_UPLOAD_BYTES) {
+  if (file.size > maxUploadBytes) {
     return {
       code: "file_too_large",
-      message: `The selected file exceeds the ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB upload limit.`,
+      message: `The selected file exceeds the ${Math.round(maxUploadBytes / 1024 / 1024)} MB upload limit.`,
     };
   }
 

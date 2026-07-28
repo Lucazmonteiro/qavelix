@@ -47,8 +47,13 @@ test("homepage text updates from a shared client dictionary without remounting c
   assert.match(homepageSource, /<CompressionPanel/);
 });
 
-test("non-home localized pages keep normal link navigation", () => {
+test("non-home, non-tool localized pages keep normal link navigation", () => {
   assert.match(localeContextSource, /export function isLocalizedHomePath/);
-  assert.match(languageSelectorSource, /if \(!isLocalizedHomePath\(window\.location\.pathname\)\) \{\s*return;\s*\}/);
-  assert.match(languageSelectorSource, /href=\{`\/\$\{locale\}`\}/);
+  assert.match(languageSelectorSource, /function isLocalizedToolPath/);
+  assert.match(
+    languageSelectorSource,
+    /if \(\s*!isLocalizedHomePath\(window\.location\.pathname\) &&\s*!isLocalizedToolPath\(window\.location\.pathname\)\s*\) \{\s*return;\s*\}/,
+  );
+  assert.match(languageSelectorSource, /href=\{getLocalizedHref\(locale\)\}/);
+  assert.match(languageSelectorSource, /return `\/\$\{locale\}`;/);
 });

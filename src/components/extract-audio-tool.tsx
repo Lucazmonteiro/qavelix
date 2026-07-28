@@ -1,7 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { PlanComparisonModal } from "@/components/plan-comparison-modal";
+import { UpgradeModal } from "@/components/upgrade-modal";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { useLocaleState } from "@/i18n/locale-context";
 import {
@@ -12,6 +15,7 @@ import {
   MAX_UPLOAD_BYTES,
   MIN_UPLOAD_BYTES,
 } from "@/lib/upload-policy";
+import { useEntitlementGate } from "@/lib/use-entitlement-gate";
 
 type ValidationErrorKey = keyof Dictionary["tools"]["extractAudio"]["validation"];
 type ProcessingState =
@@ -57,7 +61,10 @@ function hasAcceptedExtension(fileName: string) {
   return acceptedExtensions.some((extension) => lowerName.endsWith(extension));
 }
 
-function validateFile(file: File): ValidationErrorKey | null {
+// maxUploadBytes must be the caller's already-resolved, plan-aware ceiling — this
+// function has no notion of plan itself (see the same convention in
+// validateFileIdentity() on the server).
+function validateFile(file: File, maxUploadBytes: number): ValidationErrorKey | null {
   if (file.size === 0) {
     return "emptyFile";
   }
@@ -66,7 +73,7 @@ function validateFile(file: File): ValidationErrorKey | null {
     return "fileTooSmall";
   }
 
-  if (file.size > MAX_UPLOAD_BYTES) {
+  if (file.size > maxUploadBytes) {
     return "fileTooLarge";
   }
 
@@ -135,6 +142,15 @@ async function readApiError(response: Response): Promise<ExtractAudioErrorKey> {
         return "ffmpegFailed";
       case "processing_timeout":
         return "timeout";
+      case "account_required":
+        return "accountRequired";
+      case "usage_limit_reached":
+        return "usageLimitReached";
+      case "tool_unavailable_for_plan":
+        return "toolUnavailableForPlan";
+      case "invalid_entitlement_state":
+      case "usage_service_unavailable":
+        return "serviceUnavailable";
       default:
         return response.status === 404 ? "downloadUnavailable" : "serverError";
     }
@@ -181,6 +197,16 @@ async function readAnalysisResult(response: Response) {
 export function ExtractAudioTool() {
   const { dictionary } = useLocaleState();
   const copy = dictionary.tools.extractAudio;
+  const pathname = usePathname();
+  const gate = useEntitlementGate("extract-audio");
+  const isBlocked = gate.blocked;
+  // Same resolution as CompressionPanel: MAX_UPLOAD_BYTES (250MB) is the safe default
+  // until the entitlement gate resolves the actor's real plan, after which a confirmed
+  // Pro actor's own limit (500MB) takes over.
+  const resolvedMaxUploadBytes =
+    gate.plan === "pro" && gate.proLimits
+      ? gate.proLimits.maxUploadBytes
+      : (gate.freeLimits?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const analysisControllerRef = useRef<AbortController | null>(null);
@@ -202,16 +228,17 @@ export function ExtractAudioTool() {
   const selectedFile = fileState?.file ?? null;
   const validationErrorKey = fileState?.errorKey ?? null;
   const validationError = validationErrorKey
-    ? copy.validation[validationErrorKey]
+    ? copy.validation[validationErrorKey].replace("{maxSize}", formatBytes(resolvedMaxUploadBytes))
     : null;
   const hasValidFile = Boolean(selectedFile && !validationError);
   const canExtract =
     hasValidFile &&
     isAnalysisApproved &&
     !processingErrorKey &&
-    processingState === "idle";
+    processingState === "idle" &&
+    !isBlocked;
   const processingError = processingErrorKey
-    ? copy.errors[processingErrorKey]
+    ? copy.errors[processingErrorKey].replace("{maxSize}", formatBytes(resolvedMaxUploadBytes))
     : null;
   const isProcessing =
     processingState === "validating" ||
@@ -278,6 +305,10 @@ export function ExtractAudioTool() {
 
     return selectedFile ? copy.statusReady : copy.statusWaiting;
   })();
+  // uploadDescription now states both plans' fixed limits directly (never the viewer's
+  // single resolved value) so it needs no interpolation — see .upload-limit-comparison
+  // below for the dynamic, gate-sourced Free/Pro comparison.
+  const uploadDescription = copy.uploadDescription;
 
   useEffect(() => {
     return () => {
@@ -367,6 +398,10 @@ export function ExtractAudioTool() {
   }
 
   function setSelectedFiles(files: FileList | null) {
+    if (isBlocked) {
+      return;
+    }
+
     abortControllerRef.current?.abort();
     analysisControllerRef.current?.abort();
     abortControllerRef.current = null;
@@ -403,7 +438,7 @@ export function ExtractAudioTool() {
 
     setFileState({
       file,
-      errorKey: validateFile(file),
+      errorKey: validateFile(file, resolvedMaxUploadBytes),
     });
   }
 
@@ -528,7 +563,15 @@ export function ExtractAudioTool() {
       clearStatusTimers();
 
       if (!response.ok) {
-        setProcessingErrorKey(await readApiError(response));
+        const errorKey = await readApiError(response);
+
+        if (errorKey === "accountRequired") {
+          gate.reportDenial("account_required");
+        } else if (errorKey === "usageLimitReached") {
+          gate.reportDenial("usage_limit_reached");
+        }
+
+        setProcessingErrorKey(errorKey);
         setActiveOperation(null);
         setProcessingState("failed");
         return;
@@ -591,16 +634,22 @@ export function ExtractAudioTool() {
                   "upload-dropzone",
                   "extract-audio-dropzone",
                   isDragging ? "upload-dropzone--active" : "",
+                  isBlocked ? "upload-dropzone--blocked" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
+                aria-disabled={isBlocked}
                 onDragEnter={(event) => {
                   event.preventDefault();
-                  setIsDragging(true);
+                  if (!isBlocked) {
+                    setIsDragging(true);
+                  }
                 }}
                 onDragOver={(event) => {
                   event.preventDefault();
-                  setIsDragging(true);
+                  if (!isBlocked) {
+                    setIsDragging(true);
+                  }
                 }}
                 onDragLeave={(event) => {
                   event.preventDefault();
@@ -609,6 +658,11 @@ export function ExtractAudioTool() {
                 onDrop={(event) => {
                   event.preventDefault();
                   setIsDragging(false);
+
+                  if (isBlocked) {
+                    return;
+                  }
+
                   setSelectedFiles(event.dataTransfer.files);
                 }}
               >
@@ -618,6 +672,7 @@ export function ExtractAudioTool() {
                   className="upload-dropzone__input"
                   type="file"
                   accept={acceptedInputValue}
+                  disabled={isBlocked}
                   onChange={(event) => setSelectedFiles(event.target.files)}
                 />
                 <span className="upload-dropzone__icon" aria-hidden="true">
@@ -625,10 +680,11 @@ export function ExtractAudioTool() {
                 </span>
                 <span className="upload-dropzone__title">{copy.uploadTitle}</span>
                 <span className="upload-dropzone__description">
-                  {copy.uploadDescription}
+                  {uploadDescription}
                 </span>
                 <button
                   className="button button--primary"
+                  disabled={isBlocked}
                   type="button"
                   onClick={() => inputRef.current?.click()}
                 >
@@ -638,11 +694,54 @@ export function ExtractAudioTool() {
                   {copy.privacyMessage}
                 </span>
               </div>
+
+              {isBlocked && !selectedFile ? (
+                <div className="entitlement-lock-notice" role="status">
+                  <p>
+                    {gate.reason === "account_required"
+                      ? copy.errors.accountRequired
+                      : copy.errors.usageLimitReached}
+                  </p>
+                  {gate.reason === "usage_limit_reached" && gate.plan === "free" ? (
+                    <button
+                      className="button button--primary"
+                      onClick={gate.openUpgradeModal}
+                      type="button"
+                    >
+                      {dictionary.upgradeModal.upgradeButtonLabel}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <aside className="compression-status extract-audio-status" aria-live="polite">
               <div className="extract-audio-status__body">
                 <h2>{copy.statusTitle}</h2>
+                {gate.freeLimits && gate.proLimits ? (
+                  <dl className="upload-limit-comparison">
+                    <div
+                      className={
+                        gate.plan !== "pro"
+                          ? "upload-limit-comparison__row upload-limit-comparison__row--current"
+                          : "upload-limit-comparison__row"
+                      }
+                    >
+                      <dt>{dictionary.upgradeModal.freeTierName}</dt>
+                      <dd>{formatBytes(gate.freeLimits.maxUploadBytes)}</dd>
+                    </div>
+                    <div
+                      className={
+                        gate.plan === "pro"
+                          ? "upload-limit-comparison__row upload-limit-comparison__row--current"
+                          : "upload-limit-comparison__row"
+                      }
+                    >
+                      <dt>{dictionary.upgradeModal.proTierName}</dt>
+                      <dd>{formatBytes(gate.proLimits.maxUploadBytes)}</dd>
+                    </div>
+                  </dl>
+                ) : null}
                 <dl>
                   <div>
                     <dt>{copy.selectedFile}</dt>
@@ -787,6 +886,7 @@ export function ExtractAudioTool() {
                   <>
                     <button
                       className="button button--primary"
+                      disabled={isBlocked}
                       type="button"
                       onClick={() => inputRef.current?.click()}
                     >
@@ -794,11 +894,21 @@ export function ExtractAudioTool() {
                     </button>
                     <button
                       className="button button--secondary"
+                      disabled={isBlocked}
                       type="button"
                       onClick={resetSelection}
                     >
                       {copy.deleteButton}
                     </button>
+                    {isBlocked && gate.reason === "usage_limit_reached" && gate.plan === "free" ? (
+                      <button
+                        className="button button--primary"
+                        onClick={gate.openUpgradeModal}
+                        type="button"
+                      >
+                        {dictionary.upgradeModal.upgradeButtonLabel}
+                      </button>
+                    ) : null}
                   </>
                 ) : null}
 
@@ -856,6 +966,26 @@ export function ExtractAudioTool() {
           ))}
         </div>
       </section>
+
+      {gate.plan === "anonymous" && gate.anonymousLimits && gate.freeLimits && gate.proLimits ? (
+        <PlanComparisonModal
+          anonymousLimits={gate.anonymousLimits}
+          freeLimits={gate.freeLimits}
+          onClose={gate.closeUpgradeModal}
+          open={gate.showUpgradeModal}
+          proLimits={gate.proLimits}
+          returnPath={pathname}
+        />
+      ) : null}
+      {gate.plan === "free" && gate.freeLimits && gate.proLimits ? (
+        <UpgradeModal
+          cancelPath={pathname}
+          freeLimits={gate.freeLimits}
+          onClose={gate.closeUpgradeModal}
+          open={gate.showUpgradeModal}
+          proLimits={gate.proLimits}
+        />
+      ) : null}
     </main>
   );
 }

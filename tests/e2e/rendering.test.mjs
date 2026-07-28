@@ -165,19 +165,22 @@ test("e2e: SEO and legal pages expose metadata and localized content", async () 
   });
 });
 
-test("e2e: public pages use deterministic back-to-compressor links", async () => {
+test("e2e: localized content pages don't statically repeat a page-level back link", async () => {
   await withNextServer(async ({ baseUrl }) => {
-    const pages = [
-      { path: "/pt-BR/contact", label: "Voltar ao compressor", href: "/pt-BR" },
-      { path: "/es/privacy-policy", label: "Volver al compresor", href: "/es" },
-    ];
+    // Back-navigation is shell-owned (NavigationControls, mounted once in AppShell,
+    // client-side) — content pages must not render their own static copy of it. This
+    // replaces a stale assertion that checked for a per-page "back to compressor" link
+    // (with a locale-specific label and href) that was removed when navigation moved
+    // to the shell-owned design; NavigationControls itself starts hidden until
+    // client-side effects run, so its dynamic state isn't observable via a raw fetch.
+    const pages = ["/pt-BR/contact", "/es/privacy-policy"];
 
-    for (const page of pages) {
-      const { response, text } = await fetchText(`${baseUrl}${page.path}`);
+    for (const path of pages) {
+      const { response, text } = await fetchText(`${baseUrl}${path}`);
 
-      assertStatus(response, 200, page.path);
-      assert.match(text, new RegExp(`href="${page.href}"`));
-      assert.match(text, new RegExp(page.label));
+      assertStatus(response, 200, path);
+      assert.doesNotMatch(text, /content-page__back-link/);
+      assert.match(text, /id="page-end-sentinel"/);
     }
   });
 });

@@ -19,7 +19,7 @@ type DownloadRouteProps = {
 
 export async function GET(request: Request, { params }: DownloadRouteProps) {
   const { id } = await params;
-  const security = enforceApiSecurity(request, {
+  const security = await enforceApiSecurity(request, {
     route: "compression.download",
     limit: 60,
     windowMs: 60_000,
