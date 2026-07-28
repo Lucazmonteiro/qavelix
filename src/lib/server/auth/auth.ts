@@ -1,4 +1,5 @@
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { betterAuth } from "better-auth/minimal";
 import { stripe } from "@better-auth/stripe";
 
@@ -27,6 +28,25 @@ async function deliverAuthEmail(kind: "reset-password" | "verify-email", email: 
       { email, url },
     );
   }
+}
+
+// Better Auth's own default verification link (`url`, built by
+// sendVerificationEmailFn) points straight at its GET /verify-email endpoint, which
+// redirects to callbackURL with no signal about which account was verified — the root
+// cause of the session-mismatch bug (see src/app/api/verify-email/route.ts's comment).
+// Rewritten here to point at that proxy route instead, carrying the same token and the
+// same embedded callbackURL forward untouched — the actual signature/expiry check still
+// happens exactly once, inside Better Auth's own verifyEmail, just invoked from our
+// route instead of reached directly by the browser.
+function buildVerificationLink(defaultUrl: string, token: string): string {
+  const parsed = new URL(defaultUrl);
+  const callbackPath = parsed.searchParams.get("callbackURL") ?? "/";
+  const proxyUrl = new URL("/api/verify-email", env.NEXT_PUBLIC_APP_URL);
+
+  proxyUrl.searchParams.set("token", token);
+  proxyUrl.searchParams.set("callbackURL", callbackPath);
+
+  return proxyUrl.toString();
 }
 
 // Milestone 5 — Stripe billing, additive on top of Milestone 4's entitlement system.
@@ -63,6 +83,15 @@ function createStripePlugin() {
     createCustomerOnSignUp: true,
     subscription: {
       enabled: true,
+      // Verified-email launch requirement: unverified accounts must not be able to start
+      // a paid subscription (a typo'd/unowned email address is a real billing-support
+      // risk). This is the plugin's own built-in gate for /subscription/upgrade — it
+      // throws its EMAIL_VERIFICATION_REQUIRED error code, mapped to a localized message
+      // client-side (see src/lib/auth-errors usage in PlanActions/UpgradeModal). Sign-in
+      // itself stays ungated (no emailAndPassword.requireEmailVerification above) and so
+      // does every other tool/dashboard route — only checkout and (via the hooks.before
+      // below, since this plugin has no equivalent option for it) the billing portal.
+      requireEmailVerification: true,
       plans: [
         {
           name: "pro",
@@ -97,6 +126,29 @@ function createStripePlugin() {
   });
 }
 
+// @better-auth/stripe has no equivalent of subscription.requireEmailVerification for
+// /subscription/billing-portal, so this reproduces the same gate at the Better Auth core
+// level via the documented hooks.before extension point (runs before every endpoint
+// dispatch; every other path is a no-op here). Registered unconditionally — it only ever
+// matches a path the stripe plugin itself registers, so it's inert whenever Stripe isn't
+// configured, the same "safe to always include" convention already used elsewhere in this
+// file. Throws the identical EMAIL_VERIFICATION_REQUIRED code the plugin's own checkout
+// gate uses, so the client maps both with one check.
+const beforeHook = createAuthMiddleware(async (ctx) => {
+  if (ctx.path !== "/subscription/billing-portal") {
+    return;
+  }
+
+  const session = await getSessionFromCtx(ctx);
+
+  if (session && !session.user.emailVerified) {
+    throw APIError.from("BAD_REQUEST", {
+      code: "EMAIL_VERIFICATION_REQUIRED",
+      message: "Email verification is required before you can manage billing.",
+    });
+  }
+});
+
 function createAuth() {
   const stripePlugin = createStripePlugin();
 
@@ -108,6 +160,9 @@ function createAuth() {
       schema,
       transaction: true,
     }),
+    hooks: {
+      before: beforeHook,
+    },
     emailAndPassword: {
       enabled: true,
       sendResetPassword: async ({ user, url }) => {
@@ -115,8 +170,8 @@ function createAuth() {
       },
     },
     emailVerification: {
-      sendVerificationEmail: async ({ user, url }) => {
-        await deliverAuthEmail("verify-email", user.email, url);
+      sendVerificationEmail: async ({ user, url, token }) => {
+        await deliverAuthEmail("verify-email", user.email, buildVerificationLink(url, token));
       },
       sendOnSignUp: true,
     },

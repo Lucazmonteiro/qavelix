@@ -59,6 +59,10 @@ test("auth.ts falls back to the original dev-only log stub whenever sendAuthEmai
   );
 });
 
+test("outgoing auth emails set replyTo to the project's existing support address, not a second contact channel", () => {
+  assert.match(emailModule, /replyTo: env\.NEXT_PUBLIC_SUPPORT_EMAIL/);
+});
+
 test("Better Auth's reset-password and verification callbacks both route through deliverAuthEmail", () => {
   assert.match(
     authModule,
@@ -66,6 +70,6 @@ test("Better Auth's reset-password and verification callbacks both route through
   );
   assert.match(
     authModule,
-    /sendVerificationEmail: async \(\{ user, url \}\) => \{\s*await deliverAuthEmail\("verify-email", user\.email, url\);/,
+    /sendVerificationEmail: async \(\{ user, url, token \}\) => \{\s*await deliverAuthEmail\("verify-email", user\.email, buildVerificationLink\(url, token\)\);/,
   );
 });

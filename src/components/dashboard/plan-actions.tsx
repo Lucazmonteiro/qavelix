@@ -24,6 +24,7 @@ export function PlanActions({ plan }: PlanActionsProps) {
   if (plan === "pro") {
     return (
       <BillingPortalButton
+        emailVerificationRequiredMessage={copy.emailVerificationRequiredMessage}
         errorMessage={copy.portalErrorMessage}
         label={copy.manageSubscriptionLabel}
         pendingLabel={copy.portalPendingLabel}
@@ -39,7 +40,11 @@ export function PlanActions({ plan }: PlanActionsProps) {
     const { error } = await startProUpgradeCheckout(locale, "/dashboard/plan?checkout=cancelled");
 
     if (error) {
-      setErrorMessage(copy.checkoutErrorMessage);
+      setErrorMessage(
+        error.code === "EMAIL_VERIFICATION_REQUIRED"
+          ? copy.emailVerificationRequiredMessage
+          : copy.checkoutErrorMessage,
+      );
       setIsPending(false);
     }
   }

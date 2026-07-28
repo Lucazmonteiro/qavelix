@@ -8,6 +8,7 @@ type AccountSummaryCardProps = {
   email: string;
   emailVerified: boolean;
   plan: PlanType;
+  locale: string;
 };
 
 export function AccountSummaryCard({
@@ -15,6 +16,7 @@ export function AccountSummaryCard({
   email,
   emailVerified,
   plan,
+  locale,
 }: AccountSummaryCardProps) {
   const copy = dictionary.dashboard.overview.accountSummary;
 
@@ -26,13 +28,15 @@ export function AccountSummaryCard({
           <dt>{copy.emailLabel}</dt>
           <dd>
             {email}{" "}
-            <span
-              className={`dashboard-status ${
-                emailVerified ? "dashboard-status--positive" : "dashboard-status--neutral"
-              }`}
-            >
-              {emailVerified ? copy.verifiedLabel : copy.unverifiedLabel}
-            </span>
+            {emailVerified ? (
+              <span className="dashboard-status dashboard-status--positive">
+                {copy.verifiedLabel}
+              </span>
+            ) : (
+              <a className="dashboard-status dashboard-status--warning" href={`/${locale}/verify-email`}>
+                {copy.unverifiedLabel}
+              </a>
+            )}
           </dd>
         </div>
         <div className="dashboard-summary-row">

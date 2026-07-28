@@ -19,14 +19,60 @@ const billingModule = await readFile("src/lib/server/billing.ts", "utf8");
 const entitlementsService = await readFile("src/lib/server/entitlements/service.ts", "utf8");
 const planActions = await readFile("src/components/dashboard/plan-actions.tsx", "utf8");
 const billingPortalButton = await readFile("src/components/dashboard/billing-portal-button.tsx", "utf8");
+const upgradeModal = await readFile("src/components/upgrade-modal.tsx", "utf8");
+const emailVerificationBanner = await readFile(
+  "src/components/dashboard/email-verification-banner.tsx",
+  "utf8",
+);
 const planPage = await readFile("src/app/[locale]/dashboard/plan/page.tsx", "utf8");
 const billingPage = await readFile("src/app/[locale]/dashboard/billing/page.tsx", "utf8");
 const nextConfig = await readFile("next.config.ts", "utf8");
 
-test("Stripe env vars are optional, validated by prefix, and never required for the app to boot", () => {
-  assert.match(envServer, /STRIPE_SECRET_KEY: z\.string\(\)\.startsWith\("sk_"\)\.optional\(\)/);
-  assert.match(envServer, /STRIPE_WEBHOOK_SECRET: z\.string\(\)\.startsWith\("whsec_"\)\.optional\(\)/);
-  assert.match(envServer, /STRIPE_PRO_MONTHLY_PRICE_ID: z\.string\(\)\.startsWith\("price_"\)\.optional\(\)/);
+test("Stripe env vars are optional, validated by real-shaped regex (not just prefix), and never required for the app to boot", () => {
+  const secretKeyMatch = envServer.match(/STRIPE_SECRET_KEY: z\.string\(\)\.regex\((\/.*?\/)\)\.optional\(\)/);
+  const webhookSecretMatch = envServer.match(
+    /STRIPE_WEBHOOK_SECRET: z\.string\(\)\.regex\((\/.*?\/)\)\.optional\(\)/,
+  );
+  const priceIdMatch = envServer.match(
+    /STRIPE_PRO_MONTHLY_PRICE_ID: z\.string\(\)\.regex\((\/.*?\/)\)\.optional\(\)/,
+  );
+
+  assert.ok(secretKeyMatch, "STRIPE_SECRET_KEY should be regex-validated");
+  assert.ok(webhookSecretMatch, "STRIPE_WEBHOOK_SECRET should be regex-validated");
+  assert.ok(priceIdMatch, "STRIPE_PRO_MONTHLY_PRICE_ID should be regex-validated");
+
+  const secretKeyPattern = new RegExp(secretKeyMatch[1].slice(1, -1));
+  const webhookSecretPattern = new RegExp(webhookSecretMatch[1].slice(1, -1));
+  const priceIdPattern = new RegExp(priceIdMatch[1].slice(1, -1));
+
+  // Accepts real-shaped test AND live values — neither mode is preferred structurally.
+  assert.match("sk_test_" + "a".repeat(24), secretKeyPattern);
+  assert.match("sk_live_" + "a".repeat(24), secretKeyPattern);
+  assert.match("whsec_" + "a".repeat(24), webhookSecretPattern);
+  assert.match("price_" + "a".repeat(24), priceIdPattern);
+
+  // Rejects obvious placeholders/typos that a bare startsWith() would have let through.
+  assert.doesNotMatch("sk_test_", secretKeyPattern);
+  assert.doesNotMatch("sk_", secretKeyPattern);
+  assert.doesNotMatch("sk_test_short", secretKeyPattern);
+  assert.doesNotMatch("whsec_xxx", webhookSecretPattern);
+  assert.doesNotMatch("price_xxx", priceIdPattern);
+});
+
+test("Stripe config fails fast on a partially-set combination instead of silently disabling billing", () => {
+  assert.match(envServer, /configuredStripeVars\.length > 0 && configuredStripeVars\.length < 3/);
+  assert.match(envServer, /only partially configured/);
+});
+
+test("a genuine public production deployment cannot silently run on a Stripe test-mode key", () => {
+  const productionStripeCheck = envServer.slice(envServer.indexOf("// A genuine public production"));
+  assert.match(productionStripeCheck, /value\.NODE_ENV === "production"/);
+  assert.match(productionStripeCheck, /!isLocalAppUrl/);
+  assert.match(productionStripeCheck, /value\.STRIPE_SECRET_KEY\?\.startsWith\("sk_test_"\)/);
+  // The documented local NODE_ENV=production + localhost verification workflow must stay
+  // unaffected — the same isLocalAppUrl escape hatch NEXT_PUBLIC_SUPPORT_EMAIL's own check
+  // above already relies on, not a second, differently-scoped condition.
+  assert.match(envServer, /const isLocalAppUrl = localProductionHosts\.has\(appUrl\.hostname\);/);
 });
 
 test("Stripe client is a lazy globalThis-anchored singleton, matching getDb()/getAuth()'s existing pattern", () => {
@@ -193,4 +239,63 @@ test("checkout success/cancelled banners are driven by the real query param, not
   assert.match(planPage, /const \{ checkout \} = await searchParams;/);
   assert.match(planPage, /checkout === "success"/);
   assert.match(planPage, /checkout === "cancelled"/);
+});
+
+// Email-verification launch requirement: unverified accounts must not be able to start
+// checkout or reach the billing portal, but sign-in and every other route stay ungated.
+// Checkout is blocked by the Stripe plugin's own built-in option; the billing portal has
+// no equivalent option, so auth.ts reproduces the same gate via Better Auth's core
+// hooks.before extension point, throwing the identical EMAIL_VERIFICATION_REQUIRED code
+// so both surfaces map to one client-side check.
+test("checkout requires a verified email via the Stripe plugin's own built-in option", () => {
+  const subscriptionBlock = authModule.slice(
+    authModule.indexOf("subscription: {"),
+    authModule.indexOf("plans: ["),
+  );
+  assert.match(subscriptionBlock, /requireEmailVerification: true/);
+
+  // Sign-in itself must stay ungated — Better Auth's own core requireEmailVerification
+  // option (distinct from the Stripe plugin's) must not appear in emailAndPassword.
+  const emailAndPasswordBlock = authModule.slice(
+    authModule.indexOf("emailAndPassword: {"),
+    authModule.indexOf("emailVerification: {"),
+  );
+  assert.doesNotMatch(emailAndPasswordBlock, /requireEmailVerification/);
+});
+
+test("the billing portal is gated by a hooks.before check, since the plugin has no built-in option for it", () => {
+  assert.match(authModule, /from "better-auth\/api"/);
+  assert.match(authModule, /createAuthMiddleware\(async \(ctx\) => \{/);
+  assert.match(authModule, /ctx\.path !== "\/subscription\/billing-portal"/);
+  assert.match(authModule, /getSessionFromCtx\(ctx\)/);
+  assert.match(authModule, /session && !session\.user\.emailVerified/);
+  assert.match(authModule, /code: "EMAIL_VERIFICATION_REQUIRED"/);
+  assert.match(authModule, /hooks: \{\s*before: beforeHook,/);
+});
+
+test("checkout/portal UI shows a distinct message for EMAIL_VERIFICATION_REQUIRED, not the generic error", () => {
+  for (const source of [planActions, upgradeModal]) {
+    assert.match(source, /error\.code === "EMAIL_VERIFICATION_REQUIRED"/);
+    assert.match(source, /copy\.emailVerificationRequiredMessage/);
+  }
+
+  assert.match(billingPortalButton, /emailVerificationRequiredMessage: string/);
+  assert.match(billingPortalButton, /requestError\.code === "EMAIL_VERIFICATION_REQUIRED"/);
+
+  assert.match(planActions, /emailVerificationRequiredMessage=\{copy\.emailVerificationRequiredMessage\}/);
+  assert.match(
+    billingPage,
+    /emailVerificationRequiredMessage=\{planCopy\.emailVerificationRequiredMessage\}/,
+  );
+});
+
+test("plan/billing pages show a verification banner for unverified sessions, alongside (not instead of) the existing gate", () => {
+  assert.match(planPage, /from "@\/components\/dashboard\/email-verification-banner"/);
+  assert.match(planPage, /billingConfigured && !session\.user\.emailVerified/);
+
+  assert.match(billingPage, /from "@\/components\/dashboard\/email-verification-banner"/);
+  assert.match(billingPage, /await requireSession\(locale, "\/dashboard\/billing"\)/);
+  assert.match(billingPage, /!session\.user\.emailVerified/);
+
+  assert.match(emailVerificationBanner, /href=\{`\/\$\{locale\}\/verify-email`\}/);
 });

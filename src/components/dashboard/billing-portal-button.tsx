@@ -9,6 +9,12 @@ type BillingPortalButtonProps = {
   label: string;
   pendingLabel: string;
   errorMessage: string;
+  // Shown instead of errorMessage when auth.ts's hooks.before rejects the request with
+  // EMAIL_VERIFICATION_REQUIRED (see src/lib/server/auth/auth.ts) — the same launch
+  // requirement the Stripe plugin's own subscription.requireEmailVerification enforces
+  // for checkout, reproduced here since the plugin has no equivalent option for the
+  // billing portal.
+  emailVerificationRequiredMessage: string;
   // Locale-less path, e.g. "/dashboard/plan" — the locale prefix is added here so every
   // caller doesn't need to know the current locale itself.
   returnPath: string;
@@ -24,6 +30,7 @@ export function BillingPortalButton({
   label,
   pendingLabel,
   errorMessage,
+  emailVerificationRequiredMessage,
   returnPath,
   className,
 }: BillingPortalButtonProps) {
@@ -40,7 +47,11 @@ export function BillingPortalButton({
     });
 
     if (requestError) {
-      setError(errorMessage);
+      setError(
+        requestError.code === "EMAIL_VERIFICATION_REQUIRED"
+          ? emailVerificationRequiredMessage
+          : errorMessage,
+      );
       setIsPending(false);
     }
   }

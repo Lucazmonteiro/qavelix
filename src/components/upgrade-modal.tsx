@@ -44,7 +44,11 @@ export function UpgradeModal({ open, onClose, freeLimits, proLimits, cancelPath 
     const { error } = await startProUpgradeCheckout(locale, cancelPath);
 
     if (error) {
-      setErrorMessage(copy.checkoutErrorMessage);
+      setErrorMessage(
+        error.code === "EMAIL_VERIFICATION_REQUIRED"
+          ? copy.emailVerificationRequiredMessage
+          : copy.checkoutErrorMessage,
+      );
       setIsPending(false);
     }
   }

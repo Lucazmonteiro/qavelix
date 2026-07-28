@@ -60,6 +60,10 @@ test("sanitizeCallbackPath is a real allowlist, not a blocklist, and only accept
   assert.match("/pt-BR", pattern);
   assert.match("/en/tools/extract-audio", pattern);
   assert.match("/es/tools/extract-audio", pattern);
+  // Safe: the email-verification proxy route's own callback destination.
+  assert.match("/en/verify-email", pattern);
+  assert.match("/pt-BR/verify-email", pattern);
+  assert.match("/es/verify-email", pattern);
 
   // Unsafe: open-redirect vectors and anything outside this fixed set.
   assert.doesNotMatch("//evil.com", pattern);
@@ -70,6 +74,7 @@ test("sanitizeCallbackPath is a real allowlist, not a blocklist, and only accept
   assert.doesNotMatch("javascript:alert(1)", pattern);
   assert.doesNotMatch("/en/dashboard/../../etc/passwd", pattern);
   assert.doesNotMatch("/en/tools/extract-audio/../../etc/passwd", pattern);
+  assert.doesNotMatch("/en/verify-email/../../etc/passwd", pattern);
 });
 
 test("sign-in reads and sanitizes the callbackURL query param before ever trusting it", () => {
@@ -96,6 +101,20 @@ test("dashboard overview renders real authenticated session data, not placeholde
 
   assert.match(accountSummaryCard, /email: string/);
   assert.match(accountSummaryCard, /emailVerified: boolean/);
+});
+
+test("the Unverified badge is a real link to the verification flow, not just a status label", () => {
+  assert.match(dashboardPage, /locale=\{locale\}/);
+  assert.match(accountSummaryCard, /locale: string/);
+  assert.match(
+    accountSummaryCard,
+    /<a className="dashboard-status dashboard-status--warning" href=\{`\/\$\{locale\}\/verify-email`\}>/,
+  );
+  // The verified state stays a plain status badge, not a link.
+  assert.match(
+    accountSummaryCard,
+    /<span className="dashboard-status dashboard-status--positive">\s*\{copy\.verifiedLabel\}/,
+  );
 });
 
 test("account summary shows the real entitlement plan (Milestone 4), not a hardcoded label", () => {

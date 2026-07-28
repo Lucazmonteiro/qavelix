@@ -2528,6 +2528,34 @@ button.tools-menu__item:disabled {
   color: var(--warning);
 }
 
+/* Same warning visual language as .dashboard-status--warning/.form-status__error, just in
+   a full-width banner shape for the Plan/Billing pages' "verify your email" notice. */
+.dashboard-verification-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: var(--warning-soft);
+  padding: 0.9rem 1rem;
+}
+
+.dashboard-verification-banner p {
+  margin: 0;
+  color: var(--foreground);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.dashboard-verification-banner a {
+  color: var(--warning);
+  font-weight: 800;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
 .dashboard-tool-card {
   display: grid;
   gap: 0.6rem;

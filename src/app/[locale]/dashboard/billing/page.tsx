@@ -4,8 +4,10 @@ import { BillingAddressForm } from "@/components/dashboard/billing-address-form"
 import { BillingPortalButton } from "@/components/dashboard/billing-portal-button";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
+import { EmailVerificationBanner } from "@/components/dashboard/email-verification-banner";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale, locales } from "@/i18n/locales";
+import { requireSession } from "@/lib/server/auth/session";
 import { isBillingConfigured } from "@/lib/server/billing";
 
 type DashboardBillingPageProps = {
@@ -29,6 +31,7 @@ export default async function DashboardBillingPage({ params }: DashboardBillingP
     notFound();
   }
 
+  const session = await requireSession(locale, "/dashboard/billing");
   const dictionary = getDictionary(locale);
   const nav = dictionary.dashboard.nav;
   const placeholderCopy = dictionary.dashboard.placeholder;
@@ -60,9 +63,17 @@ export default async function DashboardBillingPage({ params }: DashboardBillingP
         eyebrow={dictionary.dashboard.overview.eyebrow}
         title={nav.billing}
       />
+      {!session.user.emailVerified ? (
+        <EmailVerificationBanner
+          actionLabel={planCopy.verificationBannerActionLabel}
+          locale={locale}
+          message={planCopy.verificationBannerMessage}
+        />
+      ) : null}
       <div className="foundation-card">
         <h2 className="dashboard-card__title">{nav.billing}</h2>
         <BillingPortalButton
+          emailVerificationRequiredMessage={planCopy.emailVerificationRequiredMessage}
           errorMessage={planCopy.portalErrorMessage}
           label={planCopy.manageBillingLabel}
           pendingLabel={planCopy.portalPendingLabel}

@@ -47,6 +47,7 @@ export default async function DashboardOverviewPage({ params }: DashboardOvervie
         dictionary={dictionary}
         email={session.user.email}
         emailVerified={session.user.emailVerified}
+        locale={locale}
         plan={plan}
       />
       <ToolQuickLinks dictionary={dictionary} locale={locale} />

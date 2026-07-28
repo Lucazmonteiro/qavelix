@@ -15,9 +15,13 @@ import {
 // this schema without additional field mapping.
 //
 // There is no separate "password reset" table: Better Auth's email/password plugin
-// stores reset tokens in `verification` (the same table it uses for email-verification
-// tokens), keyed by identifier. Adding a second table for the same purpose would
-// duplicate what Better Auth already manages.
+// stores reset tokens in `verification`, keyed by identifier (`reset-password:{token}`),
+// and deletes them on use. Email-verification tokens do NOT use this table in the
+// installed better-auth version (1.6.25) — they're stateless signed JWTs (see
+// node_modules/better-auth/dist/api/routes/email-verification.mjs), verified via
+// signature + expiry rather than a DB lookup. Re-verifying an already-verified user is a
+// harmless no-op, so the lack of single-use revocation there isn't a real risk. The table
+// still exists and is migrated for the reset-password flow above.
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),

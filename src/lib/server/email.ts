@@ -65,6 +65,10 @@ export async function sendAuthEmail(
     const { error } = await resend.emails.send({
       from: env.EMAIL_FROM_ADDRESS,
       to,
+      // Optional — NEXT_PUBLIC_SUPPORT_EMAIL is the project's one existing contact
+      // channel (see docs/DEPLOYMENT.md), reused here rather than a second address, so a
+      // reply to either auth email reaches the same inbox support already monitors.
+      replyTo: env.NEXT_PUBLIC_SUPPORT_EMAIL,
       subject: subjectByKind[kind],
       html: buildEmailHtml(kind, url),
     });

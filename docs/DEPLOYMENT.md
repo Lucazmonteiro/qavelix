@@ -66,6 +66,12 @@ Steps, using [Resend](https://resend.com):
 4. Verify delivery end-to-end through the real Forgot Password and Sign Up UI, not just a
    successful API response — check that the email actually lands in an inbox.
 
+Stripe Checkout and the Billing Portal both require a verified email (`auth.ts`'s
+`subscription.requireEmailVerification` and a matching `hooks.before` check — sign-in and
+every other route stay ungated). A user who never receives a verification email because
+Resend isn't configured yet can sign in and use both tools normally, but cannot subscribe
+or manage billing — another reason to complete this section before enabling Stripe.
+
 ## Vercel configuration (not used for production)
 
 `vercel.json` is not the production deployment path — see "Production target" above.
@@ -91,11 +97,30 @@ Recommended Vercel project settings:
 
 ## Render configuration (production)
 
-Set these environment variables manually in the Render service dashboard before the public production deploy:
+Set these environment variables manually in the Render service dashboard before the public production deploy. This list predates Milestones 4–5 (accounts/billing) and previously only covered the anonymous-only core product — it must include the full set below, not just the app-URL/support-email pair, or auth, database-backed rate limiting/job durability, transactional email, and Stripe billing all stay unreachable in production despite the code supporting them:
 
 ```bash
+# Core (required)
 NEXT_PUBLIC_APP_URL=https://qavelix.com
 NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com
+
+# Database + auth (required once accounts/billing are exposed to real users — see
+# src/env/server.ts; the app still boots without these, but /api/auth/* and every
+# DB-backed route, including durable rate limiting and compression job durability,
+# stay unreachable without them)
+DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+BETTER_AUTH_SECRET=
+
+# Transactional email (required before exposing sign-up/sign-in to real users — see
+# "Transactional email" above for the Resend/DNS setup steps)
+RESEND_API_KEY=re_...
+EMAIL_FROM_ADDRESS="QAVELIX <noreply@qavelix.com>"
+
+# Stripe billing (required only once Pro checkout/billing portal are enabled — omit all
+# three to keep billing off, matching src/lib/server/auth/auth.ts's createStripePlugin())
+STRIPE_SECRET_KEY=sk_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRO_MONTHLY_PRICE_ID=price_...
 ```
 
 Do not create separate departmental contact variables or aliases for the current MVP. The public contact page, privacy requests, security reports, legal notices, and accessibility feedback all use `qavelixhq@gmail.com`.
@@ -337,6 +362,153 @@ the way a Dashboard-configured production endpoint's failures do). Add
 to the `stripe listen` command above if you want local testing to exactly mirror the
 recommended production subscription list.
 
+## Final launch checklist — switching Stripe from test to live mode
+
+This is the complete, ordered sequence for taking QAVELIX PRO's billing from Stripe test
+mode to real, live payments. Test-mode behavior (documented above) is unaffected until the
+live variables below are actually set — switching to live mode is controlled entirely by
+which values are in the environment, never a separate code flag. Do not perform any step
+here until all automated test-mode validation (`npm run lint && npm run typecheck &&
+npm run build && npm run test`) passes.
+
+**1. Confirm every non-Stripe variable is already set correctly:**
+
+- `NEXT_PUBLIC_APP_URL` — the final HTTPS production origin (e.g. `https://qavelix.com`).
+- `NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com`.
+- `DATABASE_URL` — the production Neon connection string (never the CI/test branch).
+- `BETTER_AUTH_SECRET` — a real 32+ character secret, generated once and never reused
+  from a dev/test value (see "Render configuration" above for the generation command).
+- `RESEND_API_KEY` and `EMAIL_FROM_ADDRESS` — after completing the domain verification
+  steps under "Transactional email" above. Billing depends on this indirectly: checkout
+  and the billing portal both require a verified email (`auth.ts`'s
+  `subscription.requireEmailVerification` and its matching `hooks.before` check), so a
+  user who never receives a verification email cannot subscribe either.
+
+**2. Create the live QAVELIX PRO product and price in the Stripe Dashboard** (switch the
+Dashboard's mode toggle to **Live**, not Test, before doing this):
+
+1. Products → Add product. Name: `QAVELIX PRO` (or whatever you want customers to see on
+   their invoice/statement — the app itself never displays a product name, only the price).
+2. Add a recurring price: **US$9.99**, billing period **Monthly**, currency **USD**.
+3. Save, then copy the **Price ID** (`price_...`) from the price row (not the product
+   page's own `prod_...` ID — the app only ever uses the Price ID; nothing in this
+   codebase reads a product ID from configuration, so there is nothing else to copy here
+   for that ID, though you may still want to note the product ID for your own Dashboard
+   reference).
+4. This Price ID is the value for `STRIPE_PRO_MONTHLY_PRICE_ID` in Render (live mode) —
+   see step 5 below for exactly where to enter it.
+
+**3. Create the live webhook endpoint:**
+
+1. Stripe Dashboard (Live mode) → Developers → Webhooks → Add endpoint.
+2. Endpoint URL: `https://qavelix.com/api/auth/stripe/webhook` (the same path the
+   plugin's own webhook route mounts at — see "Manual Stripe test-mode subscription
+   testing" above for how this route is dispatched).
+3. Select these events **exactly** (see "Required: production webhook event subscription
+   must exclude `checkout.session.completed`" above for why no other events, and
+   specifically not that one, are needed or safe to add):
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+4. Save, then reveal and copy the endpoint's **Signing secret** (`whsec_...`) — this is a
+   different value from any `stripe listen` secret used locally; it is unique to this one
+   Dashboard-configured endpoint.
+
+**4. Configure the Stripe Customer Portal** (Dashboard → Settings → Billing → Customer
+portal, in Live mode):
+
+- **Payment methods**: enable "Allow customers to update payment methods."
+- **Cancellation**: enable "Allow customers to cancel subscriptions" (the app's own
+  Billing Portal button relies on this being turned on — with it off, a customer who
+  clicks "Manage subscription" would reach a portal with no way to actually cancel).
+- **Invoice history**: enable "Allow customers to view their billing history."
+- **Branding**: set the business name/logo/icon/colors customers should see on the
+  portal itself (Stripe-hosted, not a QAVELIX page — see `src/components/dashboard/
+  billing-portal-button.tsx`).
+- **Business information / support**: set the same public support contact
+  (`qavelixhq@gmail.com`) Stripe should show customers on the portal and on invoices.
+- Return URL is set by the app itself on every portal request (`/dashboard/plan` or
+  `/dashboard/billing`, whichever the customer opened it from) — nothing to configure
+  in the Dashboard for this.
+
+**5. Enter the live values in Render** (service dashboard → Environment):
+
+```bash
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...       # from step 3, the live endpoint's own secret
+STRIPE_PRO_MONTHLY_PRICE_ID=price_... # from step 2
+```
+
+Never paste these into chat, a commit, or any file tracked by git — `.env.local` is
+already git-ignored; keep it that way, and enter the live values directly into Render's
+environment variable UI. Setting only one or two of the three above (never all three,
+never none) is caught at boot by `src/env/server.ts`'s own validation with a clear error
+naming exactly which variable is missing — the deployment will fail to start rather than
+silently run with billing half-configured.
+
+**6. Deploy** — trigger the Render deploy (or let it auto-deploy from the push that
+already happened before this checklist, per this project's normal flow) after the env
+vars above are saved.
+
+**7. Post-deployment verification** (in this order):
+
+1. Confirm the service boots without an env-validation error (Render logs).
+2. Sign in as a real (your own) account, verify its email if not already verified.
+3. Confirm `/dashboard/plan` shows the real US$9.99/month price (read live from Stripe
+   via `getProMonthlyPriceDisplay()` — never a hardcoded number; if this shows nothing,
+   the live price lookup itself is failing, which means something above was missed).
+4. In the Stripe Dashboard (Live mode) → Developers → Webhooks → the new endpoint, confirm
+   its status shows as enabled with no failed delivery attempts yet.
+
+**8. A small real-payment smoke test** (uses a real card and a real, small charge —
+confirm you're prepared to immediately refund it in step 9):
+
+1. From a real account with a verified email, click "Upgrade to Pro" and complete
+   Checkout with a real card.
+2. Confirm the Stripe Dashboard (Live mode) shows the new Checkout Session and the new
+   `customer.subscription.created` webhook delivery succeeding (200 response).
+3. Confirm `/dashboard/plan` reflects Pro immediately after the redirect back
+   (`getPlan()`'s self-heal from the `subscription` table, per `docs/architecture` — same
+   mechanism already proven in test mode), and confirm it still shows Pro after a full
+   sign-out/sign-in cycle.
+4. Confirm the two paid tools (Video Compressor, Extract Audio) reflect Pro-tier limits
+   for that account.
+
+**9. Refund/cancellation verification** (immediately after step 8, using the same test
+subscription — do not leave a real subscription running purely from this smoke test):
+
+1. In the Stripe Dashboard, refund the smoke-test charge from step 8 (Payments → the
+   charge → Refund). A refund does not by itself cancel the subscription — do that
+   separately.
+2. Use the app's own Billing Portal (`/dashboard/billing` → "Manage subscription") to
+   cancel the subscription, exactly as a real customer would.
+3. Confirm the Stripe Dashboard shows the subscription as canceled and the
+   `customer.subscription.deleted` (or `updated` with a canceled status) webhook
+   delivered successfully.
+4. Confirm `/dashboard/plan` reverts to Free once the cancellation takes effect (matching
+   this project's existing "only active/trialing grants Pro" rule — see auth.ts's
+   `syncPlanFromSubscription`).
+
+**10. Rollback procedure**, if anything above fails or behaves unexpectedly:
+
+1. In Render, revert `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and
+   `STRIPE_PRO_MONTHLY_PRICE_ID` back to their previous test-mode values (or unset all
+   three to disable billing entirely) — this alone takes the deployment back to
+   test-mode/no-billing behavior with no code change or redeploy needed, since mode is
+   controlled purely by these variables.
+2. In the Stripe Dashboard (Live mode), disable (do not delete) the live webhook endpoint
+   from step 3 if it is delivering to a misconfigured target, to stop Stripe's retry
+   backoff from accumulating failed-delivery noise.
+3. Test-mode and live-mode Stripe customers/subscriptions are always completely separate
+   objects in Stripe's own systems — nothing from the test-mode smoke testing done during
+   development ever needs migrating, and nothing done in live mode ever affects test-mode
+   data. No production database write happens as part of this rollback; `user_entitlement
+   .plan` for any affected account simply reflects whatever the next webhook/self-heal
+   check finds once the correct (test or live) variables are back in place.
+4. If a real customer was already charged before a rollback becomes necessary, issue a
+   refund from the Stripe Dashboard as in step 9 — the app itself has no separate refund
+   mechanism; Stripe is the single source of truth for that action.
+
 ## Manual deployment checklist
 
 Before the first production deployment:
@@ -344,8 +516,11 @@ Before the first production deployment:
 1. Create the Render service from the repository, using `Dockerfile`.
 2. Set `NEXT_PUBLIC_APP_URL` to the final HTTPS production origin.
 3. Set `NEXT_PUBLIC_SUPPORT_EMAIL=qavelixhq@gmail.com`.
-4. Connect the production domain in Render.
-5. Configure Cloudflare DNS to point to Render.
-6. Verify Render has issued a valid certificate (or Cloudflare's, per the SSL/TLS mode above).
-7. Run the post-deployment checks in this document.
-8. Confirm `sitemap.xml`, `robots.txt`, metadata, favicon, and manifest use the production origin.
+4. Set `DATABASE_URL` and `BETTER_AUTH_SECRET` (required for accounts/billing — see "Render configuration" above).
+5. Set `RESEND_API_KEY` and `EMAIL_FROM_ADDRESS`, after completing the Resend domain verification steps under "Transactional email" above.
+6. Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_PRO_MONTHLY_PRICE_ID` if Pro checkout/billing is enabled for this deployment.
+7. Connect the production domain in Render.
+8. Configure Cloudflare DNS to point to Render.
+9. Verify Render has issued a valid certificate (or Cloudflare's, per the SSL/TLS mode above).
+10. Run the post-deployment checks in this document.
+11. Confirm `sitemap.xml`, `robots.txt`, metadata, favicon, and manifest use the production origin.

@@ -20,16 +20,19 @@ export async function getOptionalSession() {
 }
 
 // Only accepts an internal, locale-prefixed /dashboard path, the bare localized
-// homepage, or the Extract Audio tool page. This is intentionally an allowlist, not a
-// generic "starts with / and doesn't start with //" check — the callback value arrives
-// via a query string an attacker fully controls (?callbackURL=...), and these are the
-// only legitimate destinations any flow in this app produces a callback for: the
-// dashboard (post-sign-in), and the two tool pages (the plan-comparison modal shown when
-// an anonymous visitor hits their usage limit needs to return them to whichever tool
-// page they were using, not just the dashboard). Rejects protocol-relative URLs
-// (//evil.com), absolute URLs, and anything outside this fixed set outright by
-// construction, not by trying to blocklist every way to smuggle one past a looser check.
-const SAFE_CALLBACK_PATTERN = /^\/[a-z]{2}(-[A-Z]{2})?(\/dashboard(\/[a-zA-Z0-9/_-]*)?|\/tools\/extract-audio)?$/;
+// homepage, the Extract Audio tool page, or the Verify Email page. This is intentionally
+// an allowlist, not a generic "starts with / and doesn't start with //" check — the
+// callback value arrives via a query string an attacker fully controls
+// (?callbackURL=...), and these are the only legitimate destinations any flow in this app
+// produces a callback for: the dashboard (post-sign-in), the two tool pages (the
+// plan-comparison modal shown when an anonymous visitor hits their usage limit needs to
+// return them to whichever tool page they were using, not just the dashboard), and
+// /verify-email (src/app/api/verify-email/route.ts's own callbackURL, round-tripped
+// through this same allowlist even though it's self-generated, not user input). Rejects
+// protocol-relative URLs (//evil.com), absolute URLs, and anything outside this fixed set
+// outright by construction, not by trying to blocklist every way to smuggle one past a
+// looser check.
+const SAFE_CALLBACK_PATTERN = /^\/[a-z]{2}(-[A-Z]{2})?(\/dashboard(\/[a-zA-Z0-9/_-]*)?|\/tools\/extract-audio|\/verify-email)?$/;
 
 export function sanitizeCallbackPath(value: string | undefined | null): string | null {
   if (!value) {

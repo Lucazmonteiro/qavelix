@@ -424,6 +424,15 @@ export type Dictionary = {
       title: string;
       verifiedTitle: string;
       verifiedMessage: string;
+      verifiedNoSessionMessage: string;
+      goToSignInLabel: string;
+      differentAccountTitle: string;
+      differentAccountMessage: string;
+      differentAccountMessageGeneric: string;
+      signOutAndSignInLabel: string;
+      signingOutLabel: string;
+      signOutErrorMessage: string;
+      verificationFailedTitle: string;
       pendingTitle: string;
       pendingMessage: string;
       resendButton: string;
@@ -453,6 +462,7 @@ export type Dictionary = {
     upgradeButtonLabel: string;
     checkoutPendingLabel: string;
     checkoutErrorMessage: string;
+    emailVerificationRequiredMessage: string;
     dismissLabel: string;
     closeLabel: string;
   };
@@ -530,6 +540,9 @@ export type Dictionary = {
       manageSubscriptionLabel: string;
       portalPendingLabel: string;
       portalErrorMessage: string;
+      emailVerificationRequiredMessage: string;
+      verificationBannerMessage: string;
+      verificationBannerActionLabel: string;
       billingStatusLabel: string;
       renewsOnLabel: string;
       cancelsOnLabel: string;
@@ -1225,6 +1238,17 @@ const dictionaries: Record<Locale, Dictionary> = {
       title: "Verify your email",
       verifiedTitle: "Email verified",
       verifiedMessage: "Your email address has been verified.",
+      verifiedNoSessionMessage: "Your email address has been verified. Sign in to continue.",
+      goToSignInLabel: "Go to sign in",
+      differentAccountTitle: "A different account is signed in",
+      differentAccountMessage:
+        "{email} was just verified, but you're currently signed in with a different QAVELIX account.",
+      differentAccountMessageGeneric:
+        "Your email address was just verified, but you're currently signed in with a different QAVELIX account.",
+      signOutAndSignInLabel: "Sign in with the verified account",
+      signingOutLabel: "Signing out...",
+      signOutErrorMessage: "Could not sign out. Try again.",
+      verificationFailedTitle: "Verification failed",
       pendingTitle: "Verify your email",
       pendingMessage:
         "We sent a verification link to your email address. Open it to verify your account.",
@@ -1256,6 +1280,8 @@ const dictionaries: Record<Locale, Dictionary> = {
     upgradeButtonLabel: "Upgrade to Pro",
     checkoutPendingLabel: "Redirecting to checkout...",
     checkoutErrorMessage: "Could not start checkout. Try again.",
+    emailVerificationRequiredMessage:
+      "Verify your email address before upgrading to Pro. Check your inbox for the verification link, or request a new one.",
     dismissLabel: "Not now",
     closeLabel: "Close",
   },
@@ -1334,6 +1360,11 @@ const dictionaries: Record<Locale, Dictionary> = {
       manageSubscriptionLabel: "Manage subscription",
       portalPendingLabel: "Opening billing portal...",
       portalErrorMessage: "Could not open the billing portal. Try again.",
+      emailVerificationRequiredMessage:
+        "Verify your email address before managing your subscription or payments. Check your inbox for the verification link, or request a new one.",
+      verificationBannerMessage:
+        "Verify your email address to manage your subscription or payments.",
+      verificationBannerActionLabel: "Verify email",
       billingStatusLabel: "Billing",
       renewsOnLabel: "Renews on {date}",
       cancelsOnLabel: "Access ends on {date}",
@@ -2413,6 +2444,17 @@ const dictionaries: Record<Locale, Dictionary> = {
         title: "Verifique seu email",
         verifiedTitle: "Email verificado",
         verifiedMessage: "Seu endereço de email foi verificado.",
+        verifiedNoSessionMessage: "Seu endereço de email foi verificado. Entre para continuar.",
+        goToSignInLabel: "Ir para o login",
+        differentAccountTitle: "Uma conta diferente está conectada",
+        differentAccountMessage:
+          "{email} acabou de ser verificado, mas você está conectado no momento com uma conta QAVELIX diferente.",
+        differentAccountMessageGeneric:
+          "Seu endereço de email acabou de ser verificado, mas você está conectado no momento com uma conta QAVELIX diferente.",
+        signOutAndSignInLabel: "Entrar com a conta verificada",
+        signingOutLabel: "Saindo...",
+        signOutErrorMessage: "Não foi possível sair. Tente novamente.",
+        verificationFailedTitle: "Falha na verificação",
         pendingTitle: "Verifique seu email",
         pendingMessage:
           "Enviamos um link de verificação para o seu email. Abra-o para verificar sua conta.",
@@ -2444,6 +2486,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       upgradeButtonLabel: "Fazer upgrade para o Pro",
       checkoutPendingLabel: "Redirecionando para o checkout...",
       checkoutErrorMessage: "Não foi possível iniciar o checkout. Tente novamente.",
+      emailVerificationRequiredMessage:
+        "Verifique seu endereço de email antes de fazer upgrade para o Pro. Confira sua caixa de entrada para o link de verificação, ou solicite um novo.",
       dismissLabel: "Agora não",
       closeLabel: "Fechar",
     },
@@ -2523,6 +2567,11 @@ const dictionaries: Record<Locale, Dictionary> = {
         manageSubscriptionLabel: "Gerenciar assinatura",
         portalPendingLabel: "Abrindo o portal de cobrança...",
         portalErrorMessage: "Não foi possível abrir o portal de cobrança. Tente novamente.",
+        emailVerificationRequiredMessage:
+          "Verifique seu endereço de email antes de gerenciar sua assinatura ou pagamentos. Confira sua caixa de entrada para o link de verificação, ou solicite um novo.",
+        verificationBannerMessage:
+          "Verifique seu endereço de email para gerenciar sua assinatura ou pagamentos.",
+        verificationBannerActionLabel: "Verificar email",
         billingStatusLabel: "Cobrança",
         renewsOnLabel: "Renova em {date}",
         cancelsOnLabel: "O acesso termina em {date}",
@@ -3605,6 +3654,17 @@ const dictionaries: Record<Locale, Dictionary> = {
         title: "Verifica tu correo",
         verifiedTitle: "Correo verificado",
         verifiedMessage: "Tu correo electrónico ha sido verificado.",
+        verifiedNoSessionMessage: "Tu correo electrónico ha sido verificado. Inicia sesión para continuar.",
+        goToSignInLabel: "Ir a iniciar sesión",
+        differentAccountTitle: "Hay una cuenta diferente conectada",
+        differentAccountMessage:
+          "{email} acaba de ser verificado, pero actualmente tienes la sesión iniciada con una cuenta QAVELIX diferente.",
+        differentAccountMessageGeneric:
+          "Tu correo electrónico acaba de ser verificado, pero actualmente tienes la sesión iniciada con una cuenta QAVELIX diferente.",
+        signOutAndSignInLabel: "Iniciar sesión con la cuenta verificada",
+        signingOutLabel: "Cerrando sesión...",
+        signOutErrorMessage: "No se pudo cerrar la sesión. Inténtalo de nuevo.",
+        verificationFailedTitle: "Verificación fallida",
         pendingTitle: "Verifica tu correo",
         pendingMessage:
           "Te hemos enviado un enlace de verificación a tu correo electrónico. Ábrelo para verificar tu cuenta.",
@@ -3636,6 +3696,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       upgradeButtonLabel: "Actualizar a Pro",
       checkoutPendingLabel: "Redirigiendo al checkout...",
       checkoutErrorMessage: "No se pudo iniciar el checkout. Inténtalo de nuevo.",
+      emailVerificationRequiredMessage:
+        "Verifica tu correo electrónico antes de actualizar a Pro. Revisa tu bandeja de entrada para el enlace de verificación, o solicita uno nuevo.",
       dismissLabel: "Ahora no",
       closeLabel: "Cerrar",
     },
@@ -3715,6 +3777,11 @@ const dictionaries: Record<Locale, Dictionary> = {
         manageSubscriptionLabel: "Gestionar suscripción",
         portalPendingLabel: "Abriendo el portal de facturación...",
         portalErrorMessage: "No se pudo abrir el portal de facturación. Inténtalo de nuevo.",
+        emailVerificationRequiredMessage:
+          "Verifica tu correo electrónico antes de gestionar tu suscripción o pagos. Revisa tu bandeja de entrada para el enlace de verificación, o solicita uno nuevo.",
+        verificationBannerMessage:
+          "Verifica tu correo electrónico para gestionar tu suscripción o pagos.",
+        verificationBannerActionLabel: "Verificar correo",
         billingStatusLabel: "Facturación",
         renewsOnLabel: "Se renueva el {date}",
         cancelsOnLabel: "El acceso termina el {date}",

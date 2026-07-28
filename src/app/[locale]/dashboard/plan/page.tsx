@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
+import { EmailVerificationBanner } from "@/components/dashboard/email-verification-banner";
 import { PlanActions } from "@/components/dashboard/plan-actions";
 import { ProWelcomeModal } from "@/components/dashboard/pro-welcome-modal";
 import { SubscriptionActivationStatus } from "@/components/dashboard/subscription-activation-status";
@@ -85,6 +86,14 @@ export default async function DashboardPlanPage({ params, searchParams }: Dashbo
   return (
     <>
       <DashboardHeader description={copy.description} eyebrow={copy.eyebrow} title={copy.title} />
+
+      {billingConfigured && !session.user.emailVerified ? (
+        <EmailVerificationBanner
+          actionLabel={copy.verificationBannerActionLabel}
+          locale={locale}
+          message={copy.verificationBannerMessage}
+        />
+      ) : null}
 
       {isCheckoutSuccess && isActivating ? (
         <SubscriptionActivationStatus
