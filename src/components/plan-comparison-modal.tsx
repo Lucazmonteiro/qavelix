@@ -3,7 +3,7 @@
 import { useId } from "react";
 
 import { Modal } from "@/components/modal";
-import { useLocaleState } from "@/i18n/locale-context";
+import { replaceLocaleInPath, useLocaleState } from "@/i18n/locale-context";
 import { formatBytes } from "@/lib/upload-policy";
 
 export type PlanComparisonModalLimits = {
@@ -17,11 +17,13 @@ type PlanComparisonModalProps = {
   anonymousLimits: PlanComparisonModalLimits;
   freeLimits: PlanComparisonModalLimits;
   proLimits: PlanComparisonModalLimits;
-  // Locale-less path to return to after sign-up/sign-in (the tool page that triggered
-  // this modal) — threaded through as ?callbackURL so the visitor resumes where they
-  // were instead of landing on a generic page. Only dashboard, homepage, and
-  // /tools/extract-audio are ever accepted by sanitizeCallbackPath() server-side, so an
-  // unexpected value here simply falls back to the locale home, never an open redirect.
+  // usePathname() from the tool page that triggered this modal — already includes the
+  // locale segment (e.g. "/pt-BR/tools/extract-audio"), not locale-less; see
+  // replaceLocaleInPath()'s use below. Threaded through as ?callbackURL so the visitor
+  // resumes where they were instead of landing on a generic page. Only dashboard,
+  // homepage, and /tools/extract-audio are ever accepted by sanitizeCallbackPath()
+  // server-side, so an unexpected value here simply falls back to the locale home, never
+  // an open redirect.
   returnPath: string;
 };
 
@@ -44,7 +46,12 @@ export function PlanComparisonModal({
   const copy = dictionary.planComparisonModal;
   const upgradeCopy = dictionary.upgradeModal;
   const titleId = useId();
-  const callbackURL = encodeURIComponent(`/${locale}${returnPath}`);
+  // returnPath is usePathname() from the calling tool page, which already includes the
+  // locale segment under this app's /[locale]/... routing — replaceLocaleInPath() swaps
+  // it in place instead of stacking a second one (see startProUpgradeCheckout's comment
+  // in auth-client.ts for the full explanation of this shape and why the naive
+  // `/${locale}${returnPath}` concatenation this replaces was wrong).
+  const callbackURL = encodeURIComponent(replaceLocaleInPath(returnPath, locale));
 
   return (
     <Modal

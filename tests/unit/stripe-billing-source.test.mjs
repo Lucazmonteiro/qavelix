@@ -203,7 +203,7 @@ test("checkout/portal actions call the real Better Auth client methods, never fe
   // both the Plan page's upgrade button and the reusable daily-limit upgrade modal, so
   // the plan name and the success destination that drives the activation/welcome flow
   // can never drift between call sites.
-  assert.match(authClientModule, /export function startProUpgradeCheckout\(locale: string, cancelPath: string\)/);
+  assert.match(authClientModule, /export function startProUpgradeCheckout\(locale: Locale, cancelPath: string\)/);
   assert.match(authClientModule, /authClient\.subscription\.upgrade\(\{/);
   assert.match(authClientModule, /plan: "pro"/);
   assert.match(

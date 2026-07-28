@@ -17,9 +17,10 @@ type UpgradeModalProps = {
   onClose: () => void;
   freeLimits: UpgradeModalLimits;
   proLimits: UpgradeModalLimits;
-  // Locale-less path to return to if the visitor cancels checkout (e.g. the tool page
-  // that triggered this modal) — successUrl is always the Plan page, see
-  // startProUpgradeCheckout()'s own comment on why that's a single, non-duplicated path.
+  // usePathname() from the tool page that triggered this modal — already includes the
+  // locale segment (e.g. "/pt-BR"), not locale-less; startProUpgradeCheckout() re-locales
+  // it via replaceLocaleInPath() rather than concatenating, see that function's comment
+  // for why. successUrl is always the Plan page, a separate, always-locale-less literal.
   cancelPath: string;
 };
 
