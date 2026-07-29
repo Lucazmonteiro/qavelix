@@ -66,10 +66,19 @@ const uploadLimitBytes = 250 * 1024 * 1024;
 // this IP — fixed starting values meant every rerun replayed the exact same fingerprint
 // sequence, so quota consumed by an earlier run silently carried over and caused
 // spurious 401 account_required failures on later runs, unrelated to any real
-// regression. Random octets keep the IPv4 shape (some code paths may expect a
-// well-formed address) while making cross-run collisions practically impossible.
-const fingerprintRunSeedA = Math.floor(Math.random() * 254) + 1;
-const fingerprintRunSeedB = Math.floor(Math.random() * 254) + 1;
+// regression.
+//
+// Uses the RFC 3849 IPv6 documentation range (2001:db8::/32), not a private RFC1918
+// address: the trusted client-IP resolver (client-ip.ts, Security Correction #1)
+// correctly treats private/reserved ranges as skippable internal-proxy hops, so a bare
+// private address with no other hop in the chain resolves to "unknown" rather than a
+// distinct client — collapsing every such fixture into one shared identity and
+// triggering spurious rate-limit/quota failures. 2001:db8::/32 is never treated as a
+// trusted hop, is guaranteed by IANA to never be assigned to a real host, and — unlike a
+// single RFC 5737 /24 (only one free octet) — has enough address space to keep both a
+// per-run seed and a per-request counter genuinely distinct.
+const fingerprintRunSeedA = Math.floor(Math.random() * 0xffff);
+const fingerprintRunSeedB = Math.floor(Math.random() * 0xffff);
 let uploadTestFingerprintCounter = 0;
 let compressionTestFingerprintCounter = 0;
 
@@ -78,7 +87,7 @@ function compressionRequestHeaders(baseUrl) {
 
   return {
     Origin: baseUrl,
-    "X-Forwarded-For": `10.${fingerprintRunSeedA}.${fingerprintRunSeedB}.${compressionTestFingerprintCounter}`,
+    "X-Forwarded-For": `2001:db8:${fingerprintRunSeedA.toString(16)}:${fingerprintRunSeedB.toString(16)}::${compressionTestFingerprintCounter}`,
     "Content-Type": "application/json",
   };
 }
@@ -194,7 +203,7 @@ async function postRawUpload(
   uploadTestFingerprintCounter += 1;
   const headers = {
     Origin: origin,
-    "X-Forwarded-For": `172.16.${fingerprintRunSeedA}.${uploadTestFingerprintCounter}`,
+    "X-Forwarded-For": `2001:db8:${fingerprintRunSeedA.toString(16)}::${uploadTestFingerprintCounter}`,
     ...extraHeaders,
   };
 
@@ -777,7 +786,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
           method: "POST",
           headers: {
             Origin: baseUrl,
-            "X-Forwarded-For": `10.${fingerprintRunSeedA}.${fingerprintRunSeedB}.${++compressionTestFingerprintCounter}`,
+            "X-Forwarded-For": `2001:db8:${fingerprintRunSeedA.toString(16)}:${fingerprintRunSeedB.toString(16)}::${++compressionTestFingerprintCounter}`,
           },
           body: formData,
         });
@@ -870,7 +879,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
       async () => {
         const statusHeaders = {
           Origin: baseUrl,
-          "X-Forwarded-For": `10.${fingerprintRunSeedA}.${fingerprintRunSeedB}.${++compressionTestFingerprintCounter}`,
+          "X-Forwarded-For": `2001:db8:${fingerprintRunSeedA.toString(16)}:${fingerprintRunSeedB.toString(16)}::${++compressionTestFingerprintCounter}`,
         };
 
         const response = await fetch(
@@ -929,7 +938,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
         const response = await fetch(`${baseUrl}/api/entitlements/plan`, {
           headers: {
             Origin: baseUrl,
-            "X-Forwarded-For": `10.${fingerprintRunSeedA}.${fingerprintRunSeedB}.${++compressionTestFingerprintCounter}`,
+            "X-Forwarded-For": `2001:db8:${fingerprintRunSeedA.toString(16)}:${fingerprintRunSeedB.toString(16)}::${++compressionTestFingerprintCounter}`,
           },
         });
         const payload = await response.json();

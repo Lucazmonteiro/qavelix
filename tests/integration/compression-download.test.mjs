@@ -15,7 +15,12 @@ const execFileAsync = promisify(execFile);
 // database don't replay the same synthetic IP sequence — see the matching comment in
 // tests/integration/http.test.mjs for why a fixed starting value caused accumulating
 // anonymous-quota exhaustion (401 account_required) across reruns.
-const fingerprintRunSeed = Math.floor(Math.random() * 254) + 1;
+//
+// Uses the RFC 3849 IPv6 documentation range (2001:db8::/32), not a private RFC1918
+// address — see the matching comment in tests/integration/http.test.mjs for why a
+// private address collapses every fixture into the same "unknown" identity under the
+// trusted client-IP resolver (client-ip.ts, Security Correction #1).
+const fingerprintRunSeed = Math.floor(Math.random() * 0xffff);
 let requestFingerprintCounter = 0;
 
 function compressionRequestHeaders(baseUrl) {
@@ -23,7 +28,7 @@ function compressionRequestHeaders(baseUrl) {
 
   return {
     Origin: baseUrl,
-    "X-Forwarded-For": `10.${fingerprintRunSeed}.99.${requestFingerprintCounter}`,
+    "X-Forwarded-For": `2001:db8:${fingerprintRunSeed.toString(16)}::${requestFingerprintCounter}`,
     "Content-Type": "application/json",
   };
 }
