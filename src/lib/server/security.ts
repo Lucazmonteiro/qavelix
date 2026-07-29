@@ -4,6 +4,7 @@ import { eq, lt, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { env } from "@/env/server";
+import { resolveTrustedClientIdentity } from "@/lib/server/client-ip";
 import { getDb } from "@/lib/server/db/client";
 import { rateLimitBucket } from "@/lib/server/db/schema";
 import { validateSameOriginRequest } from "@/lib/server/origin";
@@ -36,10 +37,18 @@ function getHeaderValue(request: Request, headerName: string) {
   return request.headers.get(headerName) ?? "";
 }
 
+// The leftmost X-Forwarded-For entry is attacker-controlled input, not a
+// network-verified fact — see resolveTrustedClientIdentity() (client-ip.ts) for the full
+// trust-boundary reasoning behind reading it from the right instead, skipping only
+// Cloudflare's own published ranges and standard private/reserved ranges. Never trusts
+// a client-supplied header value simply because it exists. Neither cf-connecting-ip nor
+// x-real-ip is read here: trusting either directly would require the same "did this
+// really come through Cloudflare" check this function already performs via
+// X-Forwarded-For, and neither header is ever set/overwritten by this app's actual proxy
+// chain (Cloudflare, Render) — so any value present is indistinguishable from
+// attacker-injected input, not a second trustworthy signal.
 export function getClientFingerprint(request: Request) {
-  const forwardedFor = getHeaderValue(request, "x-forwarded-for").split(",")[0]?.trim();
-  const realIp = getHeaderValue(request, "x-real-ip");
-  const ipAddress = forwardedFor || realIp || "unknown";
+  const ipAddress = resolveTrustedClientIdentity(getHeaderValue(request, "x-forwarded-for"));
 
   return createHash("sha256").update(ipAddress).digest("base64url");
 }
