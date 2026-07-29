@@ -1,10 +1,11 @@
-import type { Route } from "next";
+import type { Metadata, Route } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale, locales } from "@/i18n/locales";
+import { buildSeoMetadata } from "@/lib/metadata";
 import { getOptionalSession, sanitizeCallbackPath } from "@/lib/server/auth/session";
 
 type SignUpPageProps = {
@@ -18,6 +19,28 @@ type SignUpPageProps = {
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
+}
+
+// See sign-in/page.tsx's generateMetadata comment: fixes the same wrong-canonical
+// defect for this route.
+export async function generateMetadata({ params }: SignUpPageProps): Promise<Metadata> {
+  const { locale } = await params;
+
+  if (!isLocale(locale)) {
+    notFound();
+  }
+
+  const dictionary = getDictionary(locale);
+
+  return {
+    ...buildSeoMetadata({
+      title: `${dictionary.auth.signUp.title} | QAVELIX`,
+      description: dictionary.auth.signUp.description,
+      locale,
+      pathname: "/sign-up",
+    }),
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function SignUpPage({ params, searchParams }: SignUpPageProps) {

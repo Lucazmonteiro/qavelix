@@ -13,6 +13,7 @@ type AppFooterProps = {
 export function AppFooter({ locale, dictionary }: AppFooterProps) {
   const currentYear = new Date().getFullYear();
   const links = [
+    { href: `/${locale}#pricing`, label: dictionary.home.pricing.eyebrow },
     ...contentPageSlugs.map((slug) => ({
       href: `/${locale}/${slug}`,
       label: dictionary.pages[slug].label,

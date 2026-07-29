@@ -6,15 +6,17 @@ import { SectionHeading } from "@/components/section-heading";
 import { useLocaleState } from "@/i18n/locale-context";
 
 export function HomepageContent() {
-  const { dictionary } = useLocaleState();
+  const { dictionary, locale } = useLocaleState();
   const design = dictionary.home.sections.designSystem;
   const accessibility = dictionary.home.sections.accessibility;
   const readiness = dictionary.home.sections.readiness;
+  const pricing = dictionary.home.pricing;
 
   return (
     <main className="page-shell" id="main-content">
       <HomepageCompressor
         copy={{
+          title: dictionary.home.title,
           eyebrow: dictionary.home.eyebrow,
           description: dictionary.home.description,
           primaryAction: dictionary.home.primaryAction,
@@ -75,6 +77,43 @@ export function HomepageContent() {
             <strong>{dictionary.home.statusValue}</strong>
           </div>
         </aside>
+      </section>
+
+      <section className="content-section" id="pricing">
+        <SectionHeading
+          description={pricing.description}
+          eyebrow={pricing.eyebrow}
+          title={pricing.title}
+        />
+        <div className="pricing-grid">
+          {pricing.plans.map((plan) => (
+            <article
+              className={`pricing-card${plan.highlight ? " pricing-card--highlight" : ""}`}
+              key={plan.name}
+            >
+              {plan.badge ? <p className="pricing-card__badge">{plan.badge}</p> : null}
+              <h3>{plan.name}</h3>
+              <p className="pricing-card__price">
+                <span className="pricing-card__amount">{plan.price}</span>
+                {plan.cadence ? (
+                  <span className="pricing-card__cadence">{plan.cadence}</span>
+                ) : null}
+              </p>
+              <ul className="check-list">
+                {plan.features.map((feature) => (
+                  <li key={feature}>{feature}</li>
+                ))}
+              </ul>
+              <a
+                className={`button ${plan.highlight ? "button--primary" : "button--secondary"}`}
+                href={`/${locale}/sign-up`}
+              >
+                {plan.cta}
+              </a>
+            </article>
+          ))}
+        </div>
+        <p className="pricing-note">{pricing.note}</p>
       </section>
 
       <section className="content-section" id="faq">

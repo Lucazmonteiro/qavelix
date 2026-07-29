@@ -73,6 +73,21 @@ export type Dictionary = {
       proLabel: string;
       proValue: string;
     };
+    pricing: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      note: string;
+      plans: Array<{
+        name: string;
+        price: string;
+        cadence: string;
+        highlight: boolean;
+        badge: string | null;
+        features: string[];
+        cta: string;
+      }>;
+    };
     sections: {
       designSystem: {
         eyebrow: string;
@@ -774,6 +789,41 @@ const dictionaries: Record<Locale, Dictionary> = {
         freeValue: "250 MB",
         proLabel: "Pro",
         proValue: "500 MB",
+      },
+      pricing: {
+        eyebrow: "Pricing",
+        title: "Simple, transparent pricing",
+        description:
+          "Use Video Compressor and Extract Audio for free, or upgrade to QAVELIX PRO for higher daily limits and larger files.",
+        note: "You can also try both tools without creating an account, with a small combined trial allowance.",
+        plans: [
+          {
+            name: "Free",
+            price: "$0",
+            cadence: "",
+            highlight: false,
+            badge: null,
+            features: [
+              "10 compressions or extractions per day, per tool",
+              "Up to 250 MB per file",
+              "No credit card required",
+            ],
+            cta: "Create a free account",
+          },
+          {
+            name: "QAVELIX PRO",
+            price: "$9.99",
+            cadence: "/month",
+            highlight: true,
+            badge: "Most popular",
+            features: [
+              "100 compressions or extractions per day, per tool",
+              "Up to 500 MB per file",
+              "Cancel anytime from your billing portal",
+            ],
+            cta: "Upgrade to PRO",
+          },
+        ],
       },
       sections: {
         designSystem: {
@@ -1569,6 +1619,13 @@ const dictionaries: Record<Locale, Dictionary> = {
             ],
           },
           {
+            title: "Can I cancel QAVELIX PRO, and are refunds available?",
+            body: [
+              "Yes. You can cancel your QAVELIX PRO subscription at any time from the billing portal in your account dashboard. Cancellation takes effect at the end of the current billing period, and Pro access continues until then.",
+              "QAVELIX does not offer prorated refunds for partial billing periods. If you believe a charge was made in error, reach out through the Contact page.",
+            ],
+          },
+          {
             title: "How long are files kept?",
             body: [
               "A validated upload can be used to start compression for about 15 minutes. Completed downloads remain available for about 30 minutes unless you delete them sooner.",
@@ -1765,6 +1822,13 @@ const dictionaries: Record<Locale, Dictionary> = {
             body: [
               "QAVELIX is provided on an as-available basis without a promise that every file will process successfully or remain downloadable for a specific period beyond the displayed availability window.",
               "To the extent permitted by applicable law, QAVELIX is not responsible for lost files, lost data, failed processing, expired downloads, or indirect damages resulting from use of the service.",
+            ],
+          },
+          {
+            title: "QAVELIX PRO subscriptions and cancellation",
+            body: [
+              "QAVELIX PRO is a recurring monthly subscription billed through Stripe. You can cancel at any time from the billing portal in your account dashboard; access continues until the end of the current billing period, after which the account returns to the Free plan.",
+              "QAVELIX does not provide prorated refunds for partial billing periods. If you believe you were charged in error, contact {supportEmail}.",
             ],
           },
           {
@@ -1975,6 +2039,41 @@ const dictionaries: Record<Locale, Dictionary> = {
         freeValue: "250 MB",
         proLabel: "Pro",
         proValue: "500 MB",
+      },
+      pricing: {
+        eyebrow: "Preços",
+        title: "Preços simples e transparentes",
+        description:
+          "Use o Compressor de Vídeo e o Extrair Áudio gratuitamente, ou faça upgrade para o QAVELIX PRO para limites diários maiores e arquivos maiores.",
+        note: "Você também pode testar as duas ferramentas sem criar uma conta, com uma pequena cota de teste combinada.",
+        plans: [
+          {
+            name: "Free",
+            price: "$0",
+            cadence: "",
+            highlight: false,
+            badge: null,
+            features: [
+              "10 compressões ou extrações por dia, por ferramenta",
+              "Até 250 MB por arquivo",
+              "Sem necessidade de cartão de crédito",
+            ],
+            cta: "Criar conta gratuita",
+          },
+          {
+            name: "QAVELIX PRO",
+            price: "$9.99",
+            cadence: "/mês",
+            highlight: true,
+            badge: "Mais popular",
+            features: [
+              "100 compressões ou extrações por dia, por ferramenta",
+              "Até 500 MB por arquivo",
+              "Cancele quando quiser pelo portal de cobrança",
+            ],
+            cta: "Fazer upgrade para o PRO",
+          },
+        ],
       },
       sections: {
         designSystem: {
@@ -2778,6 +2877,13 @@ const dictionaries: Record<Locale, Dictionary> = {
             ],
           },
           {
+            title: "Posso cancelar o QAVELIX PRO, e existem reembolsos?",
+            body: [
+              "Sim. Você pode cancelar sua assinatura do QAVELIX PRO a qualquer momento pelo portal de cobrança no seu painel de conta. O cancelamento tem efeito no fim do período de cobrança atual, e o acesso PRO continua até lá.",
+              "O QAVELIX não oferece reembolsos proporcionais por períodos parciais de cobrança. Se você acredita que uma cobrança foi feita por engano, entre em contato pela página de Contato.",
+            ],
+          },
+          {
             title: "Por quanto tempo os arquivos ficam disponíveis?",
             body: [
               "Um upload validado pode ser usado para iniciar a compressão por cerca de 15 minutos. Downloads concluídos ficam disponíveis por cerca de 30 minutos, a menos que você os exclua antes.",
@@ -2974,6 +3080,13 @@ const dictionaries: Record<Locale, Dictionary> = {
             body: [
               "O QAVELIX é fornecido conforme disponível, sem promessa de que todo arquivo será processado com sucesso ou ficará disponível para download além da janela exibida.",
               "Na medida permitida pela lei aplicável, o QAVELIX não se responsabiliza por arquivos perdidos, dados perdidos, falha de processamento, downloads expirados ou danos indiretos decorrentes do uso do serviço.",
+            ],
+          },
+          {
+            title: "Assinaturas do QAVELIX PRO e cancelamento",
+            body: [
+              "O QAVELIX PRO é uma assinatura mensal recorrente cobrada através da Stripe. Você pode cancelar a qualquer momento pelo portal de cobrança no seu painel de conta; o acesso continua até o fim do período de cobrança atual, após o qual a conta volta ao plano Free.",
+              "O QAVELIX não oferece reembolsos proporcionais por períodos parciais de cobrança. Se você acredita que foi cobrado por engano, entre em contato pelo email {supportEmail}.",
             ],
           },
           {
@@ -3184,6 +3297,41 @@ const dictionaries: Record<Locale, Dictionary> = {
         freeValue: "250 MB",
         proLabel: "Pro",
         proValue: "500 MB",
+      },
+      pricing: {
+        eyebrow: "Precios",
+        title: "Precios simples y transparentes",
+        description:
+          "Usa Compresor de Video y Extraer Audio de forma gratuita, o mejora a QAVELIX PRO para límites diarios más altos y archivos más grandes.",
+        note: "También puedes probar ambas herramientas sin crear una cuenta, con una pequeña cuota de prueba combinada.",
+        plans: [
+          {
+            name: "Free",
+            price: "$0",
+            cadence: "",
+            highlight: false,
+            badge: null,
+            features: [
+              "10 compresiones o extracciones al día, por herramienta",
+              "Hasta 250 MB por archivo",
+              "No se requiere tarjeta de crédito",
+            ],
+            cta: "Crear cuenta gratuita",
+          },
+          {
+            name: "QAVELIX PRO",
+            price: "$9.99",
+            cadence: "/mes",
+            highlight: true,
+            badge: "Más popular",
+            features: [
+              "100 compresiones o extracciones al día, por herramienta",
+              "Hasta 500 MB por archivo",
+              "Cancela cuando quieras desde el portal de facturación",
+            ],
+            cta: "Mejorar a PRO",
+          },
+        ],
       },
       sections: {
         designSystem: {
@@ -3988,6 +4136,13 @@ const dictionaries: Record<Locale, Dictionary> = {
             ],
           },
           {
+            title: "¿Puedo cancelar QAVELIX PRO, y hay reembolsos disponibles?",
+            body: [
+              "Sí. Puedes cancelar tu suscripción a QAVELIX PRO en cualquier momento desde el portal de facturación en tu panel de cuenta. La cancelación entra en vigor al final del período de facturación actual, y el acceso PRO continúa hasta entonces.",
+              "QAVELIX no ofrece reembolsos prorrateados por períodos de facturación parciales. Si crees que se realizó un cargo por error, contáctanos a través de la página de Contacto.",
+            ],
+          },
+          {
             title: "¿Durante cuánto tiempo están disponibles los archivos?",
             body: [
               "Una carga validada puede usarse para iniciar la compresión durante unos 15 minutos. Las descargas completadas permanecen disponibles durante unos 30 minutos, salvo que las elimines antes.",
@@ -4184,6 +4339,13 @@ const dictionaries: Record<Locale, Dictionary> = {
             body: [
               "QAVELIX se proporciona según disponibilidad, sin prometer que todos los archivos se procesarán correctamente ni que permanecerán descargables más allá de la ventana de disponibilidad indicada.",
               "En la medida permitida por la ley aplicable, QAVELIX no responde por archivos perdidos, datos perdidos, fallos de procesamiento, descargas caducadas ni daños indirectos derivados del uso del servicio.",
+            ],
+          },
+          {
+            title: "Suscripciones a QAVELIX PRO y cancelación",
+            body: [
+              "QAVELIX PRO es una suscripción mensual recurrente facturada a través de Stripe. Puedes cancelar en cualquier momento desde el portal de facturación en tu panel de cuenta; el acceso continúa hasta el final del período de facturación actual, tras el cual la cuenta vuelve al plan Free.",
+              "QAVELIX no ofrece reembolsos prorrateados por períodos de facturación parciales. Si crees que se te cobró por error, contáctanos en {supportEmail}.",
             ],
           },
           {

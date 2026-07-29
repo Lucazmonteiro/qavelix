@@ -1,10 +1,11 @@
-import type { Route } from "next";
+import type { Metadata, Route } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale, locales } from "@/i18n/locales";
+import { buildSeoMetadata } from "@/lib/metadata";
 import { getOptionalSession, sanitizeCallbackPath } from "@/lib/server/auth/session";
 
 type SignInPageProps = {
@@ -18,6 +19,32 @@ type SignInPageProps = {
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
+}
+
+// Fixes an SEO defect: without its own metadata, this route inherited the locale
+// layout's default alternates (the homepage's canonical/hreflang), so every locale's
+// sign-in page falsely declared itself a duplicate of the English homepage. noindex is
+// deliberate too — a utility/auth page has no search-intent value of its own — but it
+// still gets a real, correct, self-referencing canonical rather than relying on an
+// accidental one.
+export async function generateMetadata({ params }: SignInPageProps): Promise<Metadata> {
+  const { locale } = await params;
+
+  if (!isLocale(locale)) {
+    notFound();
+  }
+
+  const dictionary = getDictionary(locale);
+
+  return {
+    ...buildSeoMetadata({
+      title: `${dictionary.auth.signIn.title} | QAVELIX`,
+      description: dictionary.auth.signIn.description,
+      locale,
+      pathname: "/sign-in",
+    }),
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function SignInPage({ params, searchParams }: SignInPageProps) {

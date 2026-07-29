@@ -38,7 +38,7 @@ test("locale switching preserves scroll position and document language", () => {
 
 test("homepage text updates from a shared client dictionary without remounting compressor", () => {
   assert.match(appShellSource, /<LocaleProvider initialLocale=\{locale\}>/);
-  assert.match(homepageContentSource, /const \{ dictionary \} = useLocaleState\(\)/);
+  assert.match(homepageContentSource, /const \{ dictionary, locale \} = useLocaleState\(\)/);
   assert.match(homepageContentSource, /<HomepageCompressor/);
   assert.match(homepageContentSource, /compression: dictionary\.compression/);
   assert.match(pageSource, /<HomepageContent \/>/);
