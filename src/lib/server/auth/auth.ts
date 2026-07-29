@@ -4,6 +4,7 @@ import { betterAuth } from "better-auth/minimal";
 import { stripe } from "@better-auth/stripe";
 
 import { env } from "@/env/server";
+import { TRUSTED_PROXY_CIDR_RANGES } from "@/lib/server/client-ip";
 import { getDb } from "@/lib/server/db/client";
 import * as schema from "@/lib/server/db/schema";
 import { sendAuthEmail } from "@/lib/server/email";
@@ -160,6 +161,23 @@ function createAuth() {
       schema,
       transaction: true,
     }),
+    // Security Correction #3 — without this, Better Auth's own built-in rate limiter
+    // (3 sign-in/sign-up attempts per 10s, 3 password-reset/verification-email requests
+    // per 60s, per IP — its own default special rules) only trusts a *single-value*
+    // X-Forwarded-For header. Behind this app's real Cloudflare + Render chain, the
+    // header genuinely has multiple hops, so without trustedProxies configured, IP
+    // resolution silently gives up and every visitor shares one rate-limit bucket —
+    // either a trivial denial-of-service against sign-in for everyone (one attacker
+    // exhausts the shared bucket) or no meaningful per-account brute-force throttling at
+    // all. Reuses the exact same Cloudflare/private-range trust list already used and
+    // tested for the app's own fingerprint/rate-limit resolution (client-ip.ts) rather
+    // than maintaining a second copy. Purely a rate-limiter IP-resolution detail — does
+    // not touch sessions, cookies, or any user-visible auth behavior.
+    advanced: {
+      ipAddress: {
+        trustedProxies: TRUSTED_PROXY_CIDR_RANGES,
+      },
+    },
     hooks: {
       before: beforeHook,
     },

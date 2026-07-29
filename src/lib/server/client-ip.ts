@@ -187,3 +187,22 @@ export function resolveTrustedClientIdentity(
 
   return trustedForwardedIp ?? "unknown";
 }
+
+// Security Correction #3 — Better Auth's own built-in rate limiter (sign-in/sign-up:
+// 3 attempts/10s, password-reset/verification-email: 3/60s, per IP — see
+// node_modules/@better-auth/core/dist/context/create-context.mjs's default special
+// rules) resolves the client IP via this exact same "trustedProxies-aware, walk
+// X-Forwarded-For from the right" algorithm (@better-auth/core/utils/ip.mjs's
+// getIPFromHeader), but only trusts a *single-value* header unless `trustedProxies` is
+// configured — otherwise a real, multi-hop production header (Cloudflare + Render) makes
+// it give up and fall back to one shared bucket for every visitor, silently disabling
+// per-account brute-force throttling. Exported so auth.ts can pass the exact same
+// trusted-hop list this module already uses for the app's own rate limiter/entitlement
+// fingerprint, rather than maintaining a second, potentially-drifting copy of the same
+// Cloudflare/private-range list.
+export const TRUSTED_PROXY_CIDR_RANGES = [
+  ...CLOUDFLARE_IPV4_RANGES,
+  ...CLOUDFLARE_IPV6_RANGES,
+  ...PRIVATE_RESERVED_IPV4_RANGES,
+  ...PRIVATE_RESERVED_IPV6_RANGES,
+];
