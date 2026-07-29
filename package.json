@@ -24,7 +24,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "better-auth": "^1.6.25",
     "drizzle-orm": "^0.45.2",
-    "next": "latest",
+    "next": "16.2.12",
     "react": "latest",
     "react-dom": "latest",
     "resend": "^6.18.0",
@@ -45,7 +45,8 @@
     "typescript": "latest"
   },
   "overrides": {
-    "postcss": "8.5.19"
+    "postcss": "8.5.19",
+    "sharp": "0.35.3"
   },
   "engines": {
     "node": ">=22.0.0"
