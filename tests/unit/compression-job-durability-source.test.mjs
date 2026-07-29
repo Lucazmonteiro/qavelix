@@ -120,8 +120,10 @@ test("an expired or missing download fails closed: expiry is checked before the 
   );
   // A malformed/incomplete job (no expiresAt, no token, no signature, or a
   // non-downloadable status) is rejected before either the expiry or file check runs.
+  // Security Correction #4: a job belonging to a different actor is rejected in this
+  // same early check, indistinguishable from any other reason a download is refused.
   assert.match(
     compressionQueue,
-    /!job \|\|\s*\n\s*!isDownloadableCompressionStatus\(job\.status\) \|\|\s*\n\s*!job\.expiresAt \|\|\s*\n\s*!job\.downloadToken \|\|\s*\n\s*!job\.downloadSignature/,
+    /!job \|\|\s*\n\s*!isJobOwnedByActor\(job, actor\) \|\|\s*\n\s*!isDownloadableCompressionStatus\(job\.status\) \|\|\s*\n\s*!job\.expiresAt \|\|\s*\n\s*!job\.downloadToken \|\|\s*\n\s*!job\.downloadSignature/,
   );
 });

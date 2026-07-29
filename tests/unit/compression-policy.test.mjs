@@ -292,7 +292,10 @@ test("compression worker prevents duplicate execution of stale queued jobs", () 
     /if \(latestPersistedJob && !isPendingCompressionStatus\(latestPersistedJob\.status\)\)/,
   );
   assert.match(compressionQueueSource, /compression_worker_stale_job_skipped/);
-  assert.match(compressionQueueSource, /if \(job && job\.status === "queued"\)/);
+  // Security Correction #4: getCompressionJob() now authorization-checks (and early-
+  // returns null) before this point, so `job` is already guaranteed non-null here —
+  // the redundant `job &&` from before that check existed is gone.
+  assert.match(compressionQueueSource, /if \(job\.status === "queued"\)/);
   const getCompressionJobSource = compressionQueueSource.slice(
     compressionQueueSource.indexOf("export async function getCompressionJob"),
     compressionQueueSource.indexOf("export async function cancelCompressionJob"),

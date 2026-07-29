@@ -108,6 +108,7 @@ export async function POST(request: Request) {
     consumedUpload.upload,
     preset,
     reservation.usageEventId,
+    actor,
   );
 
   if (!result.ok) {

@@ -1,4 +1,5 @@
 import { cancelCompressionJob, getCompressionJob } from "@/lib/server/compression-queue";
+import { resolveActor } from "@/lib/server/entitlements/service";
 import {
   assertValidJobId,
   enforceApiSecurity,
@@ -14,9 +15,9 @@ type JobRouteProps = {
   }>;
 };
 
-export async function GET(_request: Request, { params }: JobRouteProps) {
+export async function GET(request: Request, { params }: JobRouteProps) {
   const { id } = await params;
-  const security = await enforceApiSecurity(_request, {
+  const security = await enforceApiSecurity(request, {
     route: "compression.status",
     limit: 120,
     windowMs: 60_000,
@@ -33,7 +34,11 @@ export async function GET(_request: Request, { params }: JobRouteProps) {
     );
   }
 
-  const job = await getCompressionJob(id);
+  // Security Correction #4 — a job belonging to a different actor must be
+  // indistinguishable from a nonexistent one: getCompressionJob() returns null for both,
+  // so this never discloses that a job ID exists but belongs to someone else.
+  const actor = await resolveActor(request);
+  const job = await getCompressionJob(id, actor);
 
   if (!job) {
     return securityJson(
@@ -65,7 +70,11 @@ export async function DELETE(request: Request, { params }: JobRouteProps) {
     );
   }
 
-  const job = await cancelCompressionJob(id);
+  // Security Correction #4 — same generic-404 authorization boundary as GET above:
+  // cancelling someone else's job is rejected identically to cancelling a job that
+  // never existed.
+  const actor = await resolveActor(request);
+  const job = await cancelCompressionJob(id, actor);
 
   if (!job) {
     return securityJson(

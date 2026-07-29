@@ -110,9 +110,14 @@ async function createAnalyzedUploadReference(baseUrl, file) {
 
 async function createCompressionJobAndWait(baseUrl, file, { requireObservedProgress = false } = {}) {
   const uploadReference = await createAnalyzedUploadReference(baseUrl, file);
+  // Security Correction #4: the job is now bound to whichever actor's headers created
+  // it, so every subsequent poll/download for this same job must reuse these exact
+  // headers — a fresh call to compressionRequestHeaders() would mint a different
+  // simulated actor and get correctly rejected as unauthorized.
+  const headers = compressionRequestHeaders(baseUrl);
   const createResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
     method: "POST",
-    headers: compressionRequestHeaders(baseUrl),
+    headers,
     body: JSON.stringify({ uploadReference, preset: "balanced" }),
   });
   const createPayload = await readJson(createResponse, `${file.name} compression create`);
@@ -125,7 +130,7 @@ async function createCompressionJobAndWait(baseUrl, file, { requireObservedProgr
   const observedProgress = [];
 
   for (let attempt = 0; attempt < 80; attempt += 1) {
-    const response = await fetch(`${baseUrl}/api/compression/jobs/${latestJob.id}`);
+    const response = await fetch(`${baseUrl}/api/compression/jobs/${latestJob.id}`, { headers });
     const payload = await readJson(response, `${file.name} compression poll ${attempt}`);
 
     assertStatus(response, 200, `${file.name} compression poll ${attempt}`);
@@ -154,11 +159,16 @@ async function createCompressionJobAndWait(baseUrl, file, { requireObservedProgr
     assert.ok(observedProgress.some((progress) => progress > 0));
   }
 
+  // Attached (not part of the API response) purely so assertDownloadWorks() below can
+  // download as the same simulated actor that created this job — never trusted by any
+  // production code, this is test-fixture bookkeeping only.
+  latestJob.testActorHeaders = headers;
+
   return latestJob;
 }
 
 async function assertDownloadWorks(baseUrl, job, expectedName) {
-  const response = await fetch(`${baseUrl}${job.downloadUrl}`);
+  const response = await fetch(`${baseUrl}${job.downloadUrl}`, { headers: job.testActorHeaders });
   const bytes = new Uint8Array(await response.arrayBuffer());
   const outputPath = path.join(os.tmpdir(), `${randomUUID()}-${expectedName}`);
 

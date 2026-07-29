@@ -92,8 +92,12 @@ function compressionRequestHeaders(baseUrl) {
   };
 }
 
-async function pollCompressionJob(baseUrl, jobId) {
-  const response = await fetch(`${baseUrl}/api/compression/jobs/${jobId}`);
+// Security Correction #4: a job is bound to whichever actor's headers created it, so
+// polling it afterward must reuse those exact headers — omitting them (or generating a
+// fresh, different simulated actor) is now correctly treated as a different, unrelated
+// actor and rejected.
+async function pollCompressionJob(baseUrl, jobId, headers) {
+  const response = await fetch(`${baseUrl}/api/compression/jobs/${jobId}`, { headers });
   const payload = await response.json();
 
   return { response, payload };
@@ -270,22 +274,24 @@ async function deleteAnalyzedUpload(baseUrl, uploadReference) {
 
 async function createCompressionJobFromReference(baseUrl, file, preset) {
   const uploadReference = await createAnalyzedUploadReference(baseUrl, file);
+  const headers = compressionRequestHeaders(baseUrl);
   const response = await fetch(`${baseUrl}/api/compression/jobs`, {
     method: "POST",
-    headers: compressionRequestHeaders(baseUrl),
+    headers,
     body: JSON.stringify({ uploadReference, preset }),
   });
   const payload = await response.json();
 
-  return { response, payload, uploadReference };
+  return { response, payload, uploadReference, headers };
 }
 
 async function createCompressionJobAndWait(baseUrl, file, preset) {
   const uploadReference = await createAnalyzedUploadReference(baseUrl, file);
+  const headers = compressionRequestHeaders(baseUrl);
 
   const createResponse = await fetch(`${baseUrl}/api/compression/jobs`, {
     method: "POST",
-    headers: compressionRequestHeaders(baseUrl),
+    headers,
     body: JSON.stringify({ uploadReference, preset }),
   });
   const createPayload = await createResponse.json();
@@ -296,7 +302,7 @@ async function createCompressionJobAndWait(baseUrl, file, preset) {
   let latestJob = createPayload.job;
 
   for (let attempt = 0; attempt < 80; attempt += 1) {
-    const { response, payload } = await pollCompressionJob(baseUrl, latestJob.id);
+    const { response, payload } = await pollCompressionJob(baseUrl, latestJob.id, headers);
 
     assertStatus(response, 200, `${preset} compression job poll ${attempt}`);
     assert.equal(payload.ok, true);
@@ -951,7 +957,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
 
     await t.test("creates a compression job that is immediately pollable", async () => {
       const file = await createGeneratedMp4File("queued.mp4", { durationSeconds: 1 });
-      const { response: createResponse, payload: createPayload } =
+      const { response: createResponse, payload: createPayload, headers } =
         await createCompressionJobFromReference(baseUrl, file, "balanced");
 
       assertStatus(createResponse, 202, "compression job create");
@@ -960,6 +966,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
 
       const pollResponse = await fetch(
         `${baseUrl}/api/compression/jobs/${createPayload.job.id}`,
+        { headers },
       );
       const pollPayload = await pollResponse.json();
 
@@ -971,7 +978,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
 
     await t.test("polls an API-created job through terminal status", async () => {
       const file = await createGeneratedMp4File("tracked.mp4", { durationSeconds: 1 });
-      const { response: createResponse, payload: createPayload } =
+      const { response: createResponse, payload: createPayload, headers } =
         await createCompressionJobFromReference(baseUrl, file, "small");
 
       assertStatus(createResponse, 202, "tracked compression job create");
@@ -979,7 +986,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
       let latestJob = createPayload.job;
 
       for (let attempt = 0; attempt < 20; attempt += 1) {
-        const { response, payload } = await pollCompressionJob(baseUrl, latestJob.id);
+        const { response, payload } = await pollCompressionJob(baseUrl, latestJob.id, headers);
 
         assertStatus(response, 200, `tracked compression job poll ${attempt}`);
         assert.equal(payload.ok, true);
@@ -1003,7 +1010,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
       "executes FFmpeg and completes a real compression job with a download",
       async () => {
         const file = await createGeneratedMp4File("generated.mp4");
-        const { response: createResponse, payload: createPayload } =
+        const { response: createResponse, payload: createPayload, headers } =
           await createCompressionJobFromReference(baseUrl, file, "balanced");
 
         assertStatus(createResponse, 202, "real compression job create");
@@ -1013,7 +1020,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
         let pollAttempts = 0;
 
         for (let attempt = 0; attempt < 80; attempt += 1) {
-          const { response, payload } = await pollCompressionJob(baseUrl, latestJob.id);
+          const { response, payload } = await pollCompressionJob(baseUrl, latestJob.id, headers);
           pollAttempts += 1;
 
           assertStatus(response, 200, `real compression job poll ${attempt}`);
@@ -1040,7 +1047,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
         assert.ok(latestJob.compression);
         assert.ok(latestJob.downloadUrl);
 
-        const downloadResponse = await fetch(`${baseUrl}${latestJob.downloadUrl}`);
+        const downloadResponse = await fetch(`${baseUrl}${latestJob.downloadUrl}`, { headers });
 
         assertStatus(downloadResponse, 200, "real compression download");
         assert.match(downloadResponse.headers.get("content-type") ?? "", /video\/mp4/);
@@ -1083,7 +1090,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
         const file = await createGeneratedMp4File("cancelled.mp4", {
           durationSeconds: 1,
         });
-        const { response: createResponse, payload: createPayload } =
+        const { response: createResponse, payload: createPayload, headers } =
           await createCompressionJobFromReference(baseUrl, file, "high");
 
         assertStatus(createResponse, 202, "cancel compression job create");
@@ -1092,9 +1099,7 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
           `${baseUrl}/api/compression/jobs/${createPayload.job.id}`,
           {
             method: "DELETE",
-            headers: {
-              Origin: baseUrl,
-            },
+            headers,
           },
         );
         const cancelPayload = await cancelResponse.json();

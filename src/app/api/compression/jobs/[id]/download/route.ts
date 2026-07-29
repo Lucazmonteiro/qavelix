@@ -1,6 +1,7 @@
 import { Readable } from "node:stream";
 
 import { readCompressionDownload } from "@/lib/server/compression-queue";
+import { resolveActor } from "@/lib/server/entitlements/service";
 import {
   assertValidJobId,
   assertValidSignedValue,
@@ -51,7 +52,13 @@ export async function GET(request: Request, { params }: DownloadRouteProps) {
     );
   }
 
-  const download = await readCompressionDownload(id, token, signature);
+  // Security Correction #4 — defense in depth on top of the existing HMAC token/
+  // signature check: even a valid, leaked signed URL (e.g. from browser history, a
+  // shared screenshot, or a proxy log) no longer grants a download unless the requester
+  // is also the actor who created the job. Rejected identically to an expired/missing
+  // download (404), never a distinct "wrong owner" response.
+  const actor = await resolveActor(request);
+  const download = await readCompressionDownload(id, token, signature, actor);
 
   if (!download) {
     return securityJson(

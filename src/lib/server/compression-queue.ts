@@ -20,6 +20,7 @@ import {
 import type { ConsumedAnalyzedUpload } from "@/lib/server/analyzed-upload-registry";
 import { getDb } from "@/lib/server/db/client";
 import { compressionJob as compressionJobTable } from "@/lib/server/db/schema";
+import type { Actor } from "@/lib/server/entitlements/service";
 import { confirmUsage, releaseUsage } from "@/lib/server/entitlements/service";
 import { analyzeWithFfprobe } from "@/lib/server/ffprobe";
 import type { UploadValidationError } from "@/lib/upload-policy";
@@ -38,6 +39,14 @@ type CompressionJob = CompressionJobSnapshot & {
   // releases the reservation instead — see confirmJobUsage()/releaseJobUsage() below.
   usageEventId: string | null;
   usageConfirmed: boolean;
+  // Security Correction #4 — the actor that created this job (from resolveActor(),
+  // the same identity already used for entitlements), persisted alongside every other
+  // job field in the existing `data` JSONB column — no schema migration required. Null
+  // only for a job created before this fix shipped (a narrow, time-bounded transition
+  // window given jobs are short-lived); see isJobOwnedByActor() for how that case is
+  // handled. Never exposed to the client — see snapshot(), which deliberately omits it.
+  actorType: Actor["type"] | null;
+  actorId: string | null;
 };
 
 type CreateJobResult =
@@ -144,7 +153,25 @@ function serializableJob(job: CompressionJob) {
     downloadSignature: job.downloadSignature,
     usageEventId: job.usageEventId,
     usageConfirmed: job.usageConfirmed,
+    actorType: job.actorType,
+    actorId: job.actorId,
   };
+}
+
+// Security Correction #4 — the single authorization decision every job-scoped route
+// (status, cancel, download) funnels through, so ownership can never be checked
+// inconsistently between them. A job with no stored actor predates this fix (jobs are
+// short-lived — 12-minute FFmpeg timeout, 30-minute download TTL — so this is a narrow,
+// self-resolving transition window, not a standing gap) and is grandfathered through
+// unchanged rather than retroactively locking an in-flight job out from under its owner.
+// Every job created from this point on always has an actor, so this exception naturally
+// stops applying once existing jobs at deploy time have expired.
+function isJobOwnedByActor(job: CompressionJob, actor: Actor): boolean {
+  if (!job.actorType || !job.actorId) {
+    return true;
+  }
+
+  return job.actorType === actor.type && job.actorId === actor.id;
 }
 
 // Marks the reservation as successfully spent — called exactly once, on the one path
@@ -788,6 +815,7 @@ export async function createCompressionJobFromAnalyzedUpload(
   upload: ConsumedAnalyzedUpload,
   preset: CompressionPresetId,
   usageEventId: string | null,
+  actor: Actor,
 ): Promise<CreateJobResult> {
   let jobCreated = false;
 
@@ -866,6 +894,8 @@ export async function createCompressionJobFromAnalyzedUpload(
         cleanupTimer: null,
         usageEventId,
         usageConfirmed: false,
+        actorType: actor.type,
+        actorId: actor.id,
       };
 
       jobs.set(id, job);
@@ -904,21 +934,27 @@ export async function createCompressionJobFromAnalyzedUpload(
   }
 }
 
-export async function getCompressionJob(id: string) {
+// actor must be the requester's own resolveActor() result — every job-scoped lookup is
+// authorization-scoped by construction, never fetched first and checked afterward.
+export async function getCompressionJob(id: string, actor: Actor) {
   const job = await findCompressionJob(id);
 
-  if (job && job.status === "queued") {
+  if (!job || !isJobOwnedByActor(job, actor)) {
+    return null;
+  }
+
+  if (job.status === "queued") {
     enqueueJob(job.id);
     void ensureCompressionWorker();
   }
 
-  return job ? snapshot(job) : null;
+  return snapshot(job);
 }
 
-export async function cancelCompressionJob(id: string) {
+export async function cancelCompressionJob(id: string, actor: Actor) {
   const job = await findCompressionJob(id);
 
-  if (!job) {
+  if (!job || !isJobOwnedByActor(job, actor)) {
     return null;
   }
 
@@ -977,11 +1013,13 @@ export async function readCompressionDownload(
   id: string,
   token: string,
   signature: string,
+  actor: Actor,
 ) {
   const job = await findCompressionJob(id);
 
   if (
     !job ||
+    !isJobOwnedByActor(job, actor) ||
     !isDownloadableCompressionStatus(job.status) ||
     !job.expiresAt ||
     !job.downloadToken ||
