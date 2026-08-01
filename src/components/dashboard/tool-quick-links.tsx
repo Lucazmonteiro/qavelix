@@ -8,8 +8,8 @@ type ToolQuickLinksProps = {
   dictionary: Dictionary;
 };
 
-// Static — these two tools are the entire current tool catalog. No data source to wire
-// up here; this just needs to stay easy to extend when a third tool exists.
+// Static — these tools are the entire current tool catalog. No data source to wire up
+// here; this just needs to stay easy to extend as further tools are added.
 export function ToolQuickLinks({ locale, dictionary }: ToolQuickLinksProps) {
   const copy = dictionary.dashboard.overview.tools;
 
@@ -23,6 +23,11 @@ export function ToolQuickLinks({ locale, dictionary }: ToolQuickLinksProps) {
       href: `/${locale}/tools/extract-audio`,
       label: copy.extractAudioLabel,
       description: copy.extractAudioDescription,
+    },
+    {
+      href: `/${locale}/tools/video-trimmer`,
+      label: copy.videoTrimmerLabel,
+      description: copy.videoTrimmerDescription,
     },
   ];
 

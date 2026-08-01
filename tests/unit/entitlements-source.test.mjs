@@ -60,9 +60,12 @@ test("plan policy encodes the exact confirmed product numbers, not invented defa
   assert.match(proBlock, /maxUploadBytes: PRO_MAX_UPLOAD_BYTES/);
   assert.match(policy, /export const PRO_MAX_UPLOAD_BYTES = 500 \* 1024 \* 1024/);
 
-  // Both tools are covered for both authenticated tiers — a future tool means one new
-  // entry per plan here, nothing else (the "configurable, easy to change" requirement).
-  assert.match(policy, /export const TOOL_IDS = \["video-compressor", "extract-audio"\] as const/);
+  // All three tools are covered for both authenticated tiers — a future tool means one
+  // new entry per plan here, nothing else (the "configurable, easy to change" requirement).
+  assert.match(
+    policy,
+    /export const TOOL_IDS = \["video-compressor", "extract-audio", "video-trimmer"\] as const/,
+  );
   assert.match(policy, /export const PLAN_TYPES = \["free", "pro"\] as const/);
 });
 

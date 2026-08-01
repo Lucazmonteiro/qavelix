@@ -40,6 +40,11 @@ export function AppHeader({ locale, dictionary }: AppHeaderProps) {
       icon: "\uD83C\uDFB5",
       label: dictionary.navigation.extractAudioTool,
     },
+    {
+      href: `/${locale}/tools/video-trimmer`,
+      icon: "\u2702\uFE0F",
+      label: dictionary.navigation.videoTrimmerTool,
+    },
   ];
 
   useEffect(() => {

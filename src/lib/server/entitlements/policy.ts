@@ -12,7 +12,7 @@ export function isPlanType(value: string): value is PlanType {
   return (PLAN_TYPES as readonly string[]).includes(value);
 }
 
-export const TOOL_IDS = ["video-compressor", "extract-audio"] as const;
+export const TOOL_IDS = ["video-compressor", "extract-audio", "video-trimmer"] as const;
 export type ToolId = (typeof TOOL_IDS)[number];
 
 export function isToolId(value: string): value is ToolId {
@@ -71,6 +71,14 @@ export const TOOL_POLICY: {
       period: "day",
       maxUploadBytes: MAX_UPLOAD_BYTES,
     },
+    // VIDEOTRIMMER.md "Free / Pro Entitlements" Option A (the document's own recommended
+    // default): mirror the existing symmetric policy exactly rather than inventing
+    // trim-specific numbers — see that doc for the Option A/B trade-off discussion.
+    "video-trimmer": {
+      maxUsesPerPeriod: 10,
+      period: "day",
+      maxUploadBytes: MAX_UPLOAD_BYTES,
+    },
   },
   pro: {
     "video-compressor": {
@@ -79,6 +87,11 @@ export const TOOL_POLICY: {
       maxUploadBytes: PRO_MAX_UPLOAD_BYTES,
     },
     "extract-audio": {
+      maxUsesPerPeriod: 100,
+      period: "day",
+      maxUploadBytes: PRO_MAX_UPLOAD_BYTES,
+    },
+    "video-trimmer": {
       maxUsesPerPeriod: 100,
       period: "day",
       maxUploadBytes: PRO_MAX_UPLOAD_BYTES,

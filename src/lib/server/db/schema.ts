@@ -266,3 +266,16 @@ export const compressionJob = pgTable("compression_job", {
   data: jsonb("data").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Video Trimmer (VIDEOTRIMMER.md Phase 1) — a separate table from compression_job rather
+// than a shared one with a discriminator column, per that document's Open Decision #3: a
+// new tool sharing Compressor's already-shipped, revenue-bearing table/queue is a riskier
+// change to review and revert independently than an equivalent, isolated table following
+// the exact same shape/columns. Identical durability reasoning to compression_job above —
+// see that table's comment.
+export const videoTrimmerJob = pgTable("video_trimmer_job", {
+  id: text("id").primaryKey(),
+  status: text("status").notNull(),
+  data: jsonb("data").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
