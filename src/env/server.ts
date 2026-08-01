@@ -4,6 +4,18 @@ const rawNodeEnv = process.env.NODE_ENV ?? "development";
 const hasExplicitAppUrl = Boolean(process.env.NEXT_PUBLIC_APP_URL);
 const localProductionHosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
+// CI (and some PaaS env-var UIs) can only express "this secret isn't configured" as an
+// empty string, not as a genuinely absent variable — e.g. GitHub Actions' `${{ secrets.X
+// }}` interpolates to "" when the secret was never set for that run. Zod's `.optional()`
+// only treats `undefined` as absent, so an empty string still gets validated against the
+// real schema (a URL shape, a 32-char minimum, a key-prefix regex) and fails every one of
+// them, crashing every optional var at once instead of leaving them unset as intended.
+// Normalizing "" to undefined here restores the actual "optional everywhere" behavior
+// documented above for every field this reaches.
+function emptyToUndefined(value: string | undefined): string | undefined {
+  return value === "" ? undefined : value;
+}
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -123,17 +135,17 @@ const envSchema = z
 
 const parsedEnv = envSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
-  NEXT_PUBLIC_SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL,
+  NEXT_PUBLIC_SUPPORT_EMAIL: emptyToUndefined(process.env.NEXT_PUBLIC_SUPPORT_EMAIL),
   NEXT_PUBLIC_APP_URL:
-    process.env.NEXT_PUBLIC_APP_URL ??
+    emptyToUndefined(process.env.NEXT_PUBLIC_APP_URL) ??
     (rawNodeEnv === "production" ? undefined : "http://localhost:3000"),
-  DATABASE_URL: process.env.DATABASE_URL,
-  BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-  STRIPE_PRO_MONTHLY_PRICE_ID: process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
-  RESEND_API_KEY: process.env.RESEND_API_KEY,
-  EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS,
+  DATABASE_URL: emptyToUndefined(process.env.DATABASE_URL),
+  BETTER_AUTH_SECRET: emptyToUndefined(process.env.BETTER_AUTH_SECRET),
+  STRIPE_SECRET_KEY: emptyToUndefined(process.env.STRIPE_SECRET_KEY),
+  STRIPE_WEBHOOK_SECRET: emptyToUndefined(process.env.STRIPE_WEBHOOK_SECRET),
+  STRIPE_PRO_MONTHLY_PRICE_ID: emptyToUndefined(process.env.STRIPE_PRO_MONTHLY_PRICE_ID),
+  RESEND_API_KEY: emptyToUndefined(process.env.RESEND_API_KEY),
+  EMAIL_FROM_ADDRESS: emptyToUndefined(process.env.EMAIL_FROM_ADDRESS),
 });
 
 if (!parsedEnv.success) {
