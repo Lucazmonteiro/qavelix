@@ -59,5 +59,8 @@ jobs:
         if: ${{ env.DATABASE_URL != '' }}
         run: npm run db:migrate
 
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Test
         run: npm run test
