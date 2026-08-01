@@ -533,6 +533,31 @@ button.tools-menu__item:disabled {
   font-weight: 700;
 }
 
+/* Compact single-icon mobile stand-in for .theme-toggle — see theme-toggle.tsx. Hidden
+   by default; swapped in for the two-button toggle at the 640px header breakpoint below. */
+.theme-toggle-icon {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.theme-toggle-icon:hover {
+  border-color: var(--accent);
+}
+
+.theme-toggle-icon__glyph {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 .navigation-controls {
   position: fixed;
   right: max(1rem, env(safe-area-inset-right));
@@ -2761,20 +2786,56 @@ button.tools-menu__item:disabled {
   }
 
   .site-header__actions,
-  .language-selector,
-  .theme-toggle,
   .hero-section__actions,
   .stat-grid {
     width: 100%;
   }
 
-  .language-selector__link,
-  .theme-toggle__button {
-    flex: 1 1 auto;
+  /* Keep language selector, theme toggle, and auth buttons compact and inline instead of
+     each stretching to its own full-width row — that stretch is what previously forced
+     3-4 stacked lines here. .site-header__actions' own flex-wrap (base rule above) still
+     lets the row wrap to a second line on the narrowest phones, never more than two. */
+  .site-header__actions {
+    gap: 0.4rem;
+  }
+
+  .language-selector {
+    flex: 0 0 auto;
+    padding: 0.15rem;
   }
 
   .language-selector__link {
-    min-width: 2.75rem;
+    width: 2.15rem;
+    min-height: 2.15rem;
+  }
+
+  /* The full two-button text toggle is desktop-only at this width in the header; the
+     compact icon button (theme-toggle.tsx) takes over there — see .theme-toggle-icon
+     above. :not(.theme-toggle--expanded) excludes the settings page's ThemeToggle
+     instance, which must stay visible as its own control on mobile too. */
+  .theme-toggle:not(.theme-toggle--expanded) {
+    display: none;
+  }
+
+  .theme-toggle-icon {
+    display: inline-flex;
+  }
+
+  .guest-nav-actions {
+    flex: 0 0 auto;
+  }
+
+  /* Compound selector (not just .guest-nav-actions__signup) so this outranks the
+     .button { width: 100%; } rule below on specificity, not just source order — that
+     global rule targets every full-width mobile CTA button in the app and must stay
+     unchanged for those, but .guest-nav-actions__signup also carries the .button class. */
+  .guest-nav-actions .guest-nav-actions__signin,
+  .guest-nav-actions .guest-nav-actions__signup {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 2.15rem;
+    padding-inline: 0.65rem;
+    font-size: 0.82rem;
   }
 
   .site-header__inner {
