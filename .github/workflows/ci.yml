@@ -56,7 +56,7 @@ jobs:
         run: npm run build
 
       - name: Apply database migrations
-        if: ${{ env.DATABASE_URL != '' }}
+        if: ${{ secrets.DATABASE_URL != '' }}
         run: npm run db:migrate
 
       - name: Install FFmpeg
