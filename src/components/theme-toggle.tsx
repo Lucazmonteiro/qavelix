@@ -44,12 +44,17 @@ function applyTheme(theme: ThemeMode) {
   document.documentElement.style.colorScheme = theme;
 }
 
-function SunIcon() {
+function LightbulbIcon() {
   return (
     <svg aria-hidden="true" className="theme-toggle-icon__glyph" fill="none" viewBox="0 0 20 20">
-      <circle cx="10" cy="10" r="4" stroke="currentColor" strokeWidth="1.6" />
       <path
-        d="M10 1.5v2M10 16.5v2M18.5 10h-2M3.5 10h-2M15.66 4.34l-1.42 1.42M5.76 14.24l-1.42 1.42M15.66 15.66l-1.42-1.42M5.76 5.76 4.34 4.34"
+        d="M10 2.5c-2.9 0-5.1 2.1-5.1 4.9 0 1.9 1 3.1 1.9 4 .7.7 1.2 1.4 1.3 2.3h3.8c.1-.9.6-1.6 1.3-2.3.9-.9 1.9-2.1 1.9-4 0-2.8-2.2-4.9-5.1-4.9Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M8.2 16.2h3.6M8.6 18h2.8"
         stroke="currentColor"
         strokeLinecap="round"
         strokeWidth="1.6"
@@ -150,7 +155,7 @@ export function ThemeToggle({
           suppressHydrationWarning
           type="button"
         >
-          {mode === "light" ? <MoonIcon /> : <SunIcon />}
+          {mode === "light" ? <MoonIcon /> : <LightbulbIcon />}
         </button>
       )}
     </>
