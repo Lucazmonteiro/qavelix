@@ -372,9 +372,12 @@ export type Dictionary = {
     };
     validation: {
       nameRequired: string;
+      nameTooLong: string;
       emailInvalid: string;
+      emailTooLong: string;
       passwordTooShort: string;
       passwordTooLong: string;
+      passwordTooWeak: string;
       passwordMismatch: string;
     };
     errors: {
@@ -855,7 +858,6 @@ const dictionaries: Record<Locale, Dictionary> = {
           description:
             "The interface supports keyboard use, visible focus styles, localized labels, live status messages, and reduced-motion preferences.",
           items: [
-            "The Skip to Content link takes users directly to the main content area.",
             "Upload and compression controls include clear labels and straightforward instructions.",
             "Validation and compression updates are announced discreetly for assistive technologies.",
             "Animations are automatically reduced for users who prefer less motion.",
@@ -1215,9 +1217,13 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
     validation: {
       nameRequired: "Enter your name.",
+      nameTooLong: "Name must be 100 characters or fewer.",
       emailInvalid: "Enter a valid email address.",
+      emailTooLong: "Email must be 254 characters or fewer.",
       passwordTooShort: "Password must be at least 8 characters.",
       passwordTooLong: "Password must be 128 characters or fewer.",
+      passwordTooWeak:
+        "Password must include at least one uppercase letter, one lowercase letter, and one special character.",
       passwordMismatch: "Passwords do not match.",
     },
     errors: {
@@ -2105,7 +2111,6 @@ const dictionaries: Record<Locale, Dictionary> = {
           description:
             "A interface oferece uso por teclado, foco visível, rótulos localizados, mensagens de status e respeito à preferência de movimento reduzido.",
           items: [
-            'O link "Pular para o conteúdo" leva diretamente ao conteúdo principal.',
             "Os controles de upload e compressão possuem rótulos claros e instruções objetivas.",
             "Os status de validação e compressão utilizam atualizações discretas para tecnologias assistivas.",
             "As animações são reduzidas automaticamente para usuários que preferem menos movimento.",
@@ -2470,9 +2475,13 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       validation: {
         nameRequired: "Digite seu nome.",
+        nameTooLong: "O nome deve ter no máximo 100 caracteres.",
         emailInvalid: "Digite um endereço de email válido.",
+        emailTooLong: "O email deve ter no máximo 254 caracteres.",
         passwordTooShort: "A senha deve ter pelo menos 8 caracteres.",
         passwordTooLong: "A senha deve ter no máximo 128 caracteres.",
+        passwordTooWeak:
+          "A senha deve incluir pelo menos uma letra maiúscula, uma letra minúscula e um caractere especial.",
         passwordMismatch: "As senhas não coincidem.",
       },
       errors: {
@@ -3363,7 +3372,6 @@ const dictionaries: Record<Locale, Dictionary> = {
           description:
             "La interfaz admite uso con teclado, foco visible, etiquetas localizadas, mensajes de estado y preferencia de movimiento reducido.",
           items: [
-            "El enlace «Saltar al contenido» lleva directamente al contenido principal.",
             "Los controles de carga y compresión incluyen etiquetas claras e instrucciones fáciles de seguir.",
             "Las actualizaciones de validación y compresión se anuncian de forma discreta para las tecnologías de asistencia.",
             "Las animaciones se reducen automáticamente para quienes prefieren menos movimiento.",
@@ -3729,9 +3737,13 @@ const dictionaries: Record<Locale, Dictionary> = {
       },
       validation: {
         nameRequired: "Introduce tu nombre.",
+        nameTooLong: "El nombre debe tener 100 caracteres como máximo.",
         emailInvalid: "Introduce un correo electrónico válido.",
+        emailTooLong: "El correo electrónico debe tener 254 caracteres como máximo.",
         passwordTooShort: "La contraseña debe tener al menos 8 caracteres.",
         passwordTooLong: "La contraseña debe tener 128 caracteres como máximo.",
+        passwordTooWeak:
+          "La contraseña debe incluir al menos una letra mayúscula, una letra minúscula y un carácter especial.",
         passwordMismatch: "Las contraseñas no coinciden.",
       },
       errors: {

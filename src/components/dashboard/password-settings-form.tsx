@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { getDictionary } from "@/i18n/dictionaries";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthErrorCode } from "@/lib/auth-errors";
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/lib/auth-validation";
 
 type Dictionary = ReturnType<typeof getDictionary>;
 
@@ -42,8 +43,13 @@ export function PasswordSettingsForm({ dictionary }: PasswordSettingsFormProps) 
 
     setSuccess(false);
 
-    if (newPassword.length < 8) {
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
       setError(authCopy.validation.passwordTooShort);
+      return;
+    }
+
+    if (newPassword.length > MAX_PASSWORD_LENGTH) {
+      setError(authCopy.validation.passwordTooLong);
       return;
     }
 
@@ -80,6 +86,7 @@ export function PasswordSettingsForm({ dictionary }: PasswordSettingsFormProps) 
         <input
           autoComplete="current-password"
           id="settings-current-password"
+          maxLength={MAX_PASSWORD_LENGTH}
           onChange={(event) => {
             setCurrentPassword(event.target.value);
             setSuccess(false);
@@ -94,6 +101,7 @@ export function PasswordSettingsForm({ dictionary }: PasswordSettingsFormProps) 
         <input
           autoComplete="new-password"
           id="settings-new-password"
+          maxLength={MAX_PASSWORD_LENGTH}
           onChange={(event) => {
             setNewPassword(event.target.value);
             setSuccess(false);
@@ -108,6 +116,7 @@ export function PasswordSettingsForm({ dictionary }: PasswordSettingsFormProps) 
         <input
           autoComplete="new-password"
           id="settings-confirm-password"
+          maxLength={MAX_PASSWORD_LENGTH}
           onChange={(event) => {
             setConfirmPassword(event.target.value);
             setSuccess(false);

@@ -826,10 +826,14 @@ button.tools-menu__item:disabled {
    The current actor's own tier is highlighted; the other tier stays visible but muted, so
    a Free/anonymous visitor understands the 250MB ceiling without being misled about
    Pro's 500MB, and a Pro user sees their own 500MB is what's actually active. */
+/* margin-top matches .extract-audio-status__body dl's own margin-top: 1rem — that rule
+   is what gives Extract Audio's title-to-cards gap there; the compressor's aside has no
+   equivalent __body wrapper, so it's set here directly instead, to keep both tools'
+   spacing identical without reintroducing a border in the gap. */
 .upload-limit-comparison {
   display: flex;
   gap: 0.6rem;
-  margin: 0 0 1rem;
+  margin: 1rem 0 1rem;
   padding: 0;
 }
 
@@ -913,9 +917,22 @@ button.tools-menu__item:disabled {
 
 .stat-grid__max-size-row {
   display: flex;
+  flex-wrap: nowrap;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.6rem;
+}
+
+/* Both spans default to shrinkable flex items with white-space: normal, so under this
+   card's narrow equal-thirds grid column the plan label and "250 MB"/"500 MB" value can
+   compress enough to word-wrap onto a second line (e.g. "250" / "MB" split apart).
+   white-space: nowrap forces each span's minimum width up to its full text width, and
+   flex-shrink: 0 stops the row from squeezing them past that — comfortably within this
+   card's available width, so "FREE 250 MB" always renders on one line on desktop. */
+.stat-grid__max-size-plan,
+.stat-grid__max-size-value {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .stat-grid__max-size-plan {
@@ -1338,21 +1355,36 @@ button.tools-menu__item:disabled {
   line-height: 1.12;
 }
 
-.upload-result--workflow h3,
-.compression-status h3 {
+/* .compression-status h3 deliberately does NOT get this divider (unlike
+   .upload-result--workflow h3): the compressor's status aside heading sits directly
+   above the Free/Pro upload-limit-comparison cards, and this rule previously drew a
+   line in that exact gap. Extract Audio's equivalent title is an <h2> — a different tag
+   specifically so it never matched this h3 selector — so its status aside has never had
+   this line. Keeping the compressor divider-free here is what makes the two tools'
+   sidebar status panels match. */
+.upload-result--workflow h3 {
   padding-bottom: 0.75rem;
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
 }
 
+/* :not(.upload-limit-comparison) on every .compression-status dl selector below is load-
+   bearing, not decorative: .compression-status also nests a second, unrelated <dl> (the
+   Free/Pro upload-limit-comparison cards, see line ~829) built for a side-by-side flex
+   layout with its own border/padding per card. Without the exclusion, these broader
+   descendant selectors (higher specificity than .upload-limit-comparison's own class-only
+   rules, since they add the dl/div element to the selector) silently clobbered it: display
+   flipped from flex to grid, and — worse — the shared "drop the last row's divider"
+   rule zeroed out the Pro card's own border-bottom and padding-bottom, since that card
+   happens to be dl div:last-child in this DOM. */
 .upload-result dl,
-.compression-status dl {
+.compression-status dl:not(.upload-limit-comparison) {
   display: grid;
   gap: 0.7rem;
   margin: 1.25rem 0 0;
 }
 
 .upload-result dl div,
-.compression-status dl div {
+.compression-status dl:not(.upload-limit-comparison) div {
   display: grid;
   gap: 0.25rem;
   border-bottom: 1px solid var(--border);
@@ -1360,13 +1392,13 @@ button.tools-menu__item:disabled {
 }
 
 .upload-result dl div:last-child,
-.compression-status dl div:last-child {
+.compression-status dl:not(.upload-limit-comparison) div:last-child {
   border-bottom: 0;
   padding-bottom: 0;
 }
 
 .upload-result dt,
-.compression-status dt {
+.compression-status dl:not(.upload-limit-comparison) dt {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 900;
@@ -1374,7 +1406,7 @@ button.tools-menu__item:disabled {
 }
 
 .upload-result dd,
-.compression-status dd {
+.compression-status dl:not(.upload-limit-comparison) dd {
   margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;

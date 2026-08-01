@@ -7,7 +7,7 @@ import { AuthFormShell } from "@/components/auth/auth-form-shell";
 import { useLocaleState } from "@/i18n/locale-context";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthErrorCode } from "@/lib/auth-errors";
-import { validatePasswordPair } from "@/lib/auth-validation";
+import { MAX_PASSWORD_LENGTH, validatePasswordPair } from "@/lib/auth-validation";
 
 type ResetPasswordFormProps = {
   // Read server-side from the page's searchParams, not via useSearchParams() client-side
@@ -99,6 +99,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         <AuthField
           autoComplete="new-password"
           label={copy.fields.newPasswordLabel}
+          maxLength={MAX_PASSWORD_LENGTH}
           name="newPassword"
           onChange={(event) => setNewPassword(event.target.value)}
           placeholder={copy.fields.newPasswordPlaceholder}
@@ -109,6 +110,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         <AuthField
           autoComplete="new-password"
           label={copy.fields.confirmPasswordLabel}
+          maxLength={MAX_PASSWORD_LENGTH}
           name="confirmPassword"
           onChange={(event) => setConfirmPassword(event.target.value)}
           placeholder={copy.fields.confirmPasswordPlaceholder}

@@ -30,6 +30,13 @@ type AddressResponse = {
 type LookupStatus = "idle" | "loading" | "success" | "not_found" | "error";
 
 const debounceMs = 500;
+// Generous but bounded — matches the kind of ceilings Stripe's own Address object
+// tolerates, just enough to stop a pasted essay from being submitted as a street name.
+const MAX_POSTAL_CODE_LENGTH = 20;
+const MAX_ADDRESS_LINE_LENGTH = 200;
+const MAX_HOUSE_NUMBER_LENGTH = 20;
+const MAX_CITY_LENGTH = 100;
+const MAX_REGION_LENGTH = 100;
 
 function defaultCountryForLocale(locale: Locale): string {
   if (locale === "pt-BR") {
@@ -211,6 +218,7 @@ export function BillingAddressForm({ dictionary, locale }: BillingAddressFormPro
         <input
           disabled={isLoadingAddress}
           id="billing-postal-code"
+          maxLength={MAX_POSTAL_CODE_LENGTH}
           onChange={(event) => setPostalCode(event.target.value)}
           placeholder={copy.postalCodePlaceholder}
           type="text"
@@ -245,6 +253,7 @@ export function BillingAddressForm({ dictionary, locale }: BillingAddressFormPro
         <input
           disabled={isLoadingAddress}
           id="billing-street"
+          maxLength={MAX_ADDRESS_LINE_LENGTH}
           onChange={(event) => {
             touchedFieldsRef.current.add("street");
             setStreet(event.target.value);
@@ -260,6 +269,7 @@ export function BillingAddressForm({ dictionary, locale }: BillingAddressFormPro
         <input
           disabled={isLoadingAddress}
           id="billing-number"
+          maxLength={MAX_HOUSE_NUMBER_LENGTH}
           onChange={(event) => setNumber(event.target.value)}
           placeholder={copy.numberPlaceholder}
           type="text"
@@ -272,6 +282,7 @@ export function BillingAddressForm({ dictionary, locale }: BillingAddressFormPro
         <input
           disabled={isLoadingAddress}
           id="billing-complement"
+          maxLength={MAX_ADDRESS_LINE_LENGTH}
           onChange={(event) => setComplement(event.target.value)}
           placeholder={copy.complementPlaceholder}
           type="text"
@@ -284,6 +295,7 @@ export function BillingAddressForm({ dictionary, locale }: BillingAddressFormPro
         <input
           disabled={isLoadingAddress}
           id="billing-city"
+          maxLength={MAX_CITY_LENGTH}
           onChange={(event) => {
             touchedFieldsRef.current.add("city");
             setCity(event.target.value);
@@ -298,6 +310,7 @@ export function BillingAddressForm({ dictionary, locale }: BillingAddressFormPro
         <input
           disabled={isLoadingAddress}
           id="billing-state"
+          maxLength={MAX_REGION_LENGTH}
           onChange={(event) => {
             touchedFieldsRef.current.add("state");
             setRegion(event.target.value);

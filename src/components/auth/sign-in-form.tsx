@@ -9,7 +9,7 @@ import { AuthFormShell } from "@/components/auth/auth-form-shell";
 import { useLocaleState } from "@/i18n/locale-context";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthErrorCode } from "@/lib/auth-errors";
-import { EMAIL_PATTERN } from "@/lib/auth-validation";
+import { EMAIL_PATTERN, MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/auth-validation";
 
 type SignInFormProps = {
   // Already sanitized server-side (sanitizeCallbackPath) before this component ever
@@ -72,6 +72,7 @@ export function SignInForm({ callbackURL }: SignInFormProps) {
         <AuthField
           autoComplete="email"
           label={copy.fields.emailLabel}
+          maxLength={MAX_EMAIL_LENGTH}
           name="email"
           onChange={(event) => setEmail(event.target.value)}
           placeholder={copy.fields.emailPlaceholder}
@@ -82,6 +83,7 @@ export function SignInForm({ callbackURL }: SignInFormProps) {
         <AuthField
           autoComplete="current-password"
           label={copy.fields.passwordLabel}
+          maxLength={MAX_PASSWORD_LENGTH}
           name="password"
           onChange={(event) => setPassword(event.target.value)}
           placeholder={copy.fields.passwordPlaceholder}

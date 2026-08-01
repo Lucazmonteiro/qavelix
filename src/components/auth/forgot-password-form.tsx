@@ -7,7 +7,7 @@ import { AuthFormShell } from "@/components/auth/auth-form-shell";
 import { useLocaleState } from "@/i18n/locale-context";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthErrorCode } from "@/lib/auth-errors";
-import { EMAIL_PATTERN } from "@/lib/auth-validation";
+import { EMAIL_PATTERN, MAX_EMAIL_LENGTH } from "@/lib/auth-validation";
 
 export function ForgotPasswordForm() {
   const { dictionary, locale } = useLocaleState();
@@ -70,6 +70,7 @@ export function ForgotPasswordForm() {
         <AuthField
           autoComplete="email"
           label={copy.fields.emailLabel}
+          maxLength={MAX_EMAIL_LENGTH}
           name="email"
           onChange={(event) => setEmail(event.target.value)}
           placeholder={copy.fields.emailPlaceholder}

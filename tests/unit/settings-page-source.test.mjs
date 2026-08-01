@@ -30,8 +30,10 @@ test("password form uses Better Auth's official change-password flow and validat
     passwordForm,
     /authClient\.changePassword\(\{\s*\n\s*currentPassword,\s*\n\s*newPassword,\s*\n\s*revokeOtherSessions: false,\s*\n\s*\}\)/,
   );
-  assert.match(passwordForm, /newPassword\.length < 8/);
+  assert.match(passwordForm, /newPassword\.length < MIN_PASSWORD_LENGTH/);
+  assert.match(passwordForm, /newPassword\.length > MAX_PASSWORD_LENGTH/);
   assert.match(passwordForm, /newPassword !== confirmPassword/);
+  assert.match(passwordForm, /maxLength=\{MAX_PASSWORD_LENGTH\}/);
   assert.match(passwordForm, /if \(isSaving\) \{\s*\n\s*return;/);
 });
 

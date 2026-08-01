@@ -55,7 +55,7 @@ test("logged-out visitors see a registration CTA beside sign-in, registration pr
 });
 
 test("guest sign-in gets a visible border in both themes without competing with the primary CTA", () => {
-  assert.match(globalStyles, /\.guest-nav-actions__signin \{\s*\n\s*border: 1px solid var\(--border-strong\);/);
+  assert.match(globalStyles, /\.guest-nav-actions__signin \{[^}]*\n\s*border: 1px solid var\(--border-strong\);/);
   assert.match(globalStyles, /\.guest-nav-actions__signin:hover \{\s*\n\s*border-color: var\(--accent\);/);
   // Both themes define --border-strong, so the border is visible in light and dark
   // without any extra per-theme override in this rule.

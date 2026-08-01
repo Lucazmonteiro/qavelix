@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { getDictionary } from "@/i18n/dictionaries";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthErrorCode } from "@/lib/auth-errors";
+import { MAX_NAME_LENGTH } from "@/lib/auth-validation";
 
 type Dictionary = ReturnType<typeof getDictionary>;
 
@@ -46,6 +47,12 @@ export function ProfileSettingsForm({ dictionary, initialName, email }: ProfileS
       return;
     }
 
+    if (trimmedName.length > MAX_NAME_LENGTH) {
+      setError(authCopy.validation.nameTooLong);
+      setSuccess(false);
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
     setSuccess(false);
@@ -75,6 +82,7 @@ export function ProfileSettingsForm({ dictionary, initialName, email }: ProfileS
         <input
           autoComplete="name"
           id="settings-name"
+          maxLength={MAX_NAME_LENGTH}
           onChange={(event) => {
             setName(event.target.value);
             setSuccess(false);

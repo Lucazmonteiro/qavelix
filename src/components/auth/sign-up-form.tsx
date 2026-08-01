@@ -7,7 +7,14 @@ import { AuthFormShell } from "@/components/auth/auth-form-shell";
 import { useLocaleState } from "@/i18n/locale-context";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthErrorCode } from "@/lib/auth-errors";
-import { EMAIL_PATTERN, validatePasswordPair } from "@/lib/auth-validation";
+import {
+  EMAIL_PATTERN,
+  isPasswordStrong,
+  MAX_EMAIL_LENGTH,
+  MAX_NAME_LENGTH,
+  MAX_PASSWORD_LENGTH,
+  validatePasswordPair,
+} from "@/lib/auth-validation";
 
 type FieldErrors = {
   name?: string;
@@ -42,10 +49,14 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
 
     if (!name.trim()) {
       errors.name = copy.validation.nameRequired;
+    } else if (name.length > MAX_NAME_LENGTH) {
+      errors.name = copy.validation.nameTooLong;
     }
 
     if (!EMAIL_PATTERN.test(email)) {
       errors.email = copy.validation.emailInvalid;
+    } else if (email.length > MAX_EMAIL_LENGTH) {
+      errors.email = copy.validation.emailTooLong;
     }
 
     const passwordError = validatePasswordPair(password, confirmPassword);
@@ -54,6 +65,8 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
       errors.password = copy.validation.passwordTooShort;
     } else if (passwordError === "tooLong") {
       errors.password = copy.validation.passwordTooLong;
+    } else if (!isPasswordStrong(password)) {
+      errors.password = copy.validation.passwordTooWeak;
     } else if (passwordError === "mismatch") {
       errors.confirmPassword = copy.validation.passwordMismatch;
     }
@@ -124,6 +137,7 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
           autoComplete="name"
           error={fieldErrors.name}
           label={copy.fields.nameLabel}
+          maxLength={MAX_NAME_LENGTH}
           name="name"
           onChange={(event) => setName(event.target.value)}
           placeholder={copy.fields.namePlaceholder}
@@ -135,6 +149,7 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
           autoComplete="email"
           error={fieldErrors.email}
           label={copy.fields.emailLabel}
+          maxLength={MAX_EMAIL_LENGTH}
           name="email"
           onChange={(event) => setEmail(event.target.value)}
           placeholder={copy.fields.emailPlaceholder}
@@ -146,6 +161,7 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
           autoComplete="new-password"
           error={fieldErrors.password}
           label={copy.fields.passwordLabel}
+          maxLength={MAX_PASSWORD_LENGTH}
           name="password"
           onChange={(event) => setPassword(event.target.value)}
           placeholder={copy.fields.passwordPlaceholder}
@@ -157,6 +173,7 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
           autoComplete="new-password"
           error={fieldErrors.confirmPassword}
           label={copy.fields.confirmPasswordLabel}
+          maxLength={MAX_PASSWORD_LENGTH}
           name="confirmPassword"
           onChange={(event) => setConfirmPassword(event.target.value)}
           placeholder={copy.fields.confirmPasswordPlaceholder}
