@@ -2885,6 +2885,21 @@ button.tools-menu__item:disabled {
   .primary-nav {
     order: 4;
     flex-basis: 100%;
+    gap: 0.2rem;
+  }
+
+  /* Longest-label case (ES "Herramientas"/"Acerca de"/"Contacto") was overflowing the
+     row and wrapping "Contacto" onto its own line. Tighter padding/gap/font-size (still
+     comfortably legible, still nowrap below) buys back enough width for all four items
+     to fit on one line at every supported phone width, in every locale. */
+  .primary-nav__link {
+    padding-inline: 0.5rem;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .tools-menu__button {
+    gap: 0.2rem;
   }
 
   .navigation-controls {
