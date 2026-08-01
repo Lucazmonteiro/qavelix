@@ -278,13 +278,20 @@ export function VideoTrimmerTool() {
     };
   }, []);
 
-  function resetAll() {
+  // Shared by resetAll() (explicit Cancel/Delete/reset actions, where clearing the file
+  // input's value is correct — it's what lets the user re-pick the exact same file) and
+  // setSelectedFiles() (a fresh selection, where it is NOT: inputRef.current is the same
+  // DOM node a <input type="file"> selection's FileList came from, and clearing that
+  // node's .value invalidates its .files — since setSelectedFiles still needs to read
+  // `files` after this call, doing so here silently emptied the just-selected file and
+  // left fileState stuck at null. See extract-audio-tool.tsx's own setSelectedFiles,
+  // which never touches the input value during a fresh selection for the same reason.
+  function resetProcessingState() {
     uploadControllerRef.current?.abort();
     pollingControllerRef.current?.abort();
     uploadControllerRef.current = null;
     pollingControllerRef.current = null;
     pollingSequenceRef.current += 1;
-    setFileState(null);
     setAnalysis(null);
     setStartTimeInput("00:00:00");
     setEndTimeInput("00:00:00");
@@ -293,6 +300,11 @@ export function VideoTrimmerTool() {
     setJob(null);
     setErrorKey(null);
     setDownloadStarted(false);
+  }
+
+  function resetAll() {
+    resetProcessingState();
+    setFileState(null);
 
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -304,9 +316,10 @@ export function VideoTrimmerTool() {
       return;
     }
 
-    resetAll();
+    resetProcessingState();
 
     if (!files || files.length === 0) {
+      setFileState(null);
       return;
     }
 
