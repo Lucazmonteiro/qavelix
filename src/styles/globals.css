@@ -460,7 +460,9 @@ button.tools-menu__item:disabled {
 }
 
 .guest-nav-actions__signin {
+  justify-content: center;
   border: 1px solid var(--border-strong);
+  text-align: center;
 }
 
 .guest-nav-actions__signin:hover {
@@ -471,6 +473,7 @@ button.tools-menu__item:disabled {
   min-height: 2.35rem;
   padding-inline: 0.9rem;
   font-size: 0.92rem;
+  text-align: center;
 }
 
 .language-selector,
@@ -2821,18 +2824,30 @@ button.tools-menu__item:disabled {
     display: inline-flex;
   }
 
+  /* flex-basis 100% pushes this onto its own row below language selector + theme icon
+     (its wanted width can never fit on the same line as those), then stretches it to
+     the full header width — so Sign In/Sign Up always split a fixed, known width evenly
+     instead of a width that depends on how long the translated labels happen to be. */
   .guest-nav-actions {
-    flex: 0 0 auto;
+    flex: 1 1 100%;
+    width: 100%;
+    gap: 0.5rem;
   }
 
-  /* Compound selector (not just .guest-nav-actions__signup) so this outranks the
+  /* Equal-width split via flex-grow (not the previous flex:0 0 auto/width:auto shrink-
+     to-content) so both buttons render at the same, locale-independent width — EN "Sign
+     in"/"Sign up" no longer look small and cramped next to the naturally longer ES
+     "Iniciar sesión"/"Registrarse". min-width is a floor so neither button can be
+     crushed thinner than its label needs on the narrowest supported phones.
+     Compound selector (not just .guest-nav-actions__signup) so this outranks the
      .button { width: 100%; } rule below on specificity, not just source order — that
      global rule targets every full-width mobile CTA button in the app and must stay
      unchanged for those, but .guest-nav-actions__signup also carries the .button class. */
   .guest-nav-actions .guest-nav-actions__signin,
   .guest-nav-actions .guest-nav-actions__signup {
-    flex: 0 0 auto;
+    flex: 1 1 0;
     width: auto;
+    min-width: 6.5rem;
     min-height: 2.15rem;
     padding-inline: 0.65rem;
     font-size: 0.82rem;
