@@ -2793,6 +2793,33 @@ button.tools-menu__item:disabled {
     width: 100%;
   }
 
+  /* Two-column footer link grid instead of the flex-wrap flow's left-clumped ragged
+     lines. grid-auto-flow: column (with an explicit 4-row track count) fills a column at
+     a time rather than a row at a time, so the 8 links split cleanly by DOM order —
+     Pricing/About/Contact/FAQ down column 1, Privacy Policy/Terms/Cookies/Support down
+     column 2 — with no JSX grouping needed. */
+  .site-footer__links {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, auto);
+    grid-auto-flow: column;
+    align-items: start;
+    width: 100%;
+    gap: 0.3rem 1rem;
+  }
+
+  /* The longest labels (e.g. "Cookies and Local Storage Policy" and its pt/es
+     equivalents) can't fit a ~150px column on one line — allow them to wrap onto a
+     second line instead of the header nav's nowrap treatment, which would just overflow
+     the column here. overflow-wrap is a safety net against any single long word. */
+  .site-footer__links a {
+    padding-inline: 0.4rem;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: break-word;
+    line-height: 1.3;
+  }
+
   /* Rebuilt as a single flex-wrap row (not the grid's separate "brand"/"actions" rows)
      so the logo and the language/theme utilities can share one exact row, with the auth
      CTAs and nav wrapping directly beneath in their own full-width rows. order below
