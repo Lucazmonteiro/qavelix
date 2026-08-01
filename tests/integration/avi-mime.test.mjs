@@ -11,6 +11,28 @@ import { assertStatus, withNextServer } from "../helpers/next-server.mjs";
 
 const execFileAsync = promisify(execFile);
 
+// Uploads go through resolveActor() (via enforceApiSecurity's callers), which calls
+// getOptionalSession() -> getAuth() -> getDb() unconditionally, even for an anonymous
+// request — so this genuinely requires a database, same reasoning as every other
+// *-db.test.mjs file. Skips (does not fail) when DATABASE_URL isn't configured.
+async function loadDatabaseUrl() {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  try {
+    const envFile = await readFile(".env.local", "utf8");
+    const match = envFile.match(/^DATABASE_URL=(.+)$/m);
+
+    return match?.[1]?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const databaseUrl = await loadDatabaseUrl();
+const databaseSkip = databaseUrl ? false : "DATABASE_URL is not configured";
+
 async function createAviFixture() {
   const filePath = path.join(os.tmpdir(), `${randomUUID()}.qavelix-avi-test.avi`);
 
@@ -74,7 +96,7 @@ async function postRawVideo(baseUrl, route, filePath, fileName, mimeType) {
   });
 }
 
-test("AVI MIME variants are accepted through the shared upload policy", async () => {
+test("AVI MIME variants are accepted through the shared upload policy", { skip: databaseSkip }, async () => {
   await withNextServer(async ({ baseUrl }) => {
     const createdFiles = [];
 

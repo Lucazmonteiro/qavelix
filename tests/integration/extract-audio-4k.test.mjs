@@ -11,6 +11,28 @@ import { assertStatus, withNextServer } from "../helpers/next-server.mjs";
 
 const execFileAsync = promisify(execFile);
 
+// Extract Audio goes through resolveActor() (via enforceApiSecurity's callers), which
+// calls getOptionalSession() -> getAuth() -> getDb() unconditionally, even for an
+// anonymous request — so this genuinely requires a database, same reasoning as every
+// other *-db.test.mjs file. Skips (does not fail) when DATABASE_URL isn't configured.
+async function loadDatabaseUrl() {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  try {
+    const envFile = await readFile(".env.local", "utf8");
+    const match = envFile.match(/^DATABASE_URL=(.+)$/m);
+
+    return match?.[1]?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const databaseUrl = await loadDatabaseUrl();
+const databaseSkip = databaseUrl ? false : "DATABASE_URL is not configured";
+
 const mp4Header = new Uint8Array([
   0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0x00,
   0x00, 0x02, 0x00,
@@ -109,7 +131,7 @@ async function postVideo(baseUrl, route, filePath, fileName) {
   });
 }
 
-test("Extract Audio accepts valid audible 4K MP4s and keeps invalid media blocked", async () => {
+test("Extract Audio accepts valid audible 4K MP4s and keeps invalid media blocked", { skip: databaseSkip }, async () => {
   await withNextServer(async ({ baseUrl }) => {
     const createdFiles = [];
 

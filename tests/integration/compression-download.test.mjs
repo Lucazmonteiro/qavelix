@@ -11,6 +11,30 @@ import { promisify } from "node:util";
 import { assertStatus, withNextServer } from "../helpers/next-server.mjs";
 
 const execFileAsync = promisify(execFile);
+
+// Compression job creation/status/download go through resolveActor() (via
+// enforceApiSecurity's callers), which calls getOptionalSession() -> getAuth() ->
+// getDb() unconditionally, even for an anonymous request — so this genuinely requires a
+// database, same reasoning as every other *-db.test.mjs file. Skips (does not fail) when
+// DATABASE_URL isn't configured.
+async function loadDatabaseUrl() {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  try {
+    const envFile = await readFile(".env.local", "utf8");
+    const match = envFile.match(/^DATABASE_URL=(.+)$/m);
+
+    return match?.[1]?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const databaseUrl = await loadDatabaseUrl();
+const databaseSkip = databaseUrl ? false : "DATABASE_URL is not configured";
+
 // Randomized per process run so repeated local runs against the same persistent dev
 // database don't replay the same synthetic IP sequence — see the matching comment in
 // tests/integration/http.test.mjs for why a fixed starting value caused accumulating
@@ -221,7 +245,7 @@ async function readJson(response, label) {
   return JSON.parse(text);
 }
 
-test("compression download route serves completed outputs and rejects unsafe requests", async () => {
+test("compression download route serves completed outputs and rejects unsafe requests", { skip: databaseSkip }, async () => {
   await withNextServer(async ({ baseUrl }) => {
     const mp4File = await createGeneratedVideoFile("download-source.mp4");
     const mp4Job = await createCompressionJobAndWait(baseUrl, mp4File, {

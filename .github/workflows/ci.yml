@@ -20,6 +20,14 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      # NEXT_PUBLIC_* vars are inlined by Next.js at BUILD time, not read live by an
+      # already-built production bundle at "next start" runtime — so this must be set
+      # here (present during the Build step below), not only when next-server.mjs later
+      # spawns "next start" for the test server. Locally this is masked by .env.local
+      # (gitignored, supplies the same value at build time), which is why this only
+      # surfaced in CI, where no .env.local exists. Matches next-server.mjs's own
+      # fallback value so behavior stays identical either way.
+      NEXT_PUBLIC_SUPPORT_EMAIL: "qavelixhq@gmail.com"
       # tests/integration/entitlements-db.test.mjs and stripe-billing-db.test.mjs exercise
       # real atomicity/idempotency guarantees against a real database and gracefully skip
       # (never fail) when these are unset — see each file's own skip logic, unchanged here.
