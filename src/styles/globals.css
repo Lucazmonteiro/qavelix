@@ -2788,23 +2788,43 @@ button.tools-menu__item:disabled {
     width: min(100% - 1.25rem, 1180px);
   }
 
-  .site-header__actions,
   .hero-section__actions,
   .stat-grid {
     width: 100%;
   }
 
-  /* Keep language selector, theme toggle, and auth buttons compact and inline instead of
-     each stretching to its own full-width row — that stretch is what previously forced
-     3-4 stacked lines here. .site-header__actions' own flex-wrap (base rule above) still
-     lets the row wrap to a second line on the narrowest phones, never more than two. */
-  .site-header__actions {
-    gap: 0.4rem;
+  /* Rebuilt as a single flex-wrap row (not the grid's separate "brand"/"actions" rows)
+     so the logo and the language/theme utilities can share one exact row, with the auth
+     CTAs and nav wrapping directly beneath in their own full-width rows. order below
+     controls the visual sequence — DOM order stays brand/nav/actions for reasons
+     unrelated to layout, so it can't be relied on here. */
+  .site-header__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
   }
 
+  .brand-group {
+    order: 1;
+  }
+
+  /* Dissolves this wrapper so its children (language selector, theme toggle icon, and
+     whichever root AccountMenu renders) become direct flex items of .site-header__inner
+     above, each individually placed by order/flex-basis — instead of being laid out as
+     one nested flex row that can only occupy a single grid cell. */
+  .site-header__actions {
+    display: contents;
+  }
+
+  /* margin-left: auto absorbs the row's free space, pushing the utilities cluster to the
+     right edge while the logo stays flush left — same horizontal split as before, just
+     sharing the logo's row instead of sitting in a row of its own beneath it. */
   .language-selector {
+    order: 2;
     flex: 0 0 auto;
     padding: 0.15rem;
+    margin-left: auto;
   }
 
   .language-selector__link {
@@ -2817,32 +2837,41 @@ button.tools-menu__item:disabled {
      above. :not(.theme-toggle--expanded) excludes the settings page's ThemeToggle
      instance, which must stay visible as its own control on mobile too. */
   .theme-toggle:not(.theme-toggle--expanded) {
+    order: 2;
     display: none;
   }
 
   .theme-toggle-icon {
+    order: 2;
     display: inline-flex;
   }
 
-  /* flex-basis 100% pushes this onto its own row below language selector + theme icon
-     (its wanted width can never fit on the same line as those), then stretches it to
-     the full header width — so Sign In/Sign Up always split a fixed, known width evenly
-     instead of a width that depends on how long the translated labels happen to be. */
+  /* flex-basis 100% can never fit beside the logo/utilities row above, so this wraps
+     onto its own full-width row directly under it — same technique used for .primary-nav
+     below, just ordered to land before it instead of after. Scoped through
+     .site-header__actions (still the real DOM parent, display:contents doesn't change
+     that) so this only ever matches AccountMenu's own root — either the guest links or,
+     once signed in, its .tools-menu dropdown — never the unrelated .tools-menu inside
+     .primary-nav's own "Tools" dropdown. */
+  .site-header__actions .guest-nav-actions,
+  .site-header__actions .tools-menu {
+    order: 3;
+    flex-basis: 100%;
+  }
+
   .guest-nav-actions {
-    flex: 1 1 100%;
-    width: 100%;
     gap: 0.5rem;
   }
 
-  /* Equal-width split via flex-grow (not the previous flex:0 0 auto/width:auto shrink-
-     to-content) so both buttons render at the same, locale-independent width — EN "Sign
-     in"/"Sign up" no longer look small and cramped next to the naturally longer ES
-     "Iniciar sesión"/"Registrarse". min-width is a floor so neither button can be
-     crushed thinner than its label needs on the narrowest supported phones.
-     Compound selector (not just .guest-nav-actions__signup) so this outranks the
-     .button { width: 100%; } rule below on specificity, not just source order — that
-     global rule targets every full-width mobile CTA button in the app and must stay
-     unchanged for those, but .guest-nav-actions__signup also carries the .button class. */
+  /* Equal-width split via flex-grow (not shrink-to-content) so both buttons render at
+     the same, locale-independent width — EN "Sign in"/"Sign up" no longer look small and
+     cramped next to the naturally longer ES "Iniciar sesión"/"Registrarse". min-width is
+     a floor so neither button can be crushed thinner than its label needs on the
+     narrowest supported phones. Compound selector (not just .guest-nav-actions__signup)
+     so this outranks the .button { width: 100%; } rule below on specificity, not just
+     source order — that global rule targets every full-width mobile CTA button in the
+     app and must stay unchanged for those, but .guest-nav-actions__signup also carries
+     the .button class. */
   .guest-nav-actions .guest-nav-actions__signin,
   .guest-nav-actions .guest-nav-actions__signup {
     flex: 1 1 0;
@@ -2853,12 +2882,9 @@ button.tools-menu__item:disabled {
     font-size: 0.82rem;
   }
 
-  .site-header__inner {
-    grid-template-areas:
-      "brand"
-      "actions"
-      "nav";
-    grid-template-columns: 1fr;
+  .primary-nav {
+    order: 4;
+    flex-basis: 100%;
   }
 
   .navigation-controls {
