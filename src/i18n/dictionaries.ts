@@ -492,6 +492,15 @@ export type Dictionary = {
     createAccountLabel: string;
     signInLabel: string;
   };
+  adGateModal: {
+    title: string;
+    description: string;
+    countdownLabel: string;
+    readyLabel: string;
+    continueLabel: string;
+    upsellMessage: string;
+    upgradeButtonLabel: string;
+  };
   dashboard: {
     nav: {
       navLabel: string;
@@ -1349,6 +1358,16 @@ const dictionaries: Record<Locale, Dictionary> = {
     usesLifetime: "{limit} uses total",
     createAccountLabel: "Create free account",
     signInLabel: "Sign in",
+  },
+  adGateModal: {
+    title: "Your next run is one ad away",
+    description:
+      "Your first run today was completely free. Watch this short ad to unlock processing again, or skip ads entirely with QAVELIX PRO.",
+    countdownLabel: "Continue in {seconds}s...",
+    readyLabel: "You're all set — continue whenever you're ready.",
+    continueLabel: "Continue",
+    upsellMessage: "Remove ads and unlock unlimited uploads up to 500MB with QAVELIX PRO.",
+    upgradeButtonLabel: "Upgrade to Pro",
   },
   dashboard: {
     nav: {
@@ -2607,6 +2626,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       usesLifetime: "{limit} usos no total",
       createAccountLabel: "Criar conta gratuita",
       signInLabel: "Entrar",
+    },
+    adGateModal: {
+      title: "Seu próximo uso está a um anúncio de distância",
+      description:
+        "Seu primeiro uso hoje foi totalmente gratuito. Assista a este anúncio curto para liberar o processamento novamente, ou pule os anúncios com o QAVELIX PRO.",
+      countdownLabel: "Continuar em {seconds}s...",
+      readyLabel: "Tudo pronto — continue quando quiser.",
+      continueLabel: "Continuar",
+      upsellMessage: "Remova os anúncios e libere uploads ilimitados de até 500MB com o QAVELIX PRO.",
+      upgradeButtonLabel: "Fazer upgrade para o Pro",
     },
     dashboard: {
       nav: {
@@ -3869,6 +3898,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       usesLifetime: "{limit} usos en total",
       createAccountLabel: "Crear cuenta gratuita",
       signInLabel: "Iniciar sesión",
+    },
+    adGateModal: {
+      title: "Tu próximo uso está a un anuncio de distancia",
+      description:
+        "Tu primer uso de hoy fue completamente gratis. Mira este breve anuncio para desbloquear el procesamiento otra vez, o evita los anuncios con QAVELIX PRO.",
+      countdownLabel: "Continuar en {seconds}s...",
+      readyLabel: "Todo listo — continúa cuando quieras.",
+      continueLabel: "Continuar",
+      upsellMessage: "Elimina los anuncios y desbloquea subidas ilimitadas de hasta 500MB con QAVELIX PRO.",
+      upgradeButtonLabel: "Actualizar a Pro",
     },
     dashboard: {
       nav: {
