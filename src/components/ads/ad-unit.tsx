@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useCookieConsent } from "@/lib/use-cookie-consent";
+
 export type AdFormat = "top-banner" | "sidebar" | "in-article" | "interstitial";
 
 type AdUnitPlan = "anonymous" | "free" | "pro" | null;
@@ -43,19 +45,24 @@ const AD_FORMAT_ATTR: Record<AdFormat, string> = {
 // product requirement — no DOM node, no script push, no ad request ever made) and nothing
 // when AdSense isn't configured for this format (missing client id or slot id), so the
 // component is always safe to drop into a page regardless of environment. While the
-// actor's plan is still resolving, it reserves the ad's footprint with a skeleton so the
-// eventual ad (or its absence) never causes layout shift — see .ad-unit--skeleton in
-// globals.css for the fixed min-height per format this depends on.
+// actor's plan is still resolving, or while cookie consent hasn't been accepted yet, it
+// reserves the ad's footprint with a skeleton instead — so the eventual ad (or its
+// absence) never causes layout shift, and no AdSense request/cookie is ever made before
+// the visitor has actually agreed to it (see useCookieConsent / cookie-consent-banner.tsx).
+// A visitor who explicitly declines gets the same "nothing at all" treatment as Pro: their
+// choice, not a loading state.
 export function AdUnit({ format, plan, className, label = "Advertisement" }: AdUnitProps) {
   const insertedRef = useRef(false);
   const [failed, setFailed] = useState(false);
   const labelId = useId();
+  const { status: consentStatus } = useCookieConsent();
   const clientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
   const slotId = AD_SLOT_BY_FORMAT[format];
   const configured = Boolean(clientId && slotId);
+  const hasConsent = consentStatus === "accepted";
 
   useEffect(() => {
-    if (!configured || plan === "pro" || plan === null || insertedRef.current) {
+    if (!configured || plan === "pro" || plan === null || !hasConsent || insertedRef.current) {
       return;
     }
 
@@ -73,13 +80,13 @@ export function AdUnit({ format, plan, className, label = "Advertisement" }: AdU
     }
 
     void requestAd();
-  }, [configured, plan]);
+  }, [configured, plan, hasConsent]);
 
-  if (plan === "pro" || !configured || failed) {
+  if (plan === "pro" || !configured || failed || consentStatus === "declined") {
     return null;
   }
 
-  if (plan === null) {
+  if (plan === null || !hasConsent) {
     return (
       <div
         aria-hidden="true"
