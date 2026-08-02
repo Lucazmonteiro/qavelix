@@ -50,6 +50,15 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: themeScript }}
         />
+        {env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ? (
+          <Script
+            async
+            crossOrigin="anonymous"
+            id="qavelix-adsense"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
+            strategy="lazyOnload"
+          />
+        ) : null}
         {children}
       </body>
     </html>

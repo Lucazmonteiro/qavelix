@@ -17,7 +17,8 @@
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "dev:reset-usage": "node scripts/reset-local-usage.mjs"
   },
   "dependencies": {
     "@better-auth/stripe": "^1.6.25",

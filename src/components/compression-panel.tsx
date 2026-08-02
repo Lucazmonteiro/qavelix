@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 
+import { AdGateModal } from "@/components/ads/ad-gate-modal";
+import { AdUnit } from "@/components/ads/ad-unit";
 import { PlanComparisonModal } from "@/components/plan-comparison-modal";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { useLocaleState } from "@/i18n/locale-context";
@@ -27,6 +29,7 @@ import {
   MAX_UPLOAD_BYTES,
   type UploadAnalysis,
 } from "@/lib/upload-policy";
+import { useAdGate } from "@/lib/use-ad-gate";
 import { useEntitlementGate } from "@/lib/use-entitlement-gate";
 
 type CompressionCopy = {
@@ -492,6 +495,7 @@ export function CompressionPanel({
   const pathname = usePathname();
   const gate = useEntitlementGate("video-compressor");
   const isBlocked = gate.blocked;
+  const adGate = useAdGate({ plan: gate.plan, remaining: gate.remaining, limit: gate.limit });
   // The entitlement gate resolves the actor's real plan (and the Free/Pro comparison
   // numbers) asynchronously on mount — see useEntitlementGate(). Until that resolves,
   // MAX_UPLOAD_BYTES (Free/anonymous, 250MB) is the only safe default: it can never
@@ -980,6 +984,10 @@ export function CompressionPanel({
     if (!uploadReference) {
       setDownloadStarted(false);
       setError(copy.errors.sourceUnavailable);
+      return;
+    }
+
+    if (!adGate.consumeAttempt()) {
       return;
     }
 
@@ -1789,6 +1797,8 @@ export function CompressionPanel({
         </aside>
       </div>
 
+      <AdUnit format="in-article" plan={gate.plan} />
+
       {gate.plan === "anonymous" && gate.anonymousLimits && gate.freeLimits && gate.proLimits ? (
         <PlanComparisonModal
           anonymousLimits={gate.anonymousLimits}
@@ -1806,6 +1816,18 @@ export function CompressionPanel({
           onClose={gate.closeUpgradeModal}
           open={gate.showUpgradeModal}
           proLimits={gate.proLimits}
+        />
+      ) : null}
+      {gate.plan === "anonymous" || gate.plan === "free" ? (
+        <AdGateModal
+          cancelPath={pathname}
+          onCleared={() => {
+            adGate.clearAdGate();
+            void startCompression();
+          }}
+          onClose={adGate.closeAdGateModal}
+          open={adGate.showAdGateModal}
+          plan={gate.plan}
         />
       ) : null}
     </section>

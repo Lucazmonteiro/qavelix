@@ -17,6 +17,13 @@ type EntitlementGateState = {
   freeLimits: UpgradeModalLimits | null;
   proLimits: UpgradeModalLimits | null;
   showUpgradeModal: boolean;
+  // Current-period usage for this actor/tool, as of the last resolved status fetch — only
+  // present when the backend returned allowed:true (see EntitlementCheck's shape:
+  // `remaining` only exists on the allowed branch). Consumed by useAdGate() to derive
+  // "is this the actor's first use in the period" without a second request or any
+  // client-only counter; both null while unresolved or while the actor is fully blocked.
+  remaining: number | null;
+  limit: number | null;
 };
 
 type ResolvedGateState = EntitlementGateState & { userId: string | null };
@@ -29,6 +36,8 @@ type StatusResponse = {
   anonymousLimits?: UpgradeModalLimits;
   freeLimits?: UpgradeModalLimits;
   proLimits?: UpgradeModalLimits;
+  remaining?: number;
+  limit?: number;
 };
 
 function isBlockingReason(reason: string | undefined): reason is BlockingReason {
@@ -56,6 +65,8 @@ const initialState: EntitlementGateState = {
   freeLimits: null,
   proLimits: null,
   showUpgradeModal: false,
+  remaining: null,
+  limit: null,
 };
 
 // Shared entitlement-lock behavior for every tool UI (CompressionPanel, ExtractAudioTool,
@@ -110,6 +121,8 @@ export function useEntitlementGate(toolId: ToolId) {
         freeLimits: payload.freeLimits ?? current?.freeLimits ?? null,
         proLimits: payload.proLimits ?? current?.proLimits ?? null,
         showUpgradeModal: (current?.showUpgradeModal ?? false) || shouldOpenModal,
+        remaining: payload.remaining ?? null,
+        limit: payload.limit ?? null,
         userId,
       }));
     } catch {

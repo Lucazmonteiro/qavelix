@@ -73,6 +73,19 @@ const envSchema = z
     // original dev-only behavior (logging the link) instead of failing to boot.
     RESEND_API_KEY: z.string().startsWith("re_").optional(),
     EMAIL_FROM_ADDRESS: z.string().optional(),
+    // Google AdSense integration — optional everywhere, including production, same
+    // convention as Stripe/Resend above. With NEXT_PUBLIC_ADSENSE_CLIENT_ID unset, the
+    // global AdSense loader script (layout.tsx) is never injected and AdUnit
+    // (src/components/ads/ad-unit.tsx) renders nothing anywhere, so the app keeps working
+    // exactly as before ad support existed. Each ad-slot var is independently optional —
+    // AdUnit itself requires both the client id and the specific slot for the format it's
+    // rendering before showing anything, so a partially-configured slot list just means
+    // that one placement stays empty rather than failing boot.
+    NEXT_PUBLIC_ADSENSE_CLIENT_ID: z.string().regex(/^ca-pub-\d{10,}$/).optional(),
+    NEXT_PUBLIC_ADSENSE_SLOT_TOP_BANNER: z.string().regex(/^\d{6,}$/).optional(),
+    NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR: z.string().regex(/^\d{6,}$/).optional(),
+    NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE: z.string().regex(/^\d{6,}$/).optional(),
+    NEXT_PUBLIC_ADSENSE_SLOT_INTERSTITIAL: z.string().regex(/^\d{6,}$/).optional(),
   })
   .superRefine((value, context) => {
     const appUrl = new URL(value.NEXT_PUBLIC_APP_URL);
@@ -146,6 +159,13 @@ const parsedEnv = envSchema.safeParse({
   STRIPE_PRO_MONTHLY_PRICE_ID: emptyToUndefined(process.env.STRIPE_PRO_MONTHLY_PRICE_ID),
   RESEND_API_KEY: emptyToUndefined(process.env.RESEND_API_KEY),
   EMAIL_FROM_ADDRESS: emptyToUndefined(process.env.EMAIL_FROM_ADDRESS),
+  NEXT_PUBLIC_ADSENSE_CLIENT_ID: emptyToUndefined(process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID),
+  NEXT_PUBLIC_ADSENSE_SLOT_TOP_BANNER: emptyToUndefined(process.env.NEXT_PUBLIC_ADSENSE_SLOT_TOP_BANNER),
+  NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR: emptyToUndefined(process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR),
+  NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE: emptyToUndefined(process.env.NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE),
+  NEXT_PUBLIC_ADSENSE_SLOT_INTERSTITIAL: emptyToUndefined(
+    process.env.NEXT_PUBLIC_ADSENSE_SLOT_INTERSTITIAL,
+  ),
 });
 
 if (!parsedEnv.success) {
