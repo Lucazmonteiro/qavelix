@@ -41,6 +41,7 @@ export type Dictionary = {
     toolsVideoCategory: string;
     videoCompressorTool: string;
     extractAudioTool: string;
+    videoTrimmerTool: string;
     proBadgeLabel: string;
     languageLabel: string;
     themeLabel: string;
@@ -354,6 +355,92 @@ export type Dictionary = {
         serviceUnavailable: string;
       };
     };
+    videoTrimmer: {
+      eyebrow: string;
+      title: string;
+      subtitle: string;
+      description: string;
+      uploadTitle: string;
+      uploadDescription: string;
+      privacyMessage: string;
+      chooseFile: string;
+      chooseAnotherFile: string;
+      statusTitle: string;
+      statusWaiting: string;
+      statusReady: string;
+      statusInvalid: string;
+      statusValidating: string;
+      statusUploading: string;
+      statusAnalyzing: string;
+      statusQueued: string;
+      statusProcessing: string;
+      statusPreparing: string;
+      statusCompleted: string;
+      statusFailed: string;
+      statusCancelled: string;
+      analysisProgressMessage: string;
+      trimProgressMessage: string;
+      preparingDownloadMessage: string;
+      selectedFile: string;
+      fileName: string;
+      fileSize: string;
+      fileDuration: string;
+      fileResolution: string;
+      fileFormat: string;
+      trimmedFileName: string;
+      trimmedFileSize: string;
+      startTimeLabel: string;
+      startTimePlaceholder: string;
+      endTimeLabel: string;
+      endTimePlaceholder: string;
+      durationLabel: string;
+      remainingDurationLabel: string;
+      trimButton: string;
+      downloadButton: string;
+      downloadStartedMessage: string;
+      cancelButton: string;
+      deleteButton: string;
+      nextStepMessage: string;
+      infoTitle: string;
+      infoItems: string[];
+      faqTitle: string;
+      faqItems: Array<{
+        question: string;
+        answer: string;
+      }>;
+      validation: {
+        multipleFiles: string;
+        emptyFile: string;
+        fileTooSmall: string;
+        fileTooLarge: string;
+        invalidExtension: string;
+        invalidMime: string;
+        invalidRange: string;
+        rangeOutOfBounds: string;
+        malformedTimestamp: string;
+        videoTooShort: string;
+      };
+      errors: {
+        missingFile: string;
+        emptyFile: string;
+        fileTooSmall: string;
+        fileTooLarge: string;
+        unsupportedFormat: string;
+        invalidMedia: string;
+        invalidRange: string;
+        ffprobeFailed: string;
+        ffmpegFailed: string;
+        jobFailed: string;
+        timeout: string;
+        serverError: string;
+        downloadUnavailable: string;
+        networkError: string;
+        accountRequired: string;
+        usageLimitReached: string;
+        toolUnavailableForPlan: string;
+        serviceUnavailable: string;
+      };
+    };
   };
   auth: {
     fields: {
@@ -538,6 +625,8 @@ export type Dictionary = {
         videoCompressorDescription: string;
         extractAudioLabel: string;
         extractAudioDescription: string;
+        videoTrimmerLabel: string;
+        videoTrimmerDescription: string;
         openLabel: string;
       };
     };
@@ -548,6 +637,7 @@ export type Dictionary = {
       toolLabels: {
         "video-compressor": string;
         "extract-audio": string;
+        "video-trimmer": string;
       };
       usedOfLimitDayLabel: string;
       usedOfLimitLifetimeLabel: string;
@@ -754,6 +844,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       toolsVideoCategory: "Video",
       videoCompressorTool: "Video Compressor",
       extractAudioTool: "Extract Audio",
+      videoTrimmerTool: "Video Trimmer",
       proBadgeLabel: "QAVELIX PRO subscriber",
       languageLabel: "Select language",
       themeLabel: "Theme",
@@ -1215,6 +1306,136 @@ const dictionaries: Record<Locale, Dictionary> = {
         serviceUnavailable: "The usage service is temporarily unavailable. Try again shortly.",
       },
     },
+    videoTrimmer: {
+      eyebrow: "Video Trimmer",
+      title: "Trim your video",
+      subtitle: "Cut a video down to exactly the range you need, in seconds.",
+      description:
+        "Upload a supported video, choose a start and end time, and QAVELIX trims it down to just that range — no editor required.",
+      uploadTitle: "Drop a video to trim",
+      uploadDescription:
+        "Choose a supported video file to trim.\nAccepted formats: MP4, MOV, AVI, WebM, M4V, MPEG and MPG.\nFree plan: 100 KB to 250 MB per file.\nPro plan: 100 KB to 500 MB per file.",
+      privacyMessage:
+        "Files are handled temporarily and removed automatically after the availability period.",
+      chooseFile: "Choose video",
+      chooseAnotherFile: "Choose another video",
+      statusTitle: "Video trimming",
+      statusWaiting: "Waiting for file",
+      statusReady: "File ready",
+      statusInvalid: "Invalid video",
+      statusValidating: "Validating file",
+      statusUploading: "Uploading video",
+      statusAnalyzing: "Analyzing video",
+      statusQueued: "Queued",
+      statusProcessing: "Trimming video",
+      statusPreparing: "Preparing download",
+      statusCompleted: "Completed",
+      statusFailed: "Failed",
+      statusCancelled: "Cancelled",
+      analysisProgressMessage: "Checking the video...",
+      trimProgressMessage: "Trimming the video...",
+      preparingDownloadMessage: "Preparing the download...",
+      selectedFile: "Selected file",
+      fileName: "File name",
+      fileSize: "File size",
+      fileDuration: "Duration",
+      fileResolution: "Resolution",
+      fileFormat: "Format",
+      trimmedFileName: "Trimmed file",
+      trimmedFileSize: "Trimmed size",
+      startTimeLabel: "Start time",
+      startTimePlaceholder: "00:00:00",
+      endTimeLabel: "End time",
+      endTimePlaceholder: "00:00:00",
+      durationLabel: "Original duration",
+      remainingDurationLabel: "Clip duration",
+      trimButton: "Trim Video",
+      downloadButton: "Download",
+      downloadStartedMessage: "Download started successfully.",
+      cancelButton: "Cancel",
+      deleteButton: "Delete file",
+      nextStepMessage: "Choose a start and end time, then trim your video.",
+      infoTitle: "How Video Trimmer works",
+      infoItems: [
+        "Upload a supported video file.",
+        "Choose a start time and an end time for the clip you want.",
+        "QAVELIX trims the video down to that exact range.",
+        "Download the trimmed video when processing is complete.",
+        "Temporary files are removed automatically after the availability period.",
+      ],
+      faqTitle: "Video Trimmer FAQ",
+      faqItems: [
+        {
+          question: "What does Video Trimmer do?",
+          answer:
+            "It cuts an uploaded video down to a start and end time you choose, producing a shorter video containing only that range.",
+        },
+        {
+          question: "Which video formats are supported?",
+          answer:
+            "Video Trimmer supports the same video formats as Video Compressor and Extract Audio: MP4, M4V, MOV, WebM, AVI, MPG, and MPEG.",
+        },
+        {
+          question: "Does trimming reduce video quality?",
+          answer:
+            "Whenever possible, QAVELIX trims without re-encoding, so quality stays identical to the original. Some sources may require a small amount of re-processing near the cut points.",
+        },
+        {
+          question: "What is the upload limit?",
+          answer: "The file limit is 250 MB on the Free plan and 500 MB on QAVELIX PRO.",
+        },
+        {
+          question: "How are files handled?",
+          answer:
+            "Files are temporary and are removed automatically after the availability period.",
+        },
+      ],
+      validation: {
+        multipleFiles: "Choose one video file at a time.",
+        emptyFile: "The selected file is empty. Choose another video.",
+        fileTooSmall:
+          "This video is too small to process. Choose a video of at least 100 KB.",
+        fileTooLarge:
+          "This video exceeds the {maxSize} upload limit. Choose a smaller video to continue.",
+        invalidExtension:
+          "This file extension is not supported. Choose MP4, M4V, MOV, WebM, AVI, MPG, or MPEG.",
+        invalidMime:
+          "This file type is not supported. Choose a valid video file.",
+        invalidRange: "The end time must be after the start time.",
+        rangeOutOfBounds: "The end time cannot be later than the video's duration.",
+        malformedTimestamp: "Enter a valid time in HH:MM:SS format.",
+        videoTooShort: "The video must be at least 5 seconds long to be trimmed. Choose another file.",
+      },
+      errors: {
+        missingFile: "Choose one supported video file before trimming.",
+        emptyFile: "The selected file is empty. Choose another video.",
+        fileTooSmall:
+          "This video is too small to process. Choose a video of at least 100 KB.",
+        fileTooLarge:
+          "This video exceeds the {maxSize} upload limit. Choose a smaller video to continue.",
+        unsupportedFormat:
+          "This video format is not supported. Choose MP4, MOV, AVI, WebM, M4V, MPEG, or MPG.",
+        invalidMedia:
+          "This file is corrupted or is not a valid video. Choose another file to continue.",
+        invalidRange: "The selected start and end time are not valid for this video.",
+        ffprobeFailed:
+          "QAVELIX could not analyze this video. Choose another supported video file.",
+        ffmpegFailed:
+          "QAVELIX could not trim this video. Choose another file and try again.",
+        jobFailed: "The trim job could not be completed. Try again.",
+        timeout: "Trimming took too long. Choose a shorter range or try again.",
+        serverError:
+          "Video trimming is temporarily unavailable. Try again in a moment.",
+        downloadUnavailable:
+          "The download could not be prepared. Try trimming the video again.",
+        networkError:
+          "The request could not be completed. Check your connection and try again.",
+        accountRequired: "Create a free account to keep using this tool.",
+        usageLimitReached: "You have reached today's usage limit for this tool.",
+        toolUnavailableForPlan: "This tool is not available on your current plan.",
+        serviceUnavailable: "The usage service is temporarily unavailable. Try again shortly.",
+      },
+    },
   },
   auth: {
     fields: {
@@ -1414,6 +1635,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         videoCompressorDescription: "Compress videos quickly and securely.",
         extractAudioLabel: "Extract Audio",
         extractAudioDescription: "Pull the audio track out of a video as an MP3.",
+        videoTrimmerLabel: "Video Trimmer",
+        videoTrimmerDescription: "Cut a video down to the exact range you need.",
         openLabel: "Open",
       },
     },
@@ -1424,6 +1647,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       toolLabels: {
         "video-compressor": "Video Compressor",
         "extract-audio": "Extract Audio",
+        "video-trimmer": "Video Trimmer",
       },
       usedOfLimitDayLabel: "{used} of {limit} used today",
       usedOfLimitLifetimeLabel: "{used} of {limit} used",
@@ -2041,6 +2265,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       toolsVideoCategory: "Vídeo",
       videoCompressorTool: "Compressor de Vídeo",
       extractAudioTool: "Extrair Áudio",
+      videoTrimmerTool: "Cortar Vídeo",
       proBadgeLabel: "Assinante QAVELIX PRO",
       languageLabel: "Selecionar idioma",
       themeLabel: "Tema",
@@ -2507,6 +2732,137 @@ const dictionaries: Record<Locale, Dictionary> = {
             "O serviço de uso está temporariamente indisponível. Tente novamente em instantes.",
         },
       },
+      videoTrimmer: {
+        eyebrow: "Cortar Vídeo",
+        title: "Corte seu vídeo",
+        subtitle: "Corte um vídeo exatamente no trecho que você precisa, em segundos.",
+        description:
+          "Envie um vídeo compatível, escolha um tempo de início e fim, e o QAVELIX corta o vídeo para conter apenas esse trecho — sem precisar de um editor.",
+        uploadTitle: "Solte um vídeo para cortar",
+        uploadDescription:
+          "Escolha um arquivo de vídeo compatível para cortar.\nFormatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nPlano Free: 100 KB a 250 MB por arquivo.\nPlano Pro: 100 KB a 500 MB por arquivo.",
+        privacyMessage:
+          "Os arquivos são tratados temporariamente e removidos automaticamente após o período de disponibilidade.",
+        chooseFile: "Escolher vídeo",
+        chooseAnotherFile: "Escolher outro vídeo",
+        statusTitle: "Corte de vídeo",
+        statusWaiting: "Aguardando arquivo",
+        statusReady: "Arquivo pronto",
+        statusInvalid: "Vídeo inválido",
+        statusValidating: "Validando arquivo",
+        statusUploading: "Enviando vídeo",
+        statusAnalyzing: "Analisando vídeo",
+        statusQueued: "Na fila",
+        statusProcessing: "Cortando vídeo",
+        statusPreparing: "Preparando download",
+        statusCompleted: "Concluído",
+        statusFailed: "Falha",
+        statusCancelled: "Cancelado",
+        analysisProgressMessage: "Verificando o vídeo...",
+        trimProgressMessage: "Cortando o vídeo...",
+        preparingDownloadMessage: "Preparando o download...",
+        selectedFile: "Arquivo selecionado",
+        fileName: "Nome do arquivo",
+        fileSize: "Tamanho do arquivo",
+        fileDuration: "Duração",
+        fileResolution: "Resolução",
+        fileFormat: "Formato",
+        trimmedFileName: "Arquivo cortado",
+        trimmedFileSize: "Tamanho do arquivo cortado",
+        startTimeLabel: "Início",
+        startTimePlaceholder: "00:00:00",
+        endTimeLabel: "Fim",
+        endTimePlaceholder: "00:00:00",
+        durationLabel: "Duração original",
+        remainingDurationLabel: "Duração do trecho",
+        trimButton: "Cortar Vídeo",
+        downloadButton: "Baixar",
+        downloadStartedMessage: "Download iniciado com sucesso.",
+        cancelButton: "Cancelar",
+        deleteButton: "Excluir arquivo",
+        nextStepMessage: "Escolha um tempo de início e fim, depois corte seu vídeo.",
+        infoTitle: "Como o Cortar Vídeo funciona",
+        infoItems: [
+          "Envie um arquivo de vídeo compatível.",
+          "Escolha um tempo de início e um tempo de fim para o trecho desejado.",
+          "O QAVELIX corta o vídeo exatamente nesse trecho.",
+          "Baixe o vídeo cortado quando o processamento terminar.",
+          "Arquivos temporários são removidos automaticamente após o período de disponibilidade.",
+        ],
+        faqTitle: "Perguntas frequentes sobre o Cortar Vídeo",
+        faqItems: [
+          {
+            question: "O que a ferramenta Cortar Vídeo faz?",
+            answer:
+              "Ela corta um vídeo enviado até um tempo de início e fim escolhidos por você, gerando um vídeo mais curto contendo apenas esse trecho.",
+          },
+          {
+            question: "Quais formatos de vídeo são aceitos?",
+            answer:
+              "Cortar Vídeo aceita os mesmos formatos do Compressor de Vídeo e do Extrair Áudio: MP4, M4V, MOV, WebM, AVI, MPG e MPEG.",
+          },
+          {
+            question: "O corte reduz a qualidade do vídeo?",
+            answer:
+              "Sempre que possível, o QAVELIX corta sem recodificar, mantendo a qualidade idêntica à original. Alguns arquivos podem exigir um pequeno reprocessamento perto dos pontos de corte.",
+          },
+          {
+            question: "Qual é o limite de upload?",
+            answer: "O limite por arquivo é de 250 MB no plano Free e 500 MB no QAVELIX PRO.",
+          },
+          {
+            question: "Como os arquivos são tratados?",
+            answer:
+              "Os arquivos são temporários e removidos automaticamente após o período de disponibilidade.",
+          },
+        ],
+        validation: {
+          multipleFiles: "Escolha apenas um arquivo de vídeo por vez.",
+          emptyFile: "O arquivo selecionado está vazio. Escolha outro vídeo.",
+          fileTooSmall:
+            "Este vídeo é pequeno demais para processamento. Escolha um vídeo de pelo menos 100 KB.",
+          fileTooLarge:
+            "Este vídeo excede o limite de upload de {maxSize}. Escolha um vídeo menor para continuar.",
+          invalidExtension:
+            "Esta extensão de arquivo não é aceita. Escolha MP4, M4V, MOV, WebM, AVI, MPG ou MPEG.",
+          invalidMime:
+            "Este tipo de arquivo não é aceito. Escolha um arquivo de vídeo válido.",
+          invalidRange: "O tempo de fim deve ser depois do tempo de início.",
+          rangeOutOfBounds: "O tempo de fim não pode ser maior que a duração do vídeo.",
+          malformedTimestamp: "Digite um tempo válido no formato HH:MM:SS.",
+          videoTooShort: "O vídeo precisa ter no mínimo 5 segundos para ser cortado. Escolha outro arquivo.",
+        },
+        errors: {
+          missingFile: "Escolha um arquivo de vídeo compatível antes de cortar.",
+          emptyFile: "O arquivo selecionado está vazio. Escolha outro vídeo.",
+          fileTooSmall:
+            "Este vídeo é pequeno demais para processamento. Escolha um vídeo de pelo menos 100 KB.",
+          fileTooLarge:
+            "Este vídeo excede o limite de upload de {maxSize}. Escolha um vídeo menor para continuar.",
+          unsupportedFormat:
+            "Este formato de vídeo não é aceito. Escolha MP4, MOV, AVI, WebM, M4V, MPEG ou MPG.",
+          invalidMedia:
+            "Este arquivo está corrompido ou não é um vídeo válido. Escolha outro arquivo para continuar.",
+          invalidRange: "O tempo de início e fim selecionados não são válidos para este vídeo.",
+          ffprobeFailed:
+            "O QAVELIX não conseguiu analisar este vídeo. Escolha outro arquivo compatível.",
+          ffmpegFailed:
+            "O QAVELIX não conseguiu cortar este vídeo. Escolha outro arquivo e tente novamente.",
+          jobFailed: "Não foi possível concluir o corte. Tente novamente.",
+          timeout: "O corte demorou demais. Escolha um trecho mais curto ou tente novamente.",
+          serverError:
+            "O corte de vídeo está temporariamente indisponível. Tente novamente em instantes.",
+          downloadUnavailable:
+            "Não foi possível preparar o download. Tente cortar o vídeo novamente.",
+          networkError:
+            "Não foi possível concluir a solicitação. Verifique sua conexão e tente novamente.",
+          accountRequired: "Crie uma conta gratuita para continuar usando esta ferramenta.",
+          usageLimitReached: "Você atingiu o limite de uso de hoje para esta ferramenta.",
+          toolUnavailableForPlan: "Esta ferramenta não está disponível no seu plano atual.",
+          serviceUnavailable:
+            "O serviço de uso está temporariamente indisponível. Tente novamente em instantes.",
+        },
+      },
     },
     auth: {
       fields: {
@@ -2706,6 +3062,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           videoCompressorDescription: "Comprima vídeos de forma rápida e segura.",
           extractAudioLabel: "Extrair Áudio",
           extractAudioDescription: "Extraia a trilha de áudio de um vídeo como MP3.",
+          videoTrimmerLabel: "Cortar Vídeo",
+          videoTrimmerDescription: "Corte um vídeo exatamente no trecho que você precisa.",
           openLabel: "Abrir",
         },
       },
@@ -2716,6 +3074,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         toolLabels: {
           "video-compressor": "Compressor de Vídeo",
           "extract-audio": "Extrair Áudio",
+          "video-trimmer": "Cortar Vídeo",
         },
         usedOfLimitDayLabel: "{used} de {limit} usados hoje",
         usedOfLimitLifetimeLabel: "{used} de {limit} usados",
@@ -3336,6 +3695,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       toolsVideoCategory: "Video",
       videoCompressorTool: "Compresor de video",
       extractAudioTool: "Extraer audio",
+      videoTrimmerTool: "Cortar Video",
       proBadgeLabel: "Suscriptor de QAVELIX PRO",
       languageLabel: "Seleccionar idioma",
       themeLabel: "Tema",
@@ -3803,6 +4163,137 @@ const dictionaries: Record<Locale, Dictionary> = {
             "El servicio de uso no está disponible temporalmente. Inténtalo de nuevo en unos instantes.",
         },
       },
+      videoTrimmer: {
+        eyebrow: "Cortar Video",
+        title: "Corta tu video",
+        subtitle: "Corta un video exactamente en el tramo que necesitas, en segundos.",
+        description:
+          "Sube un video compatible, elige un tiempo de inicio y fin, y QAVELIX corta el video para dejar solo ese tramo — sin necesidad de un editor.",
+        uploadTitle: "Suelta un video para cortarlo",
+        uploadDescription:
+          "Elige un archivo de video compatible para cortar.\nFormatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nPlan Free: 100 KB a 250 MB por archivo.\nPlan Pro: 100 KB a 500 MB por archivo.",
+        privacyMessage:
+          "Los archivos se gestionan temporalmente y se eliminan automáticamente después del periodo de disponibilidad.",
+        chooseFile: "Elegir video",
+        chooseAnotherFile: "Elegir otro video",
+        statusTitle: "Corte de video",
+        statusWaiting: "Esperando archivo",
+        statusReady: "Archivo listo",
+        statusInvalid: "Vídeo inválido",
+        statusValidating: "Validando archivo",
+        statusUploading: "Subiendo video",
+        statusAnalyzing: "Analizando video",
+        statusQueued: "En cola",
+        statusProcessing: "Cortando video",
+        statusPreparing: "Preparando descarga",
+        statusCompleted: "Completado",
+        statusFailed: "Error",
+        statusCancelled: "Cancelado",
+        analysisProgressMessage: "Verificando el video...",
+        trimProgressMessage: "Cortando el video...",
+        preparingDownloadMessage: "Preparando la descarga...",
+        selectedFile: "Archivo seleccionado",
+        fileName: "Nombre del archivo",
+        fileSize: "Tamaño del archivo",
+        fileDuration: "Duración",
+        fileResolution: "Resolución",
+        fileFormat: "Formato",
+        trimmedFileName: "Archivo cortado",
+        trimmedFileSize: "Tamaño del archivo cortado",
+        startTimeLabel: "Inicio",
+        startTimePlaceholder: "00:00:00",
+        endTimeLabel: "Fin",
+        endTimePlaceholder: "00:00:00",
+        durationLabel: "Duración original",
+        remainingDurationLabel: "Duración del tramo",
+        trimButton: "Cortar Video",
+        downloadButton: "Descargar",
+        downloadStartedMessage: "La descarga se inició correctamente.",
+        cancelButton: "Cancelar",
+        deleteButton: "Eliminar archivo",
+        nextStepMessage: "Elige un tiempo de inicio y fin, luego corta tu video.",
+        infoTitle: "Cómo funciona Cortar Video",
+        infoItems: [
+          "Sube un archivo de video compatible.",
+          "Elige un tiempo de inicio y un tiempo de fin para el tramo que quieres.",
+          "QAVELIX corta el video exactamente en ese tramo.",
+          "Descarga el video cortado cuando finalice el procesamiento.",
+          "Los archivos temporales se eliminan automáticamente después del periodo de disponibilidad.",
+        ],
+        faqTitle: "Preguntas frecuentes sobre Cortar Video",
+        faqItems: [
+          {
+            question: "¿Qué hace Cortar Video?",
+            answer:
+              "Corta un video subido hasta un tiempo de inicio y fin que tú eliges, generando un video más corto que contiene solo ese tramo.",
+          },
+          {
+            question: "¿Qué formatos de video son compatibles?",
+            answer:
+              "Cortar Video admite los mismos formatos que el Compresor de Video y Extraer Audio: MP4, M4V, MOV, WebM, AVI, MPG y MPEG.",
+          },
+          {
+            question: "¿El corte reduce la calidad del video?",
+            answer:
+              "Siempre que sea posible, QAVELIX corta sin recodificar, por lo que la calidad se mantiene idéntica a la original. Algunos archivos pueden requerir un pequeño reprocesamiento cerca de los puntos de corte.",
+          },
+          {
+            question: "¿Cuál es el límite de subida?",
+            answer: "El límite por archivo es de 250 MB en el plan Free y 500 MB en QAVELIX PRO.",
+          },
+          {
+            question: "¿Cómo se gestionan los archivos?",
+            answer:
+              "Los archivos son temporales y se eliminan automáticamente después del periodo de disponibilidad.",
+          },
+        ],
+        validation: {
+          multipleFiles: "Elige un solo archivo de video cada vez.",
+          emptyFile: "El archivo seleccionado está vacío. Elige otro video.",
+          fileTooSmall:
+            "Este video es demasiado pequeño para procesarlo. Elige un video de al menos 100 KB.",
+          fileTooLarge:
+            "Este video supera el límite de subida de {maxSize}. Elige un video más pequeño para continuar.",
+          invalidExtension:
+            "Esta extensión de archivo no es compatible. Elige MP4, M4V, MOV, WebM, AVI, MPG o MPEG.",
+          invalidMime:
+            "Este tipo de archivo no es compatible. Elige un archivo de video válido.",
+          invalidRange: "El tiempo de fin debe ser posterior al tiempo de inicio.",
+          rangeOutOfBounds: "El tiempo de fin no puede ser mayor que la duración del video.",
+          malformedTimestamp: "Introduce un tiempo válido en formato HH:MM:SS.",
+          videoTooShort: "El video debe durar al menos 5 segundos para poder cortarlo. Elige otro archivo.",
+        },
+        errors: {
+          missingFile: "Elige un archivo de video compatible antes de cortar.",
+          emptyFile: "El archivo seleccionado está vacío. Elige otro video.",
+          fileTooSmall:
+            "Este video es demasiado pequeño para procesarlo. Elige un video de al menos 100 KB.",
+          fileTooLarge:
+            "Este video supera el límite de subida de {maxSize}. Elige un video más pequeño para continuar.",
+          unsupportedFormat:
+            "Este formato de video no es compatible. Elige MP4, MOV, AVI, WebM, M4V, MPEG o MPG.",
+          invalidMedia:
+            "Este archivo está dañado o no es un video válido. Elige otro archivo para continuar.",
+          invalidRange: "El tiempo de inicio y fin seleccionados no son válidos para este video.",
+          ffprobeFailed:
+            "QAVELIX no ha podido analizar este video. Elige otro archivo compatible.",
+          ffmpegFailed:
+            "QAVELIX no ha podido cortar este video. Elige otro archivo e inténtalo de nuevo.",
+          jobFailed: "No se ha podido completar el corte. Inténtalo de nuevo.",
+          timeout: "El corte ha tardado demasiado. Elige un tramo más corto o inténtalo de nuevo.",
+          serverError:
+            "El corte de video no está disponible temporalmente. Inténtalo de nuevo en unos instantes.",
+          downloadUnavailable:
+            "No se ha podido preparar la descarga. Intenta cortar el video de nuevo.",
+          networkError:
+            "No se ha podido completar la solicitud. Comprueba tu conexión e inténtalo de nuevo.",
+          accountRequired: "Crea una cuenta gratuita para seguir usando esta herramienta.",
+          usageLimitReached: "Has alcanzado el límite de uso de hoy para esta herramienta.",
+          toolUnavailableForPlan: "Esta herramienta no está disponible en tu plan actual.",
+          serviceUnavailable:
+            "El servicio de uso no está disponible temporalmente. Inténtalo de nuevo en unos instantes.",
+        },
+      },
     },
     auth: {
       fields: {
@@ -4002,6 +4493,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           videoCompressorDescription: "Comprime videos de forma rápida y segura.",
           extractAudioLabel: "Extraer Audio",
           extractAudioDescription: "Extrae la pista de audio de un video como MP3.",
+          videoTrimmerLabel: "Cortar Video",
+          videoTrimmerDescription: "Corta un video exactamente en el tramo que necesitas.",
           openLabel: "Abrir",
         },
       },
@@ -4012,6 +4505,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         toolLabels: {
           "video-compressor": "Compresor de Video",
           "extract-audio": "Extraer Audio",
+          "video-trimmer": "Cortar Video",
         },
         usedOfLimitDayLabel: "{used} de {limit} usados hoy",
         usedOfLimitLifetimeLabel: "{used} de {limit} usados",
