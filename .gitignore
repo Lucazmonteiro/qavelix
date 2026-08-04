@@ -25,3 +25,5 @@ Thumbs.db
 
 # test and coverage
 coverage
+
+tsconfig.tsbuildinfo
