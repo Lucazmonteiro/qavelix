@@ -418,6 +418,7 @@ export type Dictionary = {
         invalidRange: string;
         rangeOutOfBounds: string;
         malformedTimestamp: string;
+        videoTooShort: string;
       };
       errors: {
         missingFile: string;
@@ -1387,6 +1388,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         invalidRange: "The end time must be after the start time.",
         rangeOutOfBounds: "The end time cannot be later than the video's duration.",
         malformedTimestamp: "Enter a valid time in HH:MM:SS format.",
+        videoTooShort: "The video must be at least 5 seconds long to be trimmed. Choose another file.",
       },
       errors: {
         missingFile: "Choose one supported video file before trimming.",
@@ -2685,7 +2687,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         title: "Corte seu vídeo",
         subtitle: "Corte um vídeo exatamente no trecho que você precisa, em segundos.",
         description:
-          "Envie um vídeo compatível, escolha um horário de início e fim, e o QAVELIX corta o vídeo para conter apenas esse trecho — sem precisar de um editor.",
+          "Envie um vídeo compatível, escolha um tempo de início e fim, e o QAVELIX corta o vídeo para conter apenas esse trecho — sem precisar de um editor.",
         uploadTitle: "Solte um vídeo para cortar",
         uploadDescription:
           "Escolha um arquivo de vídeo compatível para cortar.\nFormatos aceitos: MP4, MOV, AVI, WebM, M4V, MPEG e MPG.\nPlano Free: 100 KB a 250 MB por arquivo.\nPlano Pro: 100 KB a 500 MB por arquivo.",
@@ -2728,11 +2730,11 @@ const dictionaries: Record<Locale, Dictionary> = {
         downloadStartedMessage: "Download iniciado com sucesso.",
         cancelButton: "Cancelar",
         deleteButton: "Excluir arquivo",
-        nextStepMessage: "Escolha um horário de início e fim, depois corte seu vídeo.",
+        nextStepMessage: "Escolha um tempo de início e fim, depois corte seu vídeo.",
         infoTitle: "Como o Cortar Vídeo funciona",
         infoItems: [
           "Envie um arquivo de vídeo compatível.",
-          "Escolha um horário de início e um horário de fim para o trecho desejado.",
+          "Escolha um tempo de início e um tempo de fim para o trecho desejado.",
           "O QAVELIX corta o vídeo exatamente nesse trecho.",
           "Baixe o vídeo cortado quando o processamento terminar.",
           "Arquivos temporários são removidos automaticamente após o período de disponibilidade.",
@@ -2742,7 +2744,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             question: "O que a ferramenta Cortar Vídeo faz?",
             answer:
-              "Ela corta um vídeo enviado até um horário de início e fim escolhidos por você, gerando um vídeo mais curto contendo apenas esse trecho.",
+              "Ela corta um vídeo enviado até um tempo de início e fim escolhidos por você, gerando um vídeo mais curto contendo apenas esse trecho.",
           },
           {
             question: "Quais formatos de vídeo são aceitos?",
@@ -2775,9 +2777,10 @@ const dictionaries: Record<Locale, Dictionary> = {
             "Esta extensão de arquivo não é aceita. Escolha MP4, M4V, MOV, WebM, AVI, MPG ou MPEG.",
           invalidMime:
             "Este tipo de arquivo não é aceito. Escolha um arquivo de vídeo válido.",
-          invalidRange: "O horário de fim deve ser depois do horário de início.",
-          rangeOutOfBounds: "O horário de fim não pode ser maior que a duração do vídeo.",
-          malformedTimestamp: "Digite um horário válido no formato HH:MM:SS.",
+          invalidRange: "O tempo de fim deve ser depois do tempo de início.",
+          rangeOutOfBounds: "O tempo de fim não pode ser maior que a duração do vídeo.",
+          malformedTimestamp: "Digite um tempo válido no formato HH:MM:SS.",
+          videoTooShort: "O vídeo precisa ter no mínimo 5 segundos para ser cortado. Escolha outro arquivo.",
         },
         errors: {
           missingFile: "Escolha um arquivo de vídeo compatível antes de cortar.",
@@ -2790,7 +2793,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             "Este formato de vídeo não é aceito. Escolha MP4, MOV, AVI, WebM, M4V, MPEG ou MPG.",
           invalidMedia:
             "Este arquivo está corrompido ou não é um vídeo válido. Escolha outro arquivo para continuar.",
-          invalidRange: "O horário de início e fim selecionados não são válidos para este vídeo.",
+          invalidRange: "O tempo de início e fim selecionados não são válidos para este vídeo.",
           ffprobeFailed:
             "O QAVELIX não conseguiu analisar este vídeo. Escolha outro arquivo compatível.",
           ffmpegFailed:
@@ -4081,7 +4084,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         title: "Corta tu video",
         subtitle: "Corta un video exactamente en el tramo que necesitas, en segundos.",
         description:
-          "Sube un video compatible, elige una hora de inicio y fin, y QAVELIX corta el video para dejar solo ese tramo — sin necesidad de un editor.",
+          "Sube un video compatible, elige un tiempo de inicio y fin, y QAVELIX corta el video para dejar solo ese tramo — sin necesidad de un editor.",
         uploadTitle: "Suelta un video para cortarlo",
         uploadDescription:
           "Elige un archivo de video compatible para cortar.\nFormatos admitidos: MP4, MOV, AVI, WebM, M4V, MPEG y MPG.\nPlan Free: 100 KB a 250 MB por archivo.\nPlan Pro: 100 KB a 500 MB por archivo.",
@@ -4124,11 +4127,11 @@ const dictionaries: Record<Locale, Dictionary> = {
         downloadStartedMessage: "La descarga se inició correctamente.",
         cancelButton: "Cancelar",
         deleteButton: "Eliminar archivo",
-        nextStepMessage: "Elige una hora de inicio y fin, luego corta tu video.",
+        nextStepMessage: "Elige un tiempo de inicio y fin, luego corta tu video.",
         infoTitle: "Cómo funciona Cortar Video",
         infoItems: [
           "Sube un archivo de video compatible.",
-          "Elige una hora de inicio y una hora de fin para el tramo que quieres.",
+          "Elige un tiempo de inicio y un tiempo de fin para el tramo que quieres.",
           "QAVELIX corta el video exactamente en ese tramo.",
           "Descarga el video cortado cuando finalice el procesamiento.",
           "Los archivos temporales se eliminan automáticamente después del periodo de disponibilidad.",
@@ -4138,7 +4141,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             question: "¿Qué hace Cortar Video?",
             answer:
-              "Corta un video subido hasta una hora de inicio y fin que tú eliges, generando un video más corto que contiene solo ese tramo.",
+              "Corta un video subido hasta un tiempo de inicio y fin que tú eliges, generando un video más corto que contiene solo ese tramo.",
           },
           {
             question: "¿Qué formatos de video son compatibles?",
@@ -4171,9 +4174,10 @@ const dictionaries: Record<Locale, Dictionary> = {
             "Esta extensión de archivo no es compatible. Elige MP4, M4V, MOV, WebM, AVI, MPG o MPEG.",
           invalidMime:
             "Este tipo de archivo no es compatible. Elige un archivo de video válido.",
-          invalidRange: "La hora de fin debe ser posterior a la hora de inicio.",
-          rangeOutOfBounds: "La hora de fin no puede ser mayor que la duración del video.",
-          malformedTimestamp: "Introduce una hora válida en formato HH:MM:SS.",
+          invalidRange: "El tiempo de fin debe ser posterior al tiempo de inicio.",
+          rangeOutOfBounds: "El tiempo de fin no puede ser mayor que la duración del video.",
+          malformedTimestamp: "Introduce un tiempo válido en formato HH:MM:SS.",
+          videoTooShort: "El video debe durar al menos 5 segundos para poder cortarlo. Elige otro archivo.",
         },
         errors: {
           missingFile: "Elige un archivo de video compatible antes de cortar.",
@@ -4186,7 +4190,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             "Este formato de video no es compatible. Elige MP4, MOV, AVI, WebM, M4V, MPEG o MPG.",
           invalidMedia:
             "Este archivo está dañado o no es un video válido. Elige otro archivo para continuar.",
-          invalidRange: "La hora de inicio y fin seleccionadas no son válidas para este video.",
+          invalidRange: "El tiempo de inicio y fin seleccionados no son válidos para este video.",
           ffprobeFailed:
             "QAVELIX no ha podido analizar este video. Elige otro archivo compatible.",
           ffmpegFailed:

@@ -1472,6 +1472,15 @@ button.tools-menu__item:disabled {
   line-height: 1.15;
 }
 
+/* Video Trimmer only: once a job completes, the player/timeline stay mounted (so the
+   left column never collapses to an empty void) but are visually and interactively
+   locked — "Escolher outro vídeo" in the actions sidebar, outside this element, remains
+   the only way to get back to an editable state. */
+.preset-workflow--locked {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
 @keyframes workflow-content-in {
   from {
     opacity: 0;
@@ -2118,6 +2127,39 @@ button.tools-menu__item:disabled {
   white-space: nowrap;
 }
 
+/* .compression-status__warning itself stays untouched (compression-panel.tsx reuses it
+   for unrelated multi-child block content — a <p>/<strong>/<ul> stack that needs to keep
+   stacking vertically, not flex into a row). This is a video-trimmer-only companion class
+   that composes alongside it, fixing the "!" icon + message layout without affecting any
+   other tool: previously the icon and the <p> were bare siblings in a block container, so
+   the icon rendered alone on its own line above the message instead of beside it. */
+.video-trimmer-status__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.video-trimmer-status__warning-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--warning);
+  color: var(--background);
+  font-size: 0.95rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.video-trimmer-status__warning-text {
+  flex: 1 1 auto;
+  margin: 0;
+  line-height: 1.55;
+}
+
 .video-trimmer-status .compression-status__actions {
   flex: 0 0 auto;
   margin-top: 0;
@@ -2180,6 +2222,95 @@ button.tools-menu__item:disabled {
   color: var(--warning);
   font-size: 0.88rem;
   font-weight: 700;
+}
+
+/* Live preview player — replaces the dropzone in place once a file is loaded, so it sits
+   at the top of .preset-workflow, same border/radius language as .upload-dropzone. Height
+   (not max-height) + object-fit: contain gives it a fixed, predictable footprint next to
+   the metadata sidebar regardless of the source video's own aspect ratio — a portrait
+   phone-shot clip gets pillarboxed rather than blowing out the layout's height. */
+.video-trimmer-player {
+  margin-top: 0.75rem;
+}
+
+.video-trimmer-player__video {
+  display: block;
+  width: 100%;
+  height: clamp(11rem, 26vw, 18rem);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #000;
+  object-fit: contain;
+}
+
+.video-trimmer-player__time {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* Single-track dual-handle timeline. Both handles are plain <div role="slider"> children
+   positioned by percentage against the same .video-trimmer-timeline__track element that
+   backs the pointer math in updateHandleFromClientX (its getBoundingClientRect() is the
+   single coordinate space both the drag math and this layout agree on) — one real track,
+   not two stacked native inputs. touch-action: none is load-bearing: without it, a touch
+   drag on mobile scrolls the page instead of moving the handle, since these are ordinary
+   divs and don't get a native range input's built-in touch handling for free. */
+.video-trimmer-timeline {
+  position: relative;
+  height: 2.75rem;
+  margin-top: 1.1rem;
+  display: flex;
+  align-items: center;
+  touch-action: none;
+}
+
+.video-trimmer-timeline__track {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  margin-inline: 0.75rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.video-trimmer-timeline__range {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.video-trimmer-timeline__handle {
+  position: absolute;
+  top: 50%;
+  width: 1.4rem;
+  height: 1.4rem;
+  transform: translate(-50%, -50%);
+  border: 3px solid var(--accent-foreground);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: var(--soft-shadow);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.video-trimmer-timeline__handle:active {
+  cursor: grabbing;
+}
+
+.video-trimmer-timeline__handle:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.video-trimmer-timeline__handle[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .extract-audio-info,
