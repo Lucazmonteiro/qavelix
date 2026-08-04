@@ -19,6 +19,7 @@ import {
 import { useEntitlementGate } from "@/lib/use-entitlement-gate";
 import {
   isTerminalVideoTrimmerStatus,
+  MIN_SOURCE_DURATION_SECONDS,
   validateTrimRange,
   type VideoTrimmerJobSnapshot,
 } from "@/lib/video-trimmer-policy";
@@ -45,11 +46,6 @@ type FileState = {
 const acceptedInputValue = [...acceptedExtensions, ...acceptedMimeTypes].join(",");
 const pollingDelayMs = 1000;
 const maxPollingFailures = 3;
-// Client-side UX guard only, not a security/quota boundary the way upload size limits
-// are (see CLAUDE.md on client pre-checks) — a sub-5-second source video doesn't leave
-// enough room to pick a meaningful start/end range, so it's rejected the same way an
-// oversized or wrong-format file already is, reusing all the same invalid-file UI.
-const minSourceDurationSeconds = 5;
 const downloadClickCooldownMs = 3000;
 
 function hasAcceptedExtension(fileName: string) {
@@ -154,6 +150,7 @@ async function readApiError(response: Response): Promise<ErrorKey> {
       case "invalid_range":
       case "range_out_of_bounds":
       case "malformed_timestamp":
+      case "source_too_short":
         return "invalidRange";
       case "metadata_mismatch":
       case "queue_full":
@@ -449,6 +446,10 @@ export function VideoTrimmerTool() {
           "x-qavelix-file-name": encodeURIComponent(file.name),
           "x-qavelix-file-size": String(file.size),
           "x-qavelix-file-type": file.type,
+          // Without this, /api/upload/analyze defaults to video-compressor's own
+          // TOOL_POLICY entry — numerically identical today but not the actual policy
+          // this tool is supposed to enforce (see that route's resolveRequestedToolId()).
+          "x-qavelix-tool-id": "video-trimmer",
         },
         body: file,
       });
@@ -477,7 +478,14 @@ export function VideoTrimmerTool() {
       // Duration is only known after this server round-trip completes, so this can't be
       // a client pre-check the way validateFile()'s size/extension/mime checks are — it
       // has to be applied here, post-analysis, before the file is ever treated as ready.
-      if (analyzedDurationSeconds !== null && analyzedDurationSeconds < minSourceDurationSeconds) {
+      // This mirrors (but doesn't replace) validateTrimRange's own "source_too_short"
+      // check — that one is the actual server-enforced boundary (re-run against the real
+      // FFprobe duration in createVideoTrimmerJobFromAnalyzedUpload); this is purely the
+      // earliest-possible UX feedback, right after upload instead of only at trim time.
+      if (
+        analyzedDurationSeconds !== null &&
+        analyzedDurationSeconds < MIN_SOURCE_DURATION_SECONDS
+      ) {
         setFileState((current) => (current ? { ...current, errorKey: "videoTooShort" } : current));
         setProcessingState("failed");
         return;
@@ -743,6 +751,15 @@ export function VideoTrimmerTool() {
 
     if (rangeValidationError === "malformed_timestamp") {
       setRangeErrorKey("malformedTimestamp");
+      return;
+    }
+
+    // Redundant in practice — the post-analysis check in analyzeSelectedFile() already
+    // keeps a too-short file out of the "ready" state this function requires — but kept
+    // here too since validateTrimRange is the actual authoritative check, not a UX
+    // convenience one, and this is where every one of its other outcomes is already handled.
+    if (rangeValidationError === "source_too_short") {
+      setRangeErrorKey("videoTooShort");
       return;
     }
 

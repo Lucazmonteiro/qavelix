@@ -86,13 +86,23 @@ export function getVideoTrimmerDisplayProgress(
   return Math.min(100, Math.max(0, Math.round(progress)));
 }
 
+// A source video under this length doesn't leave enough room to pick a meaningful
+// start/end range. Enforced here (not just as a client-side ingestion check) specifically
+// so the server-side call site (createVideoTrimmerJobFromAnalyzedUpload, re-validating
+// against the real FFprobe-derived duration) rejects it too — a direct POST to
+// /api/video-trimmer/jobs with a valid uploadReference for a short video and a
+// full-duration range would otherwise sail past the only other check (start < end <=
+// duration) undetected.
+export const MIN_SOURCE_DURATION_SECONDS = 5;
+
 // VIDEOTRIMMER.md "Trim Configuration" validation rules — a single shared function so the
 // client-side UX pre-check and the server-side authoritative check can never drift apart
 // (the client result is never the security boundary; the server re-runs this exact check).
 export type TrimRangeValidationError =
   | "invalid_range"
   | "range_out_of_bounds"
-  | "malformed_timestamp";
+  | "malformed_timestamp"
+  | "source_too_short";
 
 export function validateTrimRange(
   startSeconds: number,
@@ -106,6 +116,10 @@ export function validateTrimRange(
     endSeconds < 0
   ) {
     return "malformed_timestamp";
+  }
+
+  if (durationSeconds !== null && durationSeconds < MIN_SOURCE_DURATION_SECONDS) {
+    return "source_too_short";
   }
 
   if (startSeconds >= endSeconds) {

@@ -10,7 +10,7 @@ import {
   createAnalyzedUploadRecord,
   deleteAnalyzedUploadReference,
 } from "@/lib/server/analyzed-upload-registry";
-import { getAnonymousLimits, getToolLimits } from "@/lib/server/entitlements/policy";
+import { getAnonymousLimits, getToolLimits, isToolId, type ToolId } from "@/lib/server/entitlements/policy";
 import { resolveActor } from "@/lib/server/entitlements/service";
 import {
   enforceApiSecurity,
@@ -25,8 +25,22 @@ export const runtime = "nodejs";
 const fileNameHeader = "x-qavelix-file-name";
 const fileSizeHeader = "x-qavelix-file-size";
 const fileTypeHeader = "x-qavelix-file-type";
+const toolIdHeader = "x-qavelix-tool-id";
 const signatureByteLength = 16;
 const uploadDirectory = path.join(os.tmpdir(), "qavelix-upload-analysis");
+
+// This route is shared across every tool that pre-validates an upload before its own
+// processing route runs (currently video-compressor and video-trimmer — extract-audio has
+// its own separate analyze route). Defaulting to "video-compressor" when the header is
+// absent or unrecognized preserves compression-panel.tsx's exact existing behavior (it
+// never sends this header) with zero changes there — callers that DO care which tool's
+// entitlement/upload-size policy applies to them must send it explicitly, the way
+// video-trimmer-tool.tsx does, so their own TOOL_POLICY entry is what's actually enforced
+// rather than silently borrowing another tool's limits.
+function resolveRequestedToolId(request: Request): ToolId {
+  const value = request.headers.get(toolIdHeader);
+  return value && isToolId(value) ? value : "video-compressor";
+}
 
 class UploadRouteError extends Error {
   constructor(
@@ -311,8 +325,9 @@ export async function POST(request: Request) {
 
   try {
     const actor = await resolveActor(request);
+    const requestedToolId = resolveRequestedToolId(request);
     const limits =
-      actor.type === "anonymous" ? getAnonymousLimits() : getToolLimits(actor.plan, "video-compressor");
+      actor.type === "anonymous" ? getAnonymousLimits() : getToolLimits(actor.plan, requestedToolId);
 
     const metadata = getUploadMetadata(request, limits.maxUploadBytes);
     const identity = {

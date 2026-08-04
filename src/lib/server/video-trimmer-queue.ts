@@ -56,6 +56,7 @@ type CreateJobResult =
           | "invalid_range"
           | "range_out_of_bounds"
           | "malformed_timestamp"
+          | "source_too_short"
           | "queue_full"
           | "missing_file"
           | "metadata_mismatch";
