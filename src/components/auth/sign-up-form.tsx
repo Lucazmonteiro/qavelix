@@ -26,14 +26,25 @@ type FieldErrors = {
 type SignUpFormProps = {
   // Already sanitized server-side (sanitizeCallbackPath) before this component sees it.
   callbackURL?: string | null;
+  // Set only when this sign-up originated from the PRO pricing card's anonymous CTA —
+  // narrowed to a fixed literal server-side (see sign-up/page.tsx), never trusted as an
+  // arbitrary string. Threaded into the verification email's own callback so
+  // verify-email-status.tsx can auto-start Stripe checkout the moment the account is
+  // confirmed, instead of losing the conversion moment on a generic "verified" page.
+  intent?: "checkout_pro" | null;
 };
 
-export function SignUpForm({ callbackURL }: SignUpFormProps) {
+export function SignUpForm({ callbackURL, intent }: SignUpFormProps) {
   const { dictionary, locale } = useLocaleState();
   const copy = dictionary.auth;
   const signInHref = callbackURL
     ? `/${locale}/sign-in?callbackURL=${encodeURIComponent(callbackURL)}`
     : `/${locale}/sign-in`;
+  // sanitizeCallbackPath's allowlist only accepts this one exact literal suffix on
+  // /verify-email — see that function's comment for why it's safe to round-trip through
+  // Better Auth's own verification-link building untouched.
+  const verifyCallbackURL =
+    intent === "checkout_pro" ? `/${locale}/verify-email?intent=checkout_pro` : `/${locale}/verify-email`;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -43,6 +54,9 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
 
   function validate(): FieldErrors {
     const errors: FieldErrors = {};
@@ -93,8 +107,9 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
       email,
       password,
       // Threaded through to the auto-sent verification email (emailVerification.sendOnSignUp
-      // in auth.ts) so the link lands back on our Verify Email page instead of the default "/".
-      callbackURL: `/${locale}/verify-email`,
+      // in auth.ts) so the link lands back on our Verify Email page instead of the default "/",
+      // carrying the checkout intent forward when this sign-up started from the PRO card.
+      callbackURL: verifyCallbackURL,
     });
 
     setIsSubmitting(false);
@@ -107,6 +122,31 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
     setIsComplete(true);
   }
 
+  // Better Auth signs the account in immediately on a successful signUp.email() call
+  // (with emailVerified: false), so this resend can target the just-submitted email
+  // directly rather than needing a session read — same endpoint, same callbackURL,
+  // VerifyEmailStatus's own handleResend just reads it from the live session instead
+  // since it has no locally-captured form value to reuse.
+  async function handleResend() {
+    setIsResending(true);
+    setResendMessage(null);
+    setResendError(null);
+
+    const { error } = await authClient.sendVerificationEmail({
+      email,
+      callbackURL: verifyCallbackURL,
+    });
+
+    setIsResending(false);
+
+    if (error) {
+      setResendError(mapAuthErrorCode(error.code, copy.errors));
+      return;
+    }
+
+    setResendMessage(copy.verifyEmail.resendSuccessMessage);
+  }
+
   if (isComplete) {
     return (
       <AuthFormShell
@@ -114,9 +154,24 @@ export function SignUpForm({ callbackURL }: SignUpFormProps) {
         eyebrow={copy.signUp.eyebrow}
         title={copy.signUp.successTitle}
       >
-        <a className="button button--primary auth-form__submit" href={callbackURL ?? `/${locale}`}>
-          {copy.verifyEmail.goHomeLabel}
-        </a>
+        <button
+          className="button button--secondary auth-form__submit"
+          disabled={isResending}
+          onClick={() => void handleResend()}
+          type="button"
+        >
+          {isResending ? copy.verifyEmail.resendingLabel : copy.verifyEmail.resendButton}
+        </button>
+        {resendMessage ? (
+          <p className="form-status__success" role="status">
+            {resendMessage}
+          </p>
+        ) : null}
+        {resendError ? (
+          <p className="form-status__error" role="alert">
+            {resendError}
+          </p>
+        ) : null}
       </AuthFormShell>
     );
   }

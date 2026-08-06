@@ -64,6 +64,15 @@ test("sanitizeCallbackPath is a real allowlist, not a blocklist, and only accept
   assert.match("/en/verify-email", pattern);
   assert.match("/pt-BR/verify-email", pattern);
   assert.match("/es/verify-email", pattern);
+  // Safe: the one exact, literal checkout-intent suffix, only on /verify-email.
+  assert.match("/en/verify-email?intent=checkout_pro", pattern);
+  assert.match("/pt-BR/verify-email?intent=checkout_pro", pattern);
+
+  // Unsafe: the intent suffix is a closed allowlist, not a general query-string
+  // allowance — no other value, path, or shape is accepted.
+  assert.doesNotMatch("/en/verify-email?intent=something_else", pattern);
+  assert.doesNotMatch("/en/dashboard?intent=checkout_pro", pattern);
+  assert.doesNotMatch("/en/verify-email?intent=checkout_pro&extra=1", pattern);
 
   // Unsafe: open-redirect vectors and anything outside this fixed set.
   assert.doesNotMatch("//evil.com", pattern);
@@ -86,7 +95,15 @@ test("sign-in reads and sanitizes the callbackURL query param before ever trusti
 
 test("sign-up also threads a sanitized callbackURL through, for the sign-in <-> sign-up cross-link case", () => {
   assert.match(signUpPage, /sanitizeCallbackPath\(/);
-  assert.match(signUpPage, /<SignUpForm callbackURL=\{callbackURL\} \/>/);
+  assert.match(signUpPage, /<SignUpForm callbackURL=\{callbackURL\} intent=\{intent\} \/>/);
+});
+
+test("sign-up narrows the intent query param to a fixed literal before trusting it", () => {
+  assert.match(signUpPage, /intent\?: string \| string\[\]/);
+  assert.match(
+    signUpPage,
+    /=== "checkout_pro"\s*\n\s*\? "checkout_pro"\s*\n\s*: null/,
+  );
 });
 
 test("sign-in redirects to the callback on success, not always the locale home", () => {

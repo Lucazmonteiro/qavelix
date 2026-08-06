@@ -170,9 +170,12 @@ test("compression action buttons use one turquoise design system", () => {
   assert.match(cssSource, /filter: brightness\(1\.06\)/);
   assert.match(cssSource, /box-shadow: var\(--strong-shadow\)/);
   assert.match(cssSource, /\.button--primary\s*\{\s*background: var\(--accent\)/);
-  assert.match(cssSource, /\.button--secondary/);
-  assert.match(cssSource, /color-mix\(in srgb, var\(--accent\) 70%, var\(--surface\)\)/);
-  assert.match(cssSource, /\.button--secondary:not\(:disabled\):hover/);
+  // Primary and secondary are visually unified — same solid accent, same shared hover
+  // rule (no separate .button--secondary:not(:disabled):hover override) — the only
+  // remaining distinct treatment is .button:disabled below, for genuinely inactive
+  // buttons.
+  assert.match(cssSource, /\.button--secondary\s*\{\s*background: var\(--accent\)/);
+  assert.doesNotMatch(cssSource, /\.button--secondary:not\(:disabled\):hover/);
   assert.match(cssSource, /\.button:disabled/);
   assert.match(cssSource, /color-mix\(in srgb, var\(--accent\) 24%, #042f2e\)/);
   assert.match(cssSource, /cursor: not-allowed/);

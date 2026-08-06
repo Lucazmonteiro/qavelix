@@ -14,6 +14,7 @@ type SignUpPageProps = {
   }>;
   searchParams: Promise<{
     callbackURL?: string | string[];
+    intent?: string | string[];
   }>;
 };
 
@@ -45,7 +46,7 @@ export async function generateMetadata({ params }: SignUpPageProps): Promise<Met
 
 export default async function SignUpPage({ params, searchParams }: SignUpPageProps) {
   const { locale } = await params;
-  const { callbackURL: rawCallbackURL } = await searchParams;
+  const { callbackURL: rawCallbackURL, intent: rawIntent } = await searchParams;
 
   if (!isLocale(locale)) {
     notFound();
@@ -54,6 +55,11 @@ export default async function SignUpPage({ params, searchParams }: SignUpPagePro
   const callbackURL = sanitizeCallbackPath(
     Array.isArray(rawCallbackURL) ? rawCallbackURL[0] : rawCallbackURL,
   );
+  // Narrowed to a fixed literal, never trusted as an arbitrary string — same posture as
+  // every other query-string value this app reads (see sanitizeCallbackPath).
+  const intent = (Array.isArray(rawIntent) ? rawIntent[0] : rawIntent) === "checkout_pro"
+    ? "checkout_pro"
+    : null;
 
   const session = await getOptionalSession();
 
@@ -65,7 +71,7 @@ export default async function SignUpPage({ params, searchParams }: SignUpPagePro
 
   return (
     <AppShell dictionary={dictionary} locale={locale}>
-      <SignUpForm callbackURL={callbackURL} />
+      <SignUpForm callbackURL={callbackURL} intent={intent} />
     </AppShell>
   );
 }

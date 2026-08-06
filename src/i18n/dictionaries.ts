@@ -554,6 +554,7 @@ export type Dictionary = {
       resendingLabel: string;
       resendSuccessMessage: string;
       goHomeLabel: string;
+      checkoutRedirectMessage: string;
     };
     accountMenu: {
       openLabel: string;
@@ -928,7 +929,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             highlight: false,
             badge: null,
             features: [
-              "10 compressions or extractions per day, per tool",
+              "10 uses per tool daily",
               "Up to 250 MB per file",
               "No credit card required",
             ],
@@ -941,7 +942,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             highlight: true,
             badge: "Most popular",
             features: [
-              "100 compressions or extractions per day, per tool",
+              "100 uses per tool daily",
               "Up to 500 MB per file",
               "Cancel anytime from your billing portal",
             ],
@@ -1563,6 +1564,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       resendingLabel: "Sending...",
       resendSuccessMessage: "Verification email sent. Check your inbox.",
       goHomeLabel: "Go to homepage",
+      checkoutRedirectMessage: "Your email is verified. Taking you to checkout to finish upgrading to QAVELIX PRO...",
     },
     accountMenu: {
       openLabel: "Account",
@@ -2355,7 +2357,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             highlight: false,
             badge: null,
             features: [
-              "10 compressões ou extrações por dia, por ferramenta",
+              "10 usos para cada ferramenta por dia",
               "Até 250 MB por arquivo",
               "Sem necessidade de cartão de crédito",
             ],
@@ -2368,7 +2370,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             highlight: true,
             badge: "Mais popular",
             features: [
-              "100 compressões ou extrações por dia, por ferramenta",
+              "100 usos para cada ferramenta por dia",
               "Até 500 MB por arquivo",
               "Cancele quando quiser pelo portal de cobrança",
             ],
@@ -2996,6 +2998,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         resendingLabel: "Enviando...",
         resendSuccessMessage: "Email de verificação enviado. Verifique sua caixa de entrada.",
         goHomeLabel: "Ir para a página inicial",
+        checkoutRedirectMessage:
+          "Seu email foi verificado. Levando você ao checkout para concluir o upgrade para o QAVELIX PRO...",
       },
       accountMenu: {
         openLabel: "Conta",
@@ -3792,7 +3796,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             highlight: false,
             badge: null,
             features: [
-              "10 compresiones o extracciones al día, por herramienta",
+              "10 usos por herramienta al día",
               "Hasta 250 MB por archivo",
               "No se requiere tarjeta de crédito",
             ],
@@ -3805,7 +3809,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             highlight: true,
             badge: "Más popular",
             features: [
-              "100 compresiones o extracciones al día, por herramienta",
+              "100 usos por herramienta al día",
               "Hasta 500 MB por archivo",
               "Cancela cuando quieras desde el portal de facturación",
             ],
@@ -4434,6 +4438,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         resendingLabel: "Enviando...",
         resendSuccessMessage: "Correo de verificación enviado. Revisa tu bandeja de entrada.",
         goHomeLabel: "Ir a la página de inicio",
+        checkoutRedirectMessage:
+          "Tu correo fue verificado. Te estamos llevando al checkout para completar la actualización a QAVELIX PRO...",
       },
       accountMenu: {
         openLabel: "Cuenta",

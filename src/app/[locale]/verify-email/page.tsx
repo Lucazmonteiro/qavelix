@@ -16,6 +16,7 @@ type VerifyEmailPageProps = {
     match?: string;
     code?: string;
     email?: string;
+    intent?: string;
   }>;
 };
 
@@ -58,12 +59,16 @@ export default async function VerifyEmailPage({ params, searchParams }: VerifyEm
   }
 
   const dictionary = getDictionary(locale);
-  const { result, match, code, email } = await searchParams;
+  const { result, match, code, email, intent } = await searchParams;
 
   return (
     <AppShell dictionary={dictionary} locale={locale}>
       <VerifyEmailStatus
         errorCode={code ?? null}
+        // Narrowed to a fixed literal, same posture as result/match below — this value
+        // only ever round-trips through sanitizeCallbackPath's allowlist (one exact
+        // string), but is still never trusted blindly here either.
+        intent={intent === "checkout_pro" ? "checkout_pro" : null}
         // Only ever built by src/app/api/verify-email/route.ts's own validated redirect —
         // still narrowed against a fixed set here rather than trusted as an arbitrary
         // string, the same defense-in-depth posture as sanitizeCallbackPath.

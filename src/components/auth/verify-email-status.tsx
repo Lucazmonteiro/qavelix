@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AuthFormShell } from "@/components/auth/auth-form-shell";
 import { useLocaleState } from "@/i18n/locale-context";
-import { authClient, useSession } from "@/lib/auth-client";
+import { authClient, startProUpgradeCheckout, useSession } from "@/lib/auth-client";
 import { mapAuthErrorCode } from "@/lib/auth-errors";
 
 type VerifyEmailStatusProps = {
@@ -17,11 +17,22 @@ type VerifyEmailStatusProps = {
   match: "same" | "different" | "none" | null;
   errorCode: string | null;
   maskedEmail: string | null;
+  // Narrowed server-side to a fixed literal (sign-up/page.tsx, verify-email/page.tsx) —
+  // set only when this account's sign-up started from the PRO pricing card's anonymous
+  // CTA. Drives Case B's auto-checkout redirect below.
+  intent: "checkout_pro" | null;
 };
 
-export function VerifyEmailStatus({ result, match, errorCode, maskedEmail }: VerifyEmailStatusProps) {
+export function VerifyEmailStatus({
+  result,
+  match,
+  errorCode,
+  maskedEmail,
+  intent,
+}: VerifyEmailStatusProps) {
   const { dictionary, locale } = useLocaleState();
   const copy = dictionary.auth;
+  const upgradeCopy = dictionary.upgradeModal;
   const session = useSession();
   const router = useRouter();
 
@@ -30,6 +41,51 @@ export function VerifyEmailStatus({ result, match, errorCode, maskedEmail }: Ver
   const [resendError, setResendError] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const hasStartedCheckoutRef = useRef(false);
+
+  // Case B's auto-redirect: fires exactly once, the moment this browser lands on its own
+  // just-verified, just-signed-in account with a PRO intent attached — see the guard
+  // below, which mirrors Case B's own render condition exactly so this can never fire for
+  // any other case. A ref (not state) tracks "already attempted" so a retry after a
+  // failed checkout doesn't get raced by this effect firing again on the same mount.
+  useEffect(() => {
+    if (
+      intent !== "checkout_pro" ||
+      result !== "success" ||
+      match !== "same" ||
+      hasStartedCheckoutRef.current
+    ) {
+      return;
+    }
+
+    hasStartedCheckoutRef.current = true;
+    void handleStartCheckout();
+    // handleStartCheckout is a stable function declaration closing over props/state read
+    // fresh on each call, not a changing dependency; including it would refire this
+    // effect on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intent, result, match]);
+
+  // Case B's auto-redirect handler and its manual retry button share this one function.
+  // cancelUrl is the plain homepage — a Stripe-checkout cancellation here has nowhere
+  // more specific to return to (there's no tool page this flow started from), and the
+  // account is already a verified, signed-in Free user by this point regardless of
+  // whether checkout completes, so landing on the homepage is a normal, functional state,
+  // not a dead end.
+  async function handleStartCheckout() {
+    setCheckoutError(null);
+
+    const { error } = await startProUpgradeCheckout(locale, `/${locale}`);
+
+    if (error) {
+      setCheckoutError(
+        error.code === "EMAIL_VERIFICATION_REQUIRED"
+          ? upgradeCopy.emailVerificationRequiredMessage
+          : upgradeCopy.checkoutErrorMessage,
+      );
+    }
+  }
 
   async function handleResend() {
     const email = session.data?.user.email;
@@ -157,6 +213,37 @@ export function VerifyEmailStatus({ result, match, errorCode, maskedEmail }: Ver
 
     // Case B: the currently signed-in account is the one that was just verified.
     if (match === "same") {
+      if (intent === "checkout_pro") {
+        return (
+          <AuthFormShell
+            description={checkoutError ?? copy.verifyEmail.checkoutRedirectMessage}
+            eyebrow={copy.verifyEmail.eyebrow}
+            title={copy.verifyEmail.verifiedTitle}
+          >
+            {checkoutError ? (
+              <>
+                <button
+                  className="button button--primary auth-form__submit"
+                  onClick={() => void handleStartCheckout()}
+                  type="button"
+                >
+                  {upgradeCopy.upgradeButtonLabel}
+                </button>
+                <a className="button button--secondary auth-form__submit" href={`/${locale}`}>
+                  {copy.verifyEmail.goHomeLabel}
+                </a>
+              </>
+            ) : (
+              <span
+                aria-label={copy.verifyEmail.checkoutRedirectMessage}
+                className="validation-loader"
+                role="progressbar"
+              />
+            )}
+          </AuthFormShell>
+        );
+      }
+
       return (
         <AuthFormShell
           description={copy.verifyEmail.verifiedMessage}

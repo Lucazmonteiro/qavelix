@@ -27,6 +27,12 @@ export function PricingCards() {
 
   const callbackURL = encodeURIComponent(replaceLocaleInPath(pathname, locale));
   const signUpHref = `/${locale}/sign-up?callbackURL=${callbackURL}`;
+  // Carries the anonymous visitor's purchase intent through account creation and email
+  // verification (see sign-up/page.tsx, sign-up-form.tsx, verify-email-status.tsx) so
+  // Case B of the verify-email flow can auto-start Stripe checkout the moment the new
+  // account is confirmed, instead of dropping the visitor back on a generic "verified"
+  // page and losing the conversion moment.
+  const anonymousProHref = `${signUpHref}&intent=checkout_pro`;
 
   async function handleUpgradeClick() {
     setCheckoutError(null);
@@ -96,7 +102,7 @@ export function PricingCards() {
               ) : (
                 <a
                   className={`button ${plan.highlight ? "button--primary" : "button--secondary"}`}
-                  href={signUpHref}
+                  href={isProCard ? anonymousProHref : signUpHref}
                 >
                   {isProCard ? pricing.getPro : plan.cta}
                 </a>

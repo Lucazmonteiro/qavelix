@@ -807,17 +807,14 @@ button.tools-menu__item:disabled {
   color: var(--accent-foreground);
 }
 
+/* Unified with .button--primary on purpose: every active, clickable button uses the
+   same solid brand accent, in both light and dark (both read from the same theme-aware
+   --accent/--accent-foreground tokens, so no separate dark-mode override is needed).
+   .button:disabled above already carries the one remaining visual distinction — a muted,
+   not-allowed treatment — for actually-inactive buttons. */
 .button--secondary {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  background: color-mix(in srgb, var(--accent) 70%, var(--surface));
+  background: var(--accent);
   color: var(--accent-foreground);
-  opacity: 0.86;
-}
-
-.button--secondary:not(:disabled):hover {
-  border-color: color-mix(in srgb, var(--accent) 78%, var(--border));
-  background: color-mix(in srgb, var(--accent) 82%, var(--surface));
-  opacity: 0.94;
 }
 
 /* Compact Free/Pro upload-size comparison shown in each tool's status panel — never a

@@ -20,19 +20,25 @@ export async function getOptionalSession() {
 }
 
 // Only accepts an internal, locale-prefixed /dashboard path, the bare localized
-// homepage, the Extract Audio tool page, or the Verify Email page. This is intentionally
-// an allowlist, not a generic "starts with / and doesn't start with //" check — the
-// callback value arrives via a query string an attacker fully controls
+// homepage, the Extract Audio tool page, or the Verify Email page (optionally carrying
+// the one exact, literal ?intent=checkout_pro suffix — never an arbitrary query string).
+// This is intentionally an allowlist, not a generic "starts with / and doesn't start with
+// //" check — the callback value arrives via a query string an attacker fully controls
 // (?callbackURL=...), and these are the only legitimate destinations any flow in this app
 // produces a callback for: the dashboard (post-sign-in), the two tool pages (the
 // plan-comparison modal shown when an anonymous visitor hits their usage limit needs to
 // return them to whichever tool page they were using, not just the dashboard), and
 // /verify-email (src/app/api/verify-email/route.ts's own callbackURL, round-tripped
-// through this same allowlist even though it's self-generated, not user input). Rejects
-// protocol-relative URLs (//evil.com), absolute URLs, and anything outside this fixed set
-// outright by construction, not by trying to blocklist every way to smuggle one past a
-// looser check.
-const SAFE_CALLBACK_PATTERN = /^\/[a-z]{2}(-[A-Z]{2})?(\/dashboard(\/[a-zA-Z0-9/_-]*)?|\/tools\/extract-audio|\/verify-email)?$/;
+// through this same allowlist even though it's self-generated, not user input).
+// ?intent=checkout_pro is threaded the same way, end to end, from PricingCards' anonymous
+// Pro-card link through sign-up, the verification email's own callback, and back to
+// /verify-email — see sign-up-form.tsx and verify-email-status.tsx. It's matched as one
+// exact literal string, not a pattern that admits attacker-chosen content, so this stays
+// a closed allowlist: no new query string shape becomes acceptable, only this one known
+// value on this one path. Rejects protocol-relative URLs (//evil.com), absolute URLs, and
+// anything outside this fixed set outright by construction, not by trying to blocklist
+// every way to smuggle one past a looser check.
+const SAFE_CALLBACK_PATTERN = /^\/[a-z]{2}(-[A-Z]{2})?(\/dashboard(\/[a-zA-Z0-9/_-]*)?|\/tools\/extract-audio|\/verify-email(\?intent=checkout_pro)?)?$/;
 
 export function sanitizeCallbackPath(value: string | undefined | null): string | null {
   if (!value) {
