@@ -872,11 +872,37 @@ button.tools-menu__item:disabled {
   color: var(--accent);
 }
 
+/* The callout is always solid/legible/static via border + background + font-weight —
+   theme-aware custom properties, so contrast holds in both light and dark without a
+   separate dark-mode override. The pulsing glow is a purely decorative overlay confined
+   to prefers-reduced-motion: no-preference, same convention as .pro-badge's shimmer. */
 .plan-explainer {
   margin: 0 0 1rem;
-  color: var(--muted);
-  font-size: 0.85rem;
+  border: 1.5px solid var(--accent);
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 700;
   line-height: 1.5;
+  padding: 0.85rem 1.1rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .plan-explainer {
+    animation: plan-explainer-glow 2.8s ease-in-out infinite;
+  }
+
+  @keyframes plan-explainer-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+    }
+
+    50% {
+      box-shadow: 0 0 16px 2px color-mix(in srgb, var(--accent) 45%, transparent);
+    }
+  }
 }
 
 .stat-grid {
@@ -2370,6 +2396,32 @@ button.tools-menu__item:disabled {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+
+/* FAQ question/answer pairs (extract-audio-tool.tsx, video-trimmer-tool.tsx) — theme-aware
+   surface/border tokens, so this needs no separate dark-mode override. */
+.feature-card {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
+  padding: 1.25rem;
+}
+
+.feature-card h3 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.feature-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .section-heading {

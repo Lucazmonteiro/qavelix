@@ -23,7 +23,7 @@ const FALLBACK_AD_GATE_COPY = {
   countdownLabel: "Continue in {seconds}s...",
   readyLabel: "You're all set — continue whenever you're ready.",
   continueLabel: "Continue",
-  upsellMessage: "Remove ads and unlock unlimited uploads up to 500MB with QAVELIX PRO.",
+  upsellMessage: "Upgrade to QAVELIX PRO: 100 daily uses ad-free and support for files up to 500MB.",
   upgradeButtonLabel: "Upgrade to Pro",
   anonymousPlanExplainer:
     "Anonymous plan: 5 uses max (2 ad-free, 3 ad-supported). Create a free account to double your limit to 10 uses!",

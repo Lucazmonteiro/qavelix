@@ -906,8 +906,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         eyebrow: "Pricing",
         title: "Simple, transparent pricing",
         description:
-          "Use Video Compressor and Extract Audio for free, or upgrade to QAVELIX PRO for higher daily limits and larger files.",
-        note: "You can also try both tools without creating an account, with a small combined trial allowance.",
+          "Use Video Compressor, Extract Audio, and Video Trimmer for free, or upgrade to QAVELIX PRO for higher daily limits and larger files.",
+        note: "You can also try all three tools without creating an account, with a small combined trial allowance.",
         plans: [
           {
             name: "Free",
@@ -1242,7 +1242,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         {
           question: "Which video formats are supported?",
           answer:
-            "Extract Audio supports the same video formats as Video Compressor: MP4, M4V, MOV, WebM, AVI, MPG, and MPEG.",
+            "Extract Audio supports the same video formats as Video Compressor and Video Trimmer: MP4, M4V, MOV, WebM, AVI, MPG, and MPEG.",
         },
         {
           question: "Is the output MP3?",
@@ -1596,7 +1596,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     countdownLabel: "Continue in {seconds}s...",
     readyLabel: "You're all set — continue whenever you're ready.",
     continueLabel: "Continue",
-    upsellMessage: "Remove ads and unlock unlimited uploads up to 500MB with QAVELIX PRO.",
+    upsellMessage: "Upgrade to QAVELIX PRO: 100 daily uses ad-free and support for files up to 500MB.",
     upgradeButtonLabel: "Upgrade to Pro",
     anonymousPlanExplainer:
       "Anonymous plan: 5 uses max (2 ad-free, 3 ad-supported). Create a free account to double your limit to 10 uses!",
@@ -1799,7 +1799,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "About QAVELIX",
           description:
-            "Learn how QAVELIX's Video Compressor and Extract Audio tools work.",
+            "Learn how QAVELIX's Video Compressor, Extract Audio, and Video Trimmer tools work.",
         },
         eyebrow: "About",
         title: "Practical media tools, built for clarity",
@@ -1809,8 +1809,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "What QAVELIX does",
             body: [
-              "QAVELIX currently offers Video Compressor and Extract Audio, two focused media tools you can use directly in your browser.",
-              "Both tools are designed to feel simple instead of technical: upload a file, review its details, choose an option, and download the result.",
+              "QAVELIX currently offers Video Compressor, Extract Audio, and Video Trimmer, three focused media tools you can use directly in your browser.",
+              "All three tools are designed to feel simple instead of technical: upload a file, review its details, choose an option, and download the result.",
             ],
           },
           {
@@ -1823,8 +1823,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "QAVELIX PRO",
             body: [
-              "Video Compressor and Extract Audio are both fully available today, for anonymous use or with a free account.",
-              "QAVELIX PRO is a paid upgrade with higher daily usage limits and larger file sizes on both tools.",
+              "Video Compressor, Extract Audio, and Video Trimmer are all fully available today, for anonymous use or with a free account.",
+              "QAVELIX PRO is a paid upgrade with higher daily usage limits and larger file sizes on all three tools.",
             ],
           },
         ],
@@ -2331,8 +2331,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         eyebrow: "Preços",
         title: "Preços simples e transparentes",
         description:
-          "Use o Compressor de Vídeo e o Extrair Áudio gratuitamente, ou faça upgrade para o QAVELIX PRO para limites diários maiores e arquivos maiores.",
-        note: "Você também pode testar as duas ferramentas sem criar uma conta, com uma pequena cota de teste combinada.",
+          "Use o Compressor de Vídeo, o Extrair Áudio e o Cortar Vídeo gratuitamente, ou faça upgrade para o QAVELIX PRO para limites diários maiores e arquivos maiores.",
+        note: "Você também pode testar as três ferramentas sem criar uma conta, com uma pequena cota de teste combinada.",
         plans: [
           {
             name: "Free",
@@ -2670,7 +2670,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             question: "Quais formatos de vídeo são aceitos?",
             answer:
-              "Extrair Áudio aceita os mesmos formatos do Compressor de Vídeo: MP4, M4V, MOV, WebM, AVI, MPG e MPEG.",
+              "Extrair Áudio aceita os mesmos formatos do Compressor de Vídeo e do Cortar Vídeo: MP4, M4V, MOV, WebM, AVI, MPG e MPEG.",
           },
           {
             question: "A saída é em MP3?",
@@ -3027,7 +3027,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       countdownLabel: "Continuar em {seconds}s...",
       readyLabel: "Tudo pronto — continue quando quiser.",
       continueLabel: "Continuar",
-      upsellMessage: "Remova os anúncios e libere uploads ilimitados de até 500MB com o QAVELIX PRO.",
+      upsellMessage:
+        "Faça upgrade para o QAVELIX PRO: 100 usos diários sem anúncios e suporte a arquivos de até 500MB.",
       upgradeButtonLabel: "Fazer upgrade para o Pro",
       anonymousPlanExplainer:
         "Plano anônimo: até 5 usos (2 sem anúncio, 3 com anúncio). Crie uma conta gratuita para dobrar seu limite para 10 usos!",
@@ -3233,7 +3234,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Sobre o QAVELIX",
           description:
-            "Conheça como funcionam o Compressor de Vídeo e o Extrair Áudio do QAVELIX.",
+            "Conheça como funcionam o Compressor de Vídeo, o Extrair Áudio e o Cortar Vídeo do QAVELIX.",
         },
         eyebrow: "Sobre",
         title: "Ferramentas de mídia práticas, criadas para clareza",
@@ -3243,8 +3244,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "O que o QAVELIX faz",
             body: [
-              "O QAVELIX oferece atualmente o Compressor de Vídeo e o Extrair Áudio, duas ferramentas de mídia focadas que você usa diretamente no navegador.",
-              "As duas ferramentas foram pensadas para parecer simples, não técnicas: envie um arquivo, revise os detalhes, escolha uma opção e baixe o resultado.",
+              "O QAVELIX oferece atualmente o Compressor de Vídeo, o Extrair Áudio e o Cortar Vídeo, três ferramentas de mídia focadas que você usa diretamente no navegador.",
+              "As três ferramentas foram pensadas para parecer simples, não técnicas: envie um arquivo, revise os detalhes, escolha uma opção e baixe o resultado.",
             ],
           },
           {
@@ -3257,8 +3258,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "QAVELIX PRO",
             body: [
-              "O Compressor de Vídeo e o Extrair Áudio já estão totalmente disponíveis hoje, para uso anônimo ou com uma conta gratuita.",
-              "O QAVELIX PRO é um upgrade pago com limites diários mais altos e arquivos maiores nas duas ferramentas.",
+              "O Compressor de Vídeo, o Extrair Áudio e o Cortar Vídeo já estão totalmente disponíveis hoje, para uso anônimo ou com uma conta gratuita.",
+              "O QAVELIX PRO é um upgrade pago com limites diários mais altos e arquivos maiores nas três ferramentas.",
             ],
           },
         ],
@@ -3765,8 +3766,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         eyebrow: "Precios",
         title: "Precios simples y transparentes",
         description:
-          "Usa Compresor de Video y Extraer Audio de forma gratuita, o mejora a QAVELIX PRO para límites diarios más altos y archivos más grandes.",
-        note: "También puedes probar ambas herramientas sin crear una cuenta, con una pequeña cuota de prueba combinada.",
+          "Usa Compresor de Video, Extraer Audio y Cortar Video de forma gratuita, o mejora a QAVELIX PRO para límites diarios más altos y archivos más grandes.",
+        note: "También puedes probar las tres herramientas sin crear una cuenta, con una pequeña cuota de prueba combinada.",
         plans: [
           {
             name: "Free",
@@ -4105,7 +4106,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             question: "¿Qué formatos de video son compatibles?",
             answer:
-              "Extraer audio admite los mismos formatos que el Compresor de video: MP4, M4V, MOV, WebM, AVI, MPG y MPEG.",
+              "Extraer audio admite los mismos formatos que el Compresor de video y Cortar Video: MP4, M4V, MOV, WebM, AVI, MPG y MPEG.",
           },
           {
             question: "¿La salida es MP3?",
@@ -4462,7 +4463,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       countdownLabel: "Continuar en {seconds}s...",
       readyLabel: "Todo listo — continúa cuando quieras.",
       continueLabel: "Continuar",
-      upsellMessage: "Elimina los anuncios y desbloquea subidas ilimitadas de hasta 500MB con QAVELIX PRO.",
+      upsellMessage:
+        "Haz upgrade a QAVELIX PRO: 100 usos diarios sin anuncios y soporte para archivos de hasta 500MB.",
       upgradeButtonLabel: "Actualizar a Pro",
       anonymousPlanExplainer:
         "Plan anónimo: hasta 5 usos (2 sin anuncios, 3 con anuncios). Crea una cuenta gratuita para duplicar tu límite a 10 usos.",
@@ -4668,7 +4670,7 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Acerca de QAVELIX",
           description:
-            "Descubre cómo funcionan el Compresor de Video y Extraer Audio de QAVELIX.",
+            "Descubre cómo funcionan el Compresor de Video, Extraer Audio y Cortar Video de QAVELIX.",
         },
         eyebrow: "Acerca de",
         title: "Herramientas multimedia prácticas, creadas para aportar claridad",
@@ -4678,8 +4680,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "Qué hace QAVELIX",
             body: [
-              "QAVELIX ofrece actualmente el Compresor de Video y Extraer Audio, dos herramientas multimedia enfocadas que puedes usar directamente en el navegador.",
-              "Ambas herramientas están pensadas para sentirse sencillas, no técnicas: sube un archivo, revisa sus detalles, elige una opción y descarga el resultado.",
+              "QAVELIX ofrece actualmente el Compresor de Video, Extraer Audio y Cortar Video, tres herramientas multimedia enfocadas que puedes usar directamente en el navegador.",
+              "Las tres herramientas están pensadas para sentirse sencillas, no técnicas: sube un archivo, revisa sus detalles, elige una opción y descarga el resultado.",
             ],
           },
           {
@@ -4692,8 +4694,8 @@ const dictionaries: Record<Locale, Dictionary> = {
           {
             title: "QAVELIX PRO",
             body: [
-              "El Compresor de Video y Extraer Audio ya están totalmente disponibles hoy, para uso anónimo o con una cuenta gratuita.",
-              "QAVELIX PRO es una mejora de pago con límites diarios más altos y archivos más grandes en ambas herramientas.",
+              "El Compresor de Video, Extraer Audio y Cortar Video ya están totalmente disponibles hoy, para uso anónimo o con una cuenta gratuita.",
+              "QAVELIX PRO es una mejora de pago con límites diarios más altos y archivos más grandes en las tres herramientas.",
             ],
           },
         ],
