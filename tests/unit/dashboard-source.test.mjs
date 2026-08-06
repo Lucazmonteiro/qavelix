@@ -222,6 +222,41 @@ test("dashboard shell is a server component composing the client nav, not a clie
   assert.match(dashboardShell, /page-shell dashboard-shell/);
 });
 
+test("the Billing nav item only renders for a Pro plan, resolved server-side by the layout, not fetched client-side", () => {
+  // Resolved once, server-side, at the layout boundary that already gates every
+  // /dashboard/* route via requireSession() — never a second client-side fetch inside
+  // DashboardNav itself, which would risk a flash of the link before it resolves.
+  assert.match(dashboardLayout, /from "@\/lib\/server\/entitlements\/service"/);
+  assert.match(dashboardLayout, /const plan = await getPlan\(session\.user\.id\)/);
+  assert.match(dashboardLayout, /<DashboardShell dictionary=\{dictionary\} locale=\{locale\} plan=\{plan\}>/);
+
+  assert.match(dashboardShell, /plan: PlanType/);
+  assert.match(dashboardShell, /<DashboardNav dictionary=\{dictionary\} locale=\{locale\} plan=\{plan\} \/>/);
+
+  assert.doesNotMatch(dashboardNav, /"use client";[\s\S]*fetch\("\/api\/entitlements/);
+  assert.match(dashboardNav, /plan: PlanType/);
+  assert.match(
+    dashboardNav,
+    /\.\.\.\(plan === "pro" \? \[\{ href: `\/\$\{locale\}\/dashboard\/billing`, label: copy\.billing \}\] : \[\]\)/,
+  );
+});
+
+test("the billing page redirects a non-Pro actor to the Plan page before any billing content renders", () => {
+  assert.match(billingPage, /from "@\/lib\/server\/entitlements\/service"/);
+  assert.match(billingPage, /const plan = await getPlan\(session\.user\.id\)/);
+  assert.match(
+    billingPage,
+    /if \(plan !== "pro"\) \{\s*\n\s*redirect\(`\/\$\{locale\}\/dashboard\/plan` as Route\);\s*\n\s*\}/,
+  );
+  // The plan check happens before isBillingConfigured() is even called — independent of
+  // Stripe configuration, always the first gate after requireSession().
+  const planCheckIndex = billingPage.indexOf("if (plan !== \"pro\")");
+  const billingConfiguredCallIndex = billingPage.indexOf(
+    "const billingConfigured = isBillingConfigured();",
+  );
+  assert.ok(planCheckIndex > 0 && billingConfiguredCallIndex > planCheckIndex);
+});
+
 test("account menu links to the dashboard for a signed-in visitor", () => {
   assert.match(accountMenu, /href=\{`\/\$\{locale\}\/dashboard`\}/);
   assert.match(accountMenu, /copy\.accountMenu\.dashboardLabel/);

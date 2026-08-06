@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import type { Route } from "next";
+import { notFound, redirect } from "next/navigation";
 
 import { BillingAddressForm } from "@/components/dashboard/billing-address-form";
 import { BillingPortalButton } from "@/components/dashboard/billing-portal-button";
@@ -9,6 +10,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale, locales } from "@/i18n/locales";
 import { requireSession } from "@/lib/server/auth/session";
 import { isBillingConfigured } from "@/lib/server/billing";
+import { getPlan } from "@/lib/server/entitlements/service";
 
 type DashboardBillingPageProps = {
   params: Promise<{
@@ -32,6 +34,20 @@ export default async function DashboardBillingPage({ params }: DashboardBillingP
   }
 
   const session = await requireSession(locale, "/dashboard/billing");
+
+  // Billing only means anything for a Pro subscriber — a Free account has no invoice
+  // history, portal access, or billing address to manage. Redirects straight back to the
+  // Plan page (the actual upgrade entry point) before any billing content renders, same
+  // "gate before render, not after" posture as requireSession() itself, so a Free actor
+  // hitting this URL directly (bookmark, typed URL, stale link) never sees so much as a
+  // flash of billing UI. Independent of isBillingConfigured() below — this is a plan
+  // check, not a Stripe-configuration check, and applies whether or not Stripe is set up.
+  const plan = await getPlan(session.user.id);
+
+  if (plan !== "pro") {
+    redirect(`/${locale}/dashboard/plan` as Route);
+  }
+
   const dictionary = getDictionary(locale);
   const nav = dictionary.dashboard.nav;
   const placeholderCopy = dictionary.dashboard.placeholder;

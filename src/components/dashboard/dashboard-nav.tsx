@@ -4,19 +4,21 @@ import { usePathname } from "next/navigation";
 
 import type { getDictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/locales";
+import type { PlanType } from "@/lib/server/entitlements/policy";
 
 type Dictionary = ReturnType<typeof getDictionary>;
 
 type DashboardNavProps = {
   locale: Locale;
   dictionary: Dictionary;
+  plan: PlanType;
 };
 
 // The only client piece of the dashboard shell — needs usePathname() for active-link
 // state. No open/close toggle: like every other nav in this app, it reflows via CSS
 // (sidebar list -> horizontal scrollable row) at narrow widths rather than collapsing
 // behind a hamburger button.
-export function DashboardNav({ locale, dictionary }: DashboardNavProps) {
+export function DashboardNav({ locale, dictionary, plan }: DashboardNavProps) {
   const pathname = usePathname();
   const copy = dictionary.dashboard.nav;
 
@@ -24,7 +26,12 @@ export function DashboardNav({ locale, dictionary }: DashboardNavProps) {
     { href: `/${locale}/dashboard`, label: copy.overview },
     { href: `/${locale}/dashboard/usage`, label: copy.usage },
     { href: `/${locale}/dashboard/plan`, label: copy.plan },
-    { href: `/${locale}/dashboard/billing`, label: copy.billing },
+    // Billing only means anything for a Pro subscriber (portal access, invoice history,
+    // billing address) — a Free account has nothing to manage there. Hidden rather than
+    // shown-disabled, since dashboard/billing/page.tsx redirects a Free actor away from
+    // the URL directly too (see that file), so a visible-but-dead link would be worse
+    // than no link.
+    ...(plan === "pro" ? [{ href: `/${locale}/dashboard/billing`, label: copy.billing }] : []),
     { href: `/${locale}/dashboard/settings`, label: copy.settings },
   ];
 

@@ -6,6 +6,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { getDictionary } from "@/i18n/dictionaries";
 import { isLocale, locales } from "@/i18n/locales";
 import { requireSession } from "@/lib/server/auth/session";
+import { getPlan } from "@/lib/server/entitlements/service";
 
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -29,13 +30,14 @@ export default async function DashboardLayout({ children, params }: DashboardLay
     notFound();
   }
 
-  await requireSession(locale, "/dashboard");
+  const session = await requireSession(locale, "/dashboard");
+  const plan = await getPlan(session.user.id);
 
   const dictionary = getDictionary(locale);
 
   return (
     <AppShell dictionary={dictionary} locale={locale}>
-      <DashboardShell dictionary={dictionary} locale={locale}>
+      <DashboardShell dictionary={dictionary} locale={locale} plan={plan}>
         {children}
       </DashboardShell>
     </AppShell>
