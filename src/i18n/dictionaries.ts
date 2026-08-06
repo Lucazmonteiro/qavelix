@@ -79,6 +79,16 @@ export type Dictionary = {
       title: string;
       description: string;
       note: string;
+      // Shown instead of a plan's own `cta` when that card matches the actor's real,
+      // server-resolved plan (a signed-in Free actor's Free card, or a Pro actor's Pro
+      // card) — rendered disabled, never a link.
+      currentPlan: string;
+      // Anonymous-only Pro-card CTA: an anonymous visitor has no account to attach a
+      // Stripe subscription to, so this always routes to sign-up (see
+      // startProUpgradeCheckout's own comment), never straight to checkout. A signed-in
+      // Free actor's Pro-card CTA text comes from the Pro plan's own `cta` field below
+      // instead, since that state does trigger real checkout.
+      getPro: string;
       plans: Array<{
         name: string;
         price: string;
@@ -908,6 +918,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         description:
           "Use Video Compressor, Extract Audio, and Video Trimmer for free, or upgrade to QAVELIX PRO for higher daily limits and larger files.",
         note: "You can also try all three tools without creating an account, with a small combined trial allowance.",
+        currentPlan: "Current Plan",
+        getPro: "Get QAVELIX PRO",
         plans: [
           {
             name: "Free",
@@ -920,7 +932,7 @@ const dictionaries: Record<Locale, Dictionary> = {
               "Up to 250 MB per file",
               "No credit card required",
             ],
-            cta: "Create a free account",
+            cta: "Create free account",
           },
           {
             name: "QAVELIX PRO",
@@ -2333,6 +2345,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         description:
           "Use o Compressor de Vídeo, o Extrair Áudio e o Cortar Vídeo gratuitamente, ou faça upgrade para o QAVELIX PRO para limites diários maiores e arquivos maiores.",
         note: "Você também pode testar as três ferramentas sem criar uma conta, com uma pequena cota de teste combinada.",
+        currentPlan: "Plano Atual",
+        getPro: "Obter o QAVELIX PRO",
         plans: [
           {
             name: "Free",
@@ -3768,6 +3782,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         description:
           "Usa Compresor de Video, Extraer Audio y Cortar Video de forma gratuita, o mejora a QAVELIX PRO para límites diarios más altos y archivos más grandes.",
         note: "También puedes probar las tres herramientas sin crear una cuenta, con una pequeña cuota de prueba combinada.",
+        currentPlan: "Plan actual",
+        getPro: "Obtener QAVELIX PRO",
         plans: [
           {
             name: "Free",
@@ -3793,7 +3809,7 @@ const dictionaries: Record<Locale, Dictionary> = {
               "Hasta 500 MB por archivo",
               "Cancela cuando quieras desde el portal de facturación",
             ],
-            cta: "Mejorar a PRO",
+            cta: "Haz upgrade a PRO",
           },
         ],
       },
