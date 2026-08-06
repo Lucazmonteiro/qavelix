@@ -27,3 +27,15 @@ Thumbs.db
 coverage
 
 tsconfig.tsbuildinfo
+
+# local dev process logs/pids
+.tmp
+
+# internal business/strategy docs and build prompts - not for public repo
+QAVELIXPRO.md
+QAVELIX_STRATEGIC_RESEARCH.md
+QAVELIX_CAPACITY_REPORT.md
+QAVELIX_NEXT_TOOL_RESEARCH.md
+PROMPTS/
+docs/architecture/business-review.md
+docs/architecture/growth-strategy.md
