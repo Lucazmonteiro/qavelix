@@ -750,6 +750,13 @@ export function ExtractAudioTool() {
                     </div>
                   </dl>
                 ) : null}
+                {gate.plan === "anonymous" || gate.plan === "free" ? (
+                  <p className="plan-explainer">
+                    {gate.plan === "anonymous"
+                      ? dictionary.adGateModal.anonymousPlanExplainer
+                      : dictionary.adGateModal.freePlanExplainer}
+                  </p>
+                ) : null}
                 <dl>
                   <div>
                     <dt>{copy.selectedFile}</dt>

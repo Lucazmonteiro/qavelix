@@ -1539,6 +1539,13 @@ export function CompressionPanel({
               </div>
             </dl>
           ) : null}
+          {gate.plan === "anonymous" || gate.plan === "free" ? (
+            <p className="plan-explainer">
+              {gate.plan === "anonymous"
+                ? dictionary.adGateModal.anonymousPlanExplainer
+                : dictionary.adGateModal.freePlanExplainer}
+            </p>
+          ) : null}
           {validation.status === "validating" ? (
             <div
               className={`compression-status__validation${

@@ -872,6 +872,13 @@ button.tools-menu__item:disabled {
   color: var(--accent);
 }
 
+.plan-explainer {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3527,6 +3534,22 @@ button.tools-menu__item:disabled {
 /* Ad-gate interstitial (src/components/ads/ad-gate-modal.tsx) — a variant of
    .upgrade-modal shown to an anonymous/Free actor starting their 2nd+ job in the current
    period, offering a countdown-gated continue or an upgrade/sign-up escape hatch. */
+.ad-gate-modal__progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.ad-gate-modal__progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 1s linear;
+}
+
 .ad-gate-modal__countdown {
   margin: 0.25rem 0 0.75rem;
   color: var(--foreground);
@@ -3545,6 +3568,12 @@ button.tools-menu__item:disabled {
   margin: 0;
   color: var(--foreground);
   font-size: 0.9rem;
+}
+
+.ad-gate-modal__upsell p + p {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
 }
 
 /* Plan-comparison modal (src/components/plan-comparison-modal.tsx) — a three-tier

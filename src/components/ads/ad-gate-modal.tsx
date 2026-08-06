@@ -19,13 +19,15 @@ const COUNTDOWN_SECONDS = 5;
 // editing these strings.
 const FALLBACK_AD_GATE_COPY = {
   title: "Continue for free with a quick ad",
-  description:
-    "Your first run today was completely free. Watch this short ad to unlock processing again, or skip ads entirely with QAVELIX PRO.",
+  description: "Watch this short ad to continue processing, or skip ads entirely with QAVELIX PRO.",
   countdownLabel: "Continue in {seconds}s...",
   readyLabel: "You're all set — continue whenever you're ready.",
   continueLabel: "Continue",
   upsellMessage: "Remove ads and unlock unlimited uploads up to 500MB with QAVELIX PRO.",
   upgradeButtonLabel: "Upgrade to Pro",
+  anonymousPlanExplainer:
+    "Anonymous plan: 5 uses max (2 ad-free, 3 ad-supported). Create a free account to double your limit to 10 uses!",
+  freePlanExplainer: "Free account: 10 daily uses (ad-supported). Upgrade to Pro for 100 ad-free uses.",
 };
 
 const FALLBACK_UPGRADE_COPY = {
@@ -113,6 +115,10 @@ export function AdGateModal({ open, onClose, onCleared, plan, cancelPath }: AdGa
 
   const callbackURL = encodeURIComponent(replaceLocaleInPath(cancelPath, locale));
   const canContinue = secondsLeft <= 0;
+  const progressPercent = Math.round(
+    ((COUNTDOWN_SECONDS - secondsLeft) / COUNTDOWN_SECONDS) * 100,
+  );
+  const planExplainer = plan === "anonymous" ? copy.anonymousPlanExplainer : copy.freePlanExplainer;
 
   return (
     <Modal className="upgrade-modal ad-gate-modal" closeLabel={upgradeCopy.closeLabel} onClose={onClose} open={open} titleId={titleId}>
@@ -121,12 +127,22 @@ export function AdGateModal({ open, onClose, onCleared, plan, cancelPath }: AdGa
       </h2>
       <p className="upgrade-modal__description">{copy.description}</p>
       <AdUnit className="ad-gate-modal__ad" format="interstitial" plan={plan} />
+      <div
+        aria-valuemax={100}
+        aria-valuemin={0}
+        aria-valuenow={progressPercent}
+        className="ad-gate-modal__progress"
+        role="progressbar"
+      >
+        <div className="ad-gate-modal__progress-bar" style={{ width: `${progressPercent}%` }} />
+      </div>
       <p className="ad-gate-modal__countdown" role="status">
         {canContinue
           ? copy.readyLabel
           : copy.countdownLabel.replace("{seconds}", String(secondsLeft))}
       </p>
       <div className="ad-gate-modal__upsell">
+        <p>{planExplainer}</p>
         <p>{copy.upsellMessage}</p>
       </div>
       {errorMessage ? (

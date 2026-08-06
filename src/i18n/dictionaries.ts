@@ -587,6 +587,8 @@ export type Dictionary = {
     continueLabel: string;
     upsellMessage: string;
     upgradeButtonLabel: string;
+    anonymousPlanExplainer: string;
+    freePlanExplainer: string;
   };
   cookieConsentBanner: {
     ariaLabel: string;
@@ -1590,12 +1592,16 @@ const dictionaries: Record<Locale, Dictionary> = {
   adGateModal: {
     title: "Your next run is one ad away",
     description:
-      "Your first run today was completely free. Watch this short ad to unlock processing again, or skip ads entirely with QAVELIX PRO.",
+      "Watch this short ad to continue processing, or skip ads entirely with QAVELIX PRO.",
     countdownLabel: "Continue in {seconds}s...",
     readyLabel: "You're all set — continue whenever you're ready.",
     continueLabel: "Continue",
     upsellMessage: "Remove ads and unlock unlimited uploads up to 500MB with QAVELIX PRO.",
     upgradeButtonLabel: "Upgrade to Pro",
+    anonymousPlanExplainer:
+      "Anonymous plan: 5 uses max (2 ad-free, 3 ad-supported). Create a free account to double your limit to 10 uses!",
+    freePlanExplainer:
+      "Free account: 10 daily uses (ad-supported). Upgrade to Pro for 100 ad-free uses.",
   },
   cookieConsentBanner: {
     ariaLabel: "Cookie consent",
@@ -3017,12 +3023,16 @@ const dictionaries: Record<Locale, Dictionary> = {
     adGateModal: {
       title: "Seu próximo uso está a um anúncio de distância",
       description:
-        "Seu primeiro uso hoje foi totalmente gratuito. Assista a este anúncio curto para liberar o processamento novamente, ou pule os anúncios com o QAVELIX PRO.",
+        "Assista a este anúncio curto para continuar o processamento, ou pule os anúncios com o QAVELIX PRO.",
       countdownLabel: "Continuar em {seconds}s...",
       readyLabel: "Tudo pronto — continue quando quiser.",
       continueLabel: "Continuar",
       upsellMessage: "Remova os anúncios e libere uploads ilimitados de até 500MB com o QAVELIX PRO.",
       upgradeButtonLabel: "Fazer upgrade para o Pro",
+      anonymousPlanExplainer:
+        "Plano anônimo: até 5 usos (2 sem anúncio, 3 com anúncio). Crie uma conta gratuita para dobrar seu limite para 10 usos!",
+      freePlanExplainer:
+        "Conta gratuita: 10 usos diários (com anúncios). Faça upgrade para o Pro e tenha 100 usos sem anúncios.",
     },
     cookieConsentBanner: {
       ariaLabel: "Consentimento de cookies",
@@ -4448,12 +4458,16 @@ const dictionaries: Record<Locale, Dictionary> = {
     adGateModal: {
       title: "Tu próximo uso está a un anuncio de distancia",
       description:
-        "Tu primer uso de hoy fue completamente gratis. Mira este breve anuncio para desbloquear el procesamiento otra vez, o evita los anuncios con QAVELIX PRO.",
+        "Mira este breve anuncio para continuar el procesamiento, o evita los anuncios con QAVELIX PRO.",
       countdownLabel: "Continuar en {seconds}s...",
       readyLabel: "Todo listo — continúa cuando quieras.",
       continueLabel: "Continuar",
       upsellMessage: "Elimina los anuncios y desbloquea subidas ilimitadas de hasta 500MB con QAVELIX PRO.",
       upgradeButtonLabel: "Actualizar a Pro",
+      anonymousPlanExplainer:
+        "Plan anónimo: hasta 5 usos (2 sin anuncios, 3 con anuncios). Crea una cuenta gratuita para duplicar tu límite a 10 usos.",
+      freePlanExplainer:
+        "Cuenta gratuita: 10 usos diarios (con anuncios). Actualiza a Pro para 100 usos sin anuncios.",
     },
     cookieConsentBanner: {
       ariaLabel: "Consentimiento de cookies",
