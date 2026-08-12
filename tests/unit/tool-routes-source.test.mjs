@@ -48,3 +48,7 @@ test("every Tools menu href in app-header.tsx resolves to a real page.tsx on dis
 test("the Extract Audio tools-menu href matches the real route directory exactly", () => {
   assert.match(headerSource, /href: `\/\$\{locale\}\/tools\/extract-audio`/);
 });
+
+test("the Video Trimmer tools-menu href matches the real route directory exactly", () => {
+  assert.match(headerSource, /href: `\/\$\{locale\}\/tools\/video-trimmer`/);
+});

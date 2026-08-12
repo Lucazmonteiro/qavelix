@@ -150,11 +150,11 @@ function serializableJob(job: VideoTrimmerJob) {
 }
 
 // Identical authorization pattern to compression-queue.ts's isJobOwnedByActor — see that
-// function's comment for the full "Security Correction #4" reasoning. Applied from day
-// one here rather than retrofitted after the fact.
+// function's comment for the full "Security Correction #4" reasoning, including the
+// fail-closed behavior when a job has no stored actor.
 function isJobOwnedByActor(job: VideoTrimmerJob, actor: Actor): boolean {
   if (!job.actorType || !job.actorId) {
-    return true;
+    return false;
   }
 
   return job.actorType === actor.type && job.actorId === actor.id;

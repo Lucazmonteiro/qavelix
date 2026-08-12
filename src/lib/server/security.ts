@@ -340,14 +340,14 @@ export function rejectOversizedRequest(
 
   if (!Number.isFinite(parsedLength) || parsedLength < 0) {
     return securityJson(
-      { ok: false, error: { message: "Invalid content length." } },
+      { ok: false, error: { code: "invalid_size", message: "Invalid content length." } },
       { status: 400, requestId },
     );
   }
 
   if (parsedLength > maxBytes) {
     return securityJson(
-      { ok: false, error: { message: "Request body is too large." } },
+      { ok: false, error: { code: "file_too_large", message: "Request body is too large." } },
       { status: 413, requestId },
     );
   }

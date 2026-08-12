@@ -541,6 +541,17 @@ test("integration: localized routes, SEO endpoints, headers, and protected APIs"
         /<xhtml:link rel="alternate" hreflang="pt-BR" href="https?:\/\/.+\/pt-BR\/tools\/extract-audio" \/>/,
       );
       assert.match(sitemap.text, /<priority>0\.8<\/priority>/);
+
+      // Video Trimmer is likewise a real, indexable public route (src/app/[locale]/tools/
+      // video-trimmer/page.tsx) — every supported locale must be present with its own
+      // hreflang alternate block, matching the Extract Audio coverage above.
+      assert.match(sitemap.text, /<loc>https?:\/\/.+\/en\/tools\/video-trimmer<\/loc>/);
+      assert.match(sitemap.text, /<loc>https?:\/\/.+\/pt-BR\/tools\/video-trimmer<\/loc>/);
+      assert.match(sitemap.text, /<loc>https?:\/\/.+\/es\/tools\/video-trimmer<\/loc>/);
+      assert.match(
+        sitemap.text,
+        /<xhtml:link rel="alternate" hreflang="es" href="https?:\/\/.+\/es\/tools\/video-trimmer" \/>/,
+      );
       // The Video Compressor intentionally has no separate route — it lives on the
       // localized homepage itself — so no /tools/video-compressor URL should ever appear.
       assert.doesNotMatch(sitemap.text, /video-compressor/);

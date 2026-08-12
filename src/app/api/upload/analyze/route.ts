@@ -15,6 +15,7 @@ import { resolveActor } from "@/lib/server/entitlements/service";
 import {
   enforceApiSecurity,
   logSecurityEvent,
+  rejectOversizedRequest,
   securityJson,
 } from "@/lib/server/security";
 import { validateFileIdentity } from "@/lib/server/upload-validation";
@@ -328,6 +329,16 @@ export async function POST(request: Request) {
     const requestedToolId = resolveRequestedToolId(request);
     const limits =
       actor.type === "anonymous" ? getAnonymousLimits() : getToolLimits(actor.plan, requestedToolId);
+
+    // Fast rejection on an obviously oversized request before any header parsing, disk
+    // I/O, or body streaming begins — the streaming byte-count check in
+    // streamRequestBodyToDisk() below remains the authoritative enforcement (Content-Length
+    // is client-supplied and can be absent or wrong), this is purely a cheap early exit.
+    const oversizedResponse = rejectOversizedRequest(request, limits.maxUploadBytes, security.requestId);
+
+    if (oversizedResponse) {
+      return oversizedResponse;
+    }
 
     const metadata = getUploadMetadata(request, limits.maxUploadBytes);
     const identity = {

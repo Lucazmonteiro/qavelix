@@ -160,15 +160,13 @@ function serializableJob(job: CompressionJob) {
 
 // Security Correction #4 — the single authorization decision every job-scoped route
 // (status, cancel, download) funnels through, so ownership can never be checked
-// inconsistently between them. A job with no stored actor predates this fix (jobs are
-// short-lived — 12-minute FFmpeg timeout, 30-minute download TTL — so this is a narrow,
-// self-resolving transition window, not a standing gap) and is grandfathered through
-// unchanged rather than retroactively locking an in-flight job out from under its owner.
-// Every job created from this point on always has an actor, so this exception naturally
-// stops applying once existing jobs at deploy time have expired.
+// inconsistently between them. Fails closed: a job with no stored actor (which should
+// never happen — every job-creation path sets both fields) is owned by no one rather than
+// everyone, so a future code path that forgets to stamp an actor can't silently become a
+// globally accessible job instead of failing safe.
 function isJobOwnedByActor(job: CompressionJob, actor: Actor): boolean {
   if (!job.actorType || !job.actorId) {
-    return true;
+    return false;
   }
 
   return job.actorType === actor.type && job.actorId === actor.id;
