@@ -215,6 +215,7 @@ export function SignUpForm({ callbackURL, intent }: SignUpFormProps) {
         <AuthField
           autoComplete="new-password"
           error={fieldErrors.password}
+          hint={copy.fields.passwordHint}
           label={copy.fields.passwordLabel}
           maxLength={MAX_PASSWORD_LENGTH}
           name="password"

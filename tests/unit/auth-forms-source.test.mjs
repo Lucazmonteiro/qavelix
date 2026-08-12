@@ -121,7 +121,11 @@ test("shared primitives are reused, not duplicated, across all 5 flow components
   }
 
   assert.match(authField, /aria-invalid=\{error \? "true" : undefined\}/);
-  assert.match(authField, /aria-describedby=\{error \? errorId : undefined\}/);
+  // aria-describedby must reference both the permanent hint and the transient error
+  // when both are present, not just the error — see AuthField's `hint` prop.
+  assert.match(authField, /aria-describedby=\{describedBy\}/);
+  assert.match(authField, /hint \? hintId : null/);
+  assert.match(authField, /error \? errorId : null/);
   assert.match(authFormShell, /page-shell auth-page/);
 });
 
@@ -139,6 +143,15 @@ test("status messages use the same role=alert/role=status convention as the rest
   assert.match(authField, /className="auth-field__error" id=\{errorId\} role="alert"/);
   assert.match(verifyEmailStatus, /className="form-status__success" role="status"/);
   assert.match(verifyEmailStatus, /className="form-status__error" role="alert"/);
+});
+
+test("sign-up shows a permanent, localized password composition hint, distinct from the on-submit error", () => {
+  assert.match(authField, /className="auth-field__hint" id=\{hintId\}/);
+  assert.match(signUpForm, /hint=\{copy\.fields\.passwordHint\}/);
+  // The dynamic strength/length validation on submit (isPasswordStrong, validatePasswordPair)
+  // stays wired up unchanged — the hint is additive UI, not a replacement for it.
+  assert.match(signUpForm, /isPasswordStrong\(password\)/);
+  assert.match(signUpForm, /validatePasswordPair\(password, confirmPassword\)/);
 });
 
 test("resend-verification and sign-out check the actual response instead of assuming success", () => {

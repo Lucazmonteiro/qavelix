@@ -460,6 +460,7 @@ export type Dictionary = {
       emailPlaceholder: string;
       passwordLabel: string;
       passwordPlaceholder: string;
+      passwordHint: string;
       newPasswordLabel: string;
       newPasswordPlaceholder: string;
       confirmPasswordLabel: string;
@@ -1460,6 +1461,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       emailPlaceholder: "you@example.com",
       passwordLabel: "Password",
       passwordPlaceholder: "Enter your password",
+      passwordHint:
+        "Password must include at least 8 characters, one uppercase letter, one lowercase letter, and one special character.",
       newPasswordLabel: "New password",
       newPasswordPlaceholder: "Enter a new password",
       confirmPasswordLabel: "Confirm password",
@@ -2894,6 +2897,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         emailPlaceholder: "voce@exemplo.com",
         passwordLabel: "Senha",
         passwordPlaceholder: "Digite sua senha",
+        passwordHint:
+          "A senha deve incluir pelo menos 8 caracteres, uma letra maiúscula, uma letra minúscula e um caractere especial.",
         newPasswordLabel: "Nova senha",
         newPasswordPlaceholder: "Digite uma nova senha",
         confirmPasswordLabel: "Confirmar senha",
@@ -4334,6 +4339,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         emailPlaceholder: "tu@ejemplo.com",
         passwordLabel: "Contraseña",
         passwordPlaceholder: "Introduce tu contraseña",
+        passwordHint:
+          "La contraseña debe incluir al menos 8 caracteres, una letra mayúscula, una letra minúscula y un carácter especial.",
         newPasswordLabel: "Nueva contraseña",
         newPasswordPlaceholder: "Introduce una nueva contraseña",
         confirmPasswordLabel: "Confirmar contraseña",

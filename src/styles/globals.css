@@ -2617,6 +2617,16 @@ button.tools-menu__item:disabled {
   opacity: 0.6;
 }
 
+.auth-field__hint {
+  margin: 0.1rem 0 0;
+  /* --accent (not --accent-foreground, which is meant for text drawn on top of an
+     accent-colored surface like a button, not for plain text on the page background) —
+     both light and dark theme values are tuned for contrast against --background. */
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
 .auth-field__error {
   margin: 0;
   color: var(--warning);
