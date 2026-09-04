@@ -3,8 +3,6 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 
-import { AdGateModal } from "@/components/ads/ad-gate-modal";
-import { AdUnit } from "@/components/ads/ad-unit";
 import { PlanComparisonModal } from "@/components/plan-comparison-modal";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { useLocaleState } from "@/i18n/locale-context";
@@ -29,7 +27,6 @@ import {
   MAX_UPLOAD_BYTES,
   type UploadAnalysis,
 } from "@/lib/upload-policy";
-import { useAdGate } from "@/lib/use-ad-gate";
 import { useEntitlementGate } from "@/lib/use-entitlement-gate";
 
 type CompressionCopy = {
@@ -495,7 +492,6 @@ export function CompressionPanel({
   const pathname = usePathname();
   const gate = useEntitlementGate("video-compressor");
   const isBlocked = gate.blocked;
-  const adGate = useAdGate({ plan: gate.plan, remaining: gate.remaining, limit: gate.limit });
   // The entitlement gate resolves the actor's real plan (and the Free/Pro comparison
   // numbers) asynchronously on mount — see useEntitlementGate(). Until that resolves,
   // MAX_UPLOAD_BYTES (Free/anonymous, 250MB) is the only safe default: it can never
@@ -987,10 +983,6 @@ export function CompressionPanel({
       return;
     }
 
-    if (!adGate.consumeAttempt()) {
-      return;
-    }
-
     setError(null);
     setDownloadStarted(false);
 
@@ -1388,6 +1380,15 @@ export function CompressionPanel({
                   {dictionary.upgradeModal.upgradeButtonLabel}
                 </button>
               ) : null}
+              {gate.reason === "account_required" && gate.plan === "anonymous" ? (
+                <button
+                  className="button button--primary"
+                  onClick={gate.openUpgradeModal}
+                  type="button"
+                >
+                  {dictionary.planComparisonModal.createAccountLabel}
+                </button>
+              ) : null}
             </div>
           ) : null}
 
@@ -1539,11 +1540,13 @@ export function CompressionPanel({
               </div>
             </dl>
           ) : null}
-          {gate.plan === "anonymous" || gate.plan === "free" ? (
-            <p className="plan-explainer">
-              {gate.plan === "anonymous"
-                ? dictionary.adGateModal.anonymousPlanExplainer
-                : dictionary.adGateModal.freePlanExplainer}
+          {(gate.plan === "anonymous" || gate.plan === "free") && gate.limit !== null ? (
+            <p className="plan-explainer" role="status">
+              {(gate.plan === "anonymous"
+                ? dictionary.usageQuotaBanner.guestRemainingLabel
+                : dictionary.usageQuotaBanner.freeRemainingLabel)
+                .replace("{remaining}", String(gate.remaining ?? 0))
+                .replace("{limit}", String(gate.limit))}
             </p>
           ) : null}
           {validation.status === "validating" ? (
@@ -1804,8 +1807,6 @@ export function CompressionPanel({
         </aside>
       </div>
 
-      <AdUnit format="in-article" plan={gate.plan} />
-
       {gate.plan === "anonymous" && gate.anonymousLimits && gate.freeLimits && gate.proLimits ? (
         <PlanComparisonModal
           anonymousLimits={gate.anonymousLimits}
@@ -1823,18 +1824,6 @@ export function CompressionPanel({
           onClose={gate.closeUpgradeModal}
           open={gate.showUpgradeModal}
           proLimits={gate.proLimits}
-        />
-      ) : null}
-      {gate.plan === "anonymous" || gate.plan === "free" ? (
-        <AdGateModal
-          cancelPath={pathname}
-          onCleared={() => {
-            adGate.clearAdGate();
-            void startCompression();
-          }}
-          onClose={adGate.closeAdGateModal}
-          open={adGate.showAdGateModal}
-          plan={gate.plan}
         />
       ) : null}
     </section>

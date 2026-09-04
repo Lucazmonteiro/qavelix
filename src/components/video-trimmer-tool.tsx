@@ -3,8 +3,6 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
-import { AdGateModal } from "@/components/ads/ad-gate-modal";
-import { AdUnit } from "@/components/ads/ad-unit";
 import { PlanComparisonModal } from "@/components/plan-comparison-modal";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -18,7 +16,6 @@ import {
   MIN_UPLOAD_BYTES,
   type UploadAnalysis,
 } from "@/lib/upload-policy";
-import { useAdGate } from "@/lib/use-ad-gate";
 import { useEntitlementGate } from "@/lib/use-entitlement-gate";
 import {
   isTerminalVideoTrimmerStatus,
@@ -207,7 +204,6 @@ export function VideoTrimmerTool() {
   const pathname = usePathname();
   const gate = useEntitlementGate("video-trimmer");
   const isBlocked = gate.blocked;
-  const adGate = useAdGate({ plan: gate.plan, remaining: gate.remaining, limit: gate.limit });
   const resolvedMaxUploadBytes =
     gate.plan === "pro" && gate.proLimits
       ? gate.proLimits.maxUploadBytes
@@ -767,10 +763,6 @@ export function VideoTrimmerTool() {
       return;
     }
 
-    if (!adGate.consumeAttempt()) {
-      return;
-    }
-
     setRangeErrorKey(null);
     setErrorKey(null);
     setDownloadStarted(false);
@@ -984,6 +976,11 @@ export function VideoTrimmerTool() {
                       {dictionary.upgradeModal.upgradeButtonLabel}
                     </button>
                   ) : null}
+                  {gate.reason === "account_required" && gate.plan === "anonymous" ? (
+                    <button className="button button--primary" onClick={gate.openUpgradeModal} type="button">
+                      {dictionary.planComparisonModal.createAccountLabel}
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -1149,11 +1146,13 @@ export function VideoTrimmerTool() {
                     </div>
                   </dl>
                 ) : null}
-                {gate.plan === "anonymous" || gate.plan === "free" ? (
-                  <p className="plan-explainer">
-                    {gate.plan === "anonymous"
-                      ? dictionary.adGateModal.anonymousPlanExplainer
-                      : dictionary.adGateModal.freePlanExplainer}
+                {(gate.plan === "anonymous" || gate.plan === "free") && gate.limit !== null ? (
+                  <p className="plan-explainer" role="status">
+                    {(gate.plan === "anonymous"
+                      ? dictionary.usageQuotaBanner.guestRemainingLabel
+                      : dictionary.usageQuotaBanner.freeRemainingLabel)
+                      .replace("{remaining}", String(gate.remaining ?? 0))
+                      .replace("{limit}", String(gate.limit))}
                   </p>
                 ) : null}
                 <dl>
@@ -1317,8 +1316,6 @@ export function VideoTrimmerTool() {
         </div>
       </section>
 
-      <AdUnit format="in-article" plan={gate.plan} />
-
       <section className="extract-audio-info" aria-labelledby="video-trimmer-info-title">
         <div className="section-heading">
           <p className="eyebrow">{copy.eyebrow}</p>
@@ -1363,18 +1360,6 @@ export function VideoTrimmerTool() {
           onClose={gate.closeUpgradeModal}
           open={gate.showUpgradeModal}
           proLimits={gate.proLimits}
-        />
-      ) : null}
-      {gate.plan === "anonymous" || gate.plan === "free" ? (
-        <AdGateModal
-          cancelPath={pathname}
-          onCleared={() => {
-            adGate.clearAdGate();
-            void startTrim();
-          }}
-          onClose={adGate.closeAdGateModal}
-          open={adGate.showAdGateModal}
-          plan={gate.plan}
         />
       ) : null}
     </main>

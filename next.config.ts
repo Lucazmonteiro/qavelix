@@ -3,42 +3,9 @@ import type { NextConfig } from "next";
 import { PRO_MAX_UPLOAD_REQUEST_BYTES } from "./src/lib/server/entitlements/policy";
 
 const isDevelopment = process.env.NODE_ENV === "development";
-// Google AdSense (src/components/ads/, layout.tsx's adsbygoogle.js loader) needs more than
-// just a script-src exception: the SDK loads the loader from googlesyndication.com,
-// creatives render inside nested googlesyndication.com/doubleclick.net iframes (blocked
-// outright by the previous frame-src 'none'), each ad issues its own image/beacon
-// requests, and Google occasionally serves the loader itself from googletagservices.com.
-// Every origin below is Google's own ad-serving infrastructure, never a third party, and
-// this app makes no other use of iframes/cross-origin fetches — adding these does not
-// broaden the CSP for anything else on the site.
-const adsenseScriptOrigins = [
-  "https://pagead2.googlesyndication.com",
-  "https://*.googlesyndication.com",
-  "https://www.googletagservices.com",
-];
-const adsenseFrameOrigins = [
-  "https://googleads.g.doubleclick.net",
-  "https://tpc.googlesyndication.com",
-  "https://*.googlesyndication.com",
-  "https://*.doubleclick.net",
-  // ad traffic quality / "sodar" (Google's invalid-traffic and viewability measurement
-  // for AdSense) runs its own check inside a nested iframe from this host, separate from
-  // the ad creative's own googlesyndication.com/doubleclick.net iframe above.
-  "https://*.adtrafficquality.google",
-];
-const adsenseConnectOrigins = [
-  "https://pagead2.googlesyndication.com",
-  "https://*.googlesyndication.com",
-  "https://*.google.com",
-  // Same ad traffic quality service as above — it also opens its own XHR/fetch
-  // (getconfig/sodar) independent of the iframe it renders in.
-  "https://*.adtrafficquality.google",
-];
-const adsenseImageOrigins = ["https://*.googlesyndication.com", "https://*.doubleclick.net"];
 const scriptSource = [
   "script-src 'self' 'unsafe-inline'",
   isDevelopment ? "'unsafe-eval'" : null,
-  ...adsenseScriptOrigins,
 ]
   .filter(Boolean)
   .join(" ");
@@ -55,11 +22,11 @@ const securityHeaders = [
       "object-src 'none'",
       scriptSource,
       "style-src 'self' 'unsafe-inline'",
-      `img-src 'self' data: blob: ${adsenseImageOrigins.join(" ")}`,
+      "img-src 'self' data: blob:",
       "media-src 'self' blob:",
       "font-src 'self'",
-      `connect-src 'self' ${adsenseConnectOrigins.join(" ")}`,
-      `frame-src ${adsenseFrameOrigins.join(" ")}`,
+      "connect-src 'self'",
+      "frame-src 'none'",
       // Explicit, not relying on the worker-src -> child-src fallback: child-src is
       // 'none' above (this app iframes nothing), and without its own directive worker-src
       // would silently inherit that 'none' too, blocking any blob:-sourced Worker. Not

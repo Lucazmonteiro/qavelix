@@ -19,9 +19,8 @@ type EntitlementGateState = {
   showUpgradeModal: boolean;
   // Current-period usage for this actor/tool, as of the last resolved status fetch — only
   // present when the backend returned allowed:true (see EntitlementCheck's shape:
-  // `remaining` only exists on the allowed branch). Consumed by useAdGate() to derive
-  // "is this the actor's first use in the period" without a second request or any
-  // client-only counter; both null while unresolved or while the actor is fully blocked.
+  // `remaining` only exists on the allowed branch). Consumed by the tool panels' own
+  // remaining-uses banner; both null while unresolved or while the actor is fully blocked.
   remaining: number | null;
   limit: number | null;
 };

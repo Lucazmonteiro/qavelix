@@ -3,8 +3,6 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { AdGateModal } from "@/components/ads/ad-gate-modal";
-import { AdUnit } from "@/components/ads/ad-unit";
 import { PlanComparisonModal } from "@/components/plan-comparison-modal";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -17,7 +15,6 @@ import {
   MAX_UPLOAD_BYTES,
   MIN_UPLOAD_BYTES,
 } from "@/lib/upload-policy";
-import { useAdGate } from "@/lib/use-ad-gate";
 import { useEntitlementGate } from "@/lib/use-entitlement-gate";
 
 type ValidationErrorKey = keyof Dictionary["tools"]["extractAudio"]["validation"];
@@ -203,7 +200,6 @@ export function ExtractAudioTool() {
   const pathname = usePathname();
   const gate = useEntitlementGate("extract-audio");
   const isBlocked = gate.blocked;
-  const adGate = useAdGate({ plan: gate.plan, remaining: gate.remaining, limit: gate.limit });
   // Same resolution as CompressionPanel: MAX_UPLOAD_BYTES (250MB) is the safe default
   // until the entitlement gate resolves the actor's real plan, after which a confirmed
   // Pro actor's own limit (500MB) takes over.
@@ -541,10 +537,6 @@ export function ExtractAudioTool() {
       return;
     }
 
-    if (!adGate.consumeAttempt()) {
-      return;
-    }
-
     abortControllerRef.current?.abort();
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -719,6 +711,15 @@ export function ExtractAudioTool() {
                       {dictionary.upgradeModal.upgradeButtonLabel}
                     </button>
                   ) : null}
+                  {gate.reason === "account_required" && gate.plan === "anonymous" ? (
+                    <button
+                      className="button button--primary"
+                      onClick={gate.openUpgradeModal}
+                      type="button"
+                    >
+                      {dictionary.planComparisonModal.createAccountLabel}
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -750,11 +751,13 @@ export function ExtractAudioTool() {
                     </div>
                   </dl>
                 ) : null}
-                {gate.plan === "anonymous" || gate.plan === "free" ? (
-                  <p className="plan-explainer">
-                    {gate.plan === "anonymous"
-                      ? dictionary.adGateModal.anonymousPlanExplainer
-                      : dictionary.adGateModal.freePlanExplainer}
+                {(gate.plan === "anonymous" || gate.plan === "free") && gate.limit !== null ? (
+                  <p className="plan-explainer" role="status">
+                    {(gate.plan === "anonymous"
+                      ? dictionary.usageQuotaBanner.guestRemainingLabel
+                      : dictionary.usageQuotaBanner.freeRemainingLabel)
+                      .replace("{remaining}", String(gate.remaining ?? 0))
+                      .replace("{limit}", String(gate.limit))}
                   </p>
                 ) : null}
                 <dl>
@@ -951,8 +954,6 @@ export function ExtractAudioTool() {
         </div>
       </section>
 
-      <AdUnit format="in-article" plan={gate.plan} />
-
       <section className="extract-audio-info" aria-labelledby="extract-audio-info-title">
         <div className="section-heading">
           <p className="eyebrow">{copy.outputFormatValue}</p>
@@ -1001,18 +1002,6 @@ export function ExtractAudioTool() {
           onClose={gate.closeUpgradeModal}
           open={gate.showUpgradeModal}
           proLimits={gate.proLimits}
-        />
-      ) : null}
-      {gate.plan === "anonymous" || gate.plan === "free" ? (
-        <AdGateModal
-          cancelPath={pathname}
-          onCleared={() => {
-            adGate.clearAdGate();
-            void extractAudio();
-          }}
-          onClose={adGate.closeAdGateModal}
-          open={adGate.showAdGateModal}
-          plan={gate.plan}
         />
       ) : null}
     </main>

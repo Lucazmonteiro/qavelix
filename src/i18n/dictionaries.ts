@@ -591,23 +591,9 @@ export type Dictionary = {
     createAccountLabel: string;
     signInLabel: string;
   };
-  adGateModal: {
-    title: string;
-    description: string;
-    countdownLabel: string;
-    readyLabel: string;
-    continueLabel: string;
-    upsellMessage: string;
-    upgradeButtonLabel: string;
-    anonymousPlanExplainer: string;
-    freePlanExplainer: string;
-  };
-  cookieConsentBanner: {
-    ariaLabel: string;
-    message: string;
-    learnMoreLabel: string;
-    acceptLabel: string;
-    declineLabel: string;
+  usageQuotaBanner: {
+    guestRemainingLabel: string;
+    freeRemainingLabel: string;
   };
   dashboard: {
     nav: {
@@ -1598,35 +1584,17 @@ const dictionaries: Record<Locale, Dictionary> = {
     closeLabel: "Close",
   },
   planComparisonModal: {
-    title: "You've reached the free trial limit",
+    title: "You've reached the free guest limit",
     description:
-      "You've used all of your free anonymous processing runs. Create a free account to keep going today, or explore what QAVELIX PRO adds on top.",
+      "You've reached the free guest limit of {limit} uses. Create a free account to get {freeLimit} more free operations!",
     anonymousTierName: "Without an account",
     usesLifetime: "{limit} uses total",
     createAccountLabel: "Create free account",
     signInLabel: "Sign in",
   },
-  adGateModal: {
-    title: "Your next run is one ad away",
-    description:
-      "Watch this short ad to continue processing, or skip ads entirely with QAVELIX PRO.",
-    countdownLabel: "Continue in {seconds}s...",
-    readyLabel: "You're all set — continue whenever you're ready.",
-    continueLabel: "Continue",
-    upsellMessage: "Upgrade to QAVELIX PRO: 100 daily uses ad-free and support for files up to 500MB.",
-    upgradeButtonLabel: "Upgrade to Pro",
-    anonymousPlanExplainer:
-      "Anonymous plan: 5 uses max (2 ad-free, 3 ad-supported). Create a free account to double your limit to 10 uses!",
-    freePlanExplainer:
-      "Free account: 10 daily uses (ad-supported). Upgrade to Pro for 100 ad-free uses.",
-  },
-  cookieConsentBanner: {
-    ariaLabel: "Cookie consent",
-    message:
-      "QAVELIX uses a strictly necessary session cookie for sign-in, and, if you accept, Google AdSense may set advertising cookies to show ads on Free and anonymous-tier pages. QAVELIX PRO is always ad-free.",
-    learnMoreLabel: "Read our Cookie Policy",
-    acceptLabel: "Accept",
-    declineLabel: "Decline non-essential",
+  usageQuotaBanner: {
+    guestRemainingLabel: "Guest: {remaining}/{limit} free remaining",
+    freeRemainingLabel: "Free Account: {remaining}/{limit} free remaining",
   },
   dashboard: {
     nav: {
@@ -1974,12 +1942,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "QAVELIX Privacy Policy",
           description:
-            "Read how QAVELIX processes uploaded files, file metadata, temporary files, logs, browser preferences, and Google AdSense advertising.",
+            "Read how QAVELIX processes uploaded files, file metadata, temporary files, logs, and browser preferences.",
         },
         eyebrow: "Privacy",
         title: "Privacy Policy",
         description:
-          "This notice explains how QAVELIX handles information when you use its media tools, including the advertising Google AdSense may show.",
+          "This notice explains how QAVELIX handles information when you use its media tools.",
         sections: [
           {
             title: "Last updated",
@@ -2032,15 +2000,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Service providers",
             body: [
               "The application may run on the hosting provider configured by the operator. The final provider and region must be confirmed for the public environment.",
-              "QAVELIX uses Google AdSense to display advertising; see \"Advertising (Google AdSense)\" below for what that involves.",
-            ],
-          },
-          {
-            title: "Advertising (Google AdSense)",
-            body: [
-              "QAVELIX may show advertisements served by Google AdSense on Free and anonymous-tier tool pages. QAVELIX PRO subscribers never see ads.",
-              "Google acts as a third-party advertising vendor and may use cookies — including __gads, __gpi, and IDE, and the test_cookie used to check whether your browser supports cookies — to serve ads based on your visits to this and other websites. These advertising cookies are only set after you accept them in the cookie consent banner; see the Cookies and Local Storage Policy for how that choice works.",
-              "You can opt out of personalized advertising at Google Ads Settings (adssettings.google.com), or opt out of a participating vendor's use of cookies for personalized advertising at www.aboutads.info/choices. Learn more about how Google uses information from sites that use its services at policies.google.com/technologies/partner-sites.",
+              "QAVELIX shows no advertising and works with no advertising vendor. Every tool is entirely free of ads, on every plan.",
             ],
           },
           {
@@ -2140,12 +2100,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "QAVELIX Cookies and Local Storage Policy",
           description:
-            "Read how QAVELIX uses localStorage for theme and cookie-consent preferences, and the cookies Google AdSense may set.",
+            "Read how QAVELIX uses localStorage for theme preferences.",
         },
         eyebrow: "Cookies",
         title: "Cookies and Local Storage Policy",
         description:
-          "This notice explains the cookies and browser storage QAVELIX uses, including cookies Google AdSense may set once you accept them.",
+          "This notice explains the cookies and browser storage QAVELIX uses.",
         sections: [
           {
             title: "Last updated",
@@ -2157,29 +2117,21 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Local storage",
             body: [
               "QAVELIX stores the selected Light or Dark theme in localStorage under the key qavelix-theme so the interface can preserve your preference across page reloads.",
-              "QAVELIX also stores your cookie consent choice (\"accepted\" or \"declined\") in localStorage under the key qavelix-cookie-consent — see \"Your consent choice\" below.",
               "The language is part of the URL path. QAVELIX does not store language selection in a cookie.",
             ],
           },
           {
             title: "Cookies and tracking",
             body: [
-              "QAVELIX sets one strictly necessary session cookie when you sign in, solely to keep you authenticated. This cookie is always set, regardless of your cookie consent choice.",
-              "QAVELIX uses Google AdSense to display advertising on Free and anonymous-tier tool pages (QAVELIX PRO subscribers never see ads). Google, as a third-party advertising vendor, may set advertising and measurement cookies — including __gads, __gpi, IDE, and test_cookie — to serve ads based on your visits to this and other websites. These cookies are not strictly necessary, and QAVELIX does not allow them to be set until you accept the cookie consent banner described below.",
-            ],
-          },
-          {
-            title: "Your consent choice",
-            body: [
-              "Because QAVELIX may set non-essential advertising cookies through Google AdSense, a cookie consent banner is shown to visitors who have not yet made a choice. Choosing \"Accept\" allows AdSense's advertising cookies to be set and ads to load; choosing \"Decline non-essential\" keeps only the strictly necessary session cookie described above, and no ads are loaded.",
-              "You can change your mind at any time by clearing your browser's site data for QAVELIX (which removes the stored choice and shows the banner again), or by using Google's own opt-out at adssettings.google.com, independent of the QAVELIX banner.",
+              "QAVELIX sets one strictly necessary session cookie when you sign in, solely to keep you authenticated. This cookie is always set.",
+              "QAVELIX shows no advertising and sets no advertising, measurement, or third-party tracking cookies of any kind, on any plan.",
             ],
           },
           {
             title: "Managing storage",
             body: [
-              "You can clear QAVELIX's stored preferences (theme and cookie consent choice) through your browser settings or site data controls. Clearing storage resets the theme to the default setting and shows the cookie consent banner again on your next visit.",
-              "This notice will be updated if QAVELIX adds any further non-essential analytics, advertising, or third-party marketing feature beyond Google AdSense.",
+              "You can clear QAVELIX's stored preferences (theme) through your browser settings or site data controls. Clearing storage resets the theme to the default setting.",
+              "This notice will be updated if QAVELIX adds any further non-essential analytics or third-party tracking feature.",
             ],
           },
         ],
@@ -3035,36 +2987,17 @@ const dictionaries: Record<Locale, Dictionary> = {
       closeLabel: "Fechar",
     },
     planComparisonModal: {
-      title: "Você atingiu o limite do teste gratuito",
+      title: "Você atingiu o limite gratuito de visitante",
       description:
-        "Você já usou todos os processamentos gratuitos anônimos disponíveis. Crie uma conta gratuita para continuar hoje, ou conheça o que o QAVELIX PRO oferece a mais.",
+        "Você atingiu o limite gratuito de visitante de {limit} usos. Crie uma conta gratuita para ganhar mais {freeLimit} operações gratuitas!",
       anonymousTierName: "Sem conta",
       usesLifetime: "{limit} usos no total",
       createAccountLabel: "Criar conta gratuita",
       signInLabel: "Entrar",
     },
-    adGateModal: {
-      title: "Seu próximo uso está a um anúncio de distância",
-      description:
-        "Assista a este anúncio curto para continuar o processamento, ou pule os anúncios com o QAVELIX PRO.",
-      countdownLabel: "Continuar em {seconds}s...",
-      readyLabel: "Tudo pronto — continue quando quiser.",
-      continueLabel: "Continuar",
-      upsellMessage:
-        "Faça upgrade para o QAVELIX PRO: 100 usos diários sem anúncios e suporte a arquivos de até 500MB.",
-      upgradeButtonLabel: "Fazer upgrade para o Pro",
-      anonymousPlanExplainer:
-        "Plano anônimo: até 5 usos (2 sem anúncio, 3 com anúncio). Crie uma conta gratuita para dobrar seu limite para 10 usos!",
-      freePlanExplainer:
-        "Conta gratuita: 10 usos diários (com anúncios). Faça upgrade para o Pro e tenha 100 usos sem anúncios.",
-    },
-    cookieConsentBanner: {
-      ariaLabel: "Consentimento de cookies",
-      message:
-        "O QAVELIX usa um cookie de sessão estritamente necessário para o login e, se você aceitar, o Google AdSense pode definir cookies de publicidade para exibir anúncios nas páginas dos planos Gratuito e anônimo. O QAVELIX PRO é sempre livre de anúncios.",
-      learnMoreLabel: "Leia nossa Política de Cookies",
-      acceptLabel: "Aceitar",
-      declineLabel: "Recusar não essenciais",
+    usageQuotaBanner: {
+      guestRemainingLabel: "Visitante: {remaining}/{limit} usos gratuitos restantes",
+      freeRemainingLabel: "Conta gratuita: {remaining}/{limit} usos gratuitos restantes",
     },
     dashboard: {
       nav: {
@@ -3415,12 +3348,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Política de Privacidade do QAVELIX",
           description:
-            "Entenda como o QAVELIX processa arquivos enviados, metadados técnicos, arquivos temporários, logs, preferências do navegador e publicidade do Google AdSense.",
+            "Entenda como o QAVELIX processa arquivos enviados, metadados técnicos, arquivos temporários, logs e preferências do navegador.",
         },
         eyebrow: "Privacidade",
         title: "Política de Privacidade",
         description:
-          "Este aviso explica como o QAVELIX trata informações quando você usa suas ferramentas de mídia, incluindo a publicidade que o Google AdSense pode exibir.",
+          "Este aviso explica como o QAVELIX trata informações quando você usa suas ferramentas de mídia.",
         sections: [
           {
             title: "Última atualização",
@@ -3473,15 +3406,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Provedores de serviço",
             body: [
               "O aplicativo pode ser executado no provedor de hospedagem configurado pelo operador. O provedor e a região finais precisam ser confirmados para o ambiente público.",
-              "O QAVELIX usa o Google AdSense para exibir publicidade; veja \"Publicidade (Google AdSense)\" abaixo para entender o que isso envolve.",
-            ],
-          },
-          {
-            title: "Publicidade (Google AdSense)",
-            body: [
-              "O QAVELIX pode exibir anúncios fornecidos pelo Google AdSense nas páginas de ferramentas dos planos Gratuito e anônimo. Assinantes do QAVELIX PRO nunca veem anúncios.",
-              "O Google atua como fornecedor de publicidade terceirizado e pode usar cookies — incluindo __gads, __gpi e IDE, além do test_cookie, usado para verificar se o navegador aceita cookies — para exibir anúncios com base nas suas visitas a este e a outros sites. Esses cookies de publicidade só são definidos depois que você os aceita no banner de consentimento de cookies; veja a Política de Cookies e Armazenamento Local para saber como essa escolha funciona.",
-              "Você pode desativar a publicidade personalizada nas Configurações de anúncios do Google (adssettings.google.com), ou recusar o uso de cookies para publicidade personalizada por fornecedores participantes em www.aboutads.info/choices. Saiba mais sobre como o Google usa informações de sites que utilizam seus serviços em policies.google.com/technologies/partner-sites.",
+              "O QAVELIX não exibe publicidade e não trabalha com nenhum fornecedor de anúncios. Todas as ferramentas são totalmente livres de anúncios, em qualquer plano.",
             ],
           },
           {
@@ -3581,12 +3506,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Política de Cookies e Armazenamento Local do QAVELIX",
           description:
-            "Entenda como o QAVELIX usa localStorage para preferências de tema e consentimento de cookies, e quais cookies o Google AdSense pode definir.",
+            "Entenda como o QAVELIX usa localStorage para preferências de tema.",
         },
         eyebrow: "Cookies",
         title: "Política de Cookies e Armazenamento Local",
         description:
-          "Este aviso explica os cookies e o armazenamento de navegador que o QAVELIX usa, incluindo os cookies que o Google AdSense pode definir depois que você os aceitar.",
+          "Este aviso explica os cookies e o armazenamento de navegador que o QAVELIX usa.",
         sections: [
           {
             title: "Última atualização",
@@ -3598,29 +3523,21 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Armazenamento local",
             body: [
               "O QAVELIX armazena o tema Claro ou Escuro selecionado no localStorage com a chave qavelix-theme para preservar sua preferência entre recarregamentos de página.",
-              "O QAVELIX também armazena sua escolha de consentimento de cookies (\"aceito\" ou \"recusado\") no localStorage com a chave qavelix-cookie-consent — veja \"Sua escolha de consentimento\" abaixo.",
               "O idioma faz parte do caminho da URL. O QAVELIX não armazena a seleção de idioma em cookie.",
             ],
           },
           {
             title: "Cookies e rastreamento",
             body: [
-              "O QAVELIX define um cookie de sessão estritamente necessário quando você entra na conta, apenas para manter você autenticado. Esse cookie é sempre definido, independentemente da sua escolha de consentimento.",
-              "O QAVELIX usa o Google AdSense para exibir publicidade nas páginas de ferramentas dos planos Gratuito e anônimo (assinantes do QAVELIX PRO nunca veem anúncios). O Google, como fornecedor de publicidade terceirizado, pode definir cookies de publicidade e medição — incluindo __gads, __gpi, IDE e test_cookie — para exibir anúncios com base nas suas visitas a este e a outros sites. Esses cookies não são estritamente necessários, e o QAVELIX não permite que sejam definidos até que você aceite o banner de consentimento de cookies descrito abaixo.",
-            ],
-          },
-          {
-            title: "Sua escolha de consentimento",
-            body: [
-              "Como o QAVELIX pode definir cookies de publicidade não essenciais através do Google AdSense, um banner de consentimento de cookies é exibido para visitantes que ainda não fizeram uma escolha. Escolher \"Aceitar\" permite que os cookies de publicidade do AdSense sejam definidos e que os anúncios sejam carregados; escolher \"Recusar não essenciais\" mantém apenas o cookie de sessão estritamente necessário descrito acima, e nenhum anúncio é carregado.",
-              "Você pode mudar de ideia a qualquer momento limpando os dados do site do QAVELIX no seu navegador (o que remove a escolha armazenada e exibe o banner novamente), ou usando o próprio mecanismo de exclusão do Google em adssettings.google.com, independentemente do banner do QAVELIX.",
+              "O QAVELIX define um cookie de sessão estritamente necessário quando você entra na conta, apenas para manter você autenticado. Esse cookie é sempre definido.",
+              "O QAVELIX não exibe publicidade e não define cookies de publicidade, medição ou rastreamento de terceiros de nenhum tipo, em nenhum plano.",
             ],
           },
           {
             title: "Como gerenciar o armazenamento",
             body: [
-              "Você pode limpar as preferências armazenadas do QAVELIX (tema e escolha de consentimento de cookies) nas configurações do navegador ou nos controles de dados do site. Ao limpar esse armazenamento, o tema volta ao padrão e o banner de consentimento de cookies é exibido novamente na sua próxima visita.",
-              "Este aviso será atualizado se o QAVELIX adicionar qualquer outro recurso não essencial de analytics, publicidade ou marketing de terceiros além do Google AdSense.",
+              "Você pode limpar as preferências armazenadas do QAVELIX (tema) nas configurações do navegador ou nos controles de dados do site. Ao limpar esse armazenamento, o tema volta ao padrão.",
+              "Este aviso será atualizado se o QAVELIX adicionar qualquer outro recurso não essencial de analytics ou rastreamento de terceiros.",
             ],
           },
         ],
@@ -4477,36 +4394,17 @@ const dictionaries: Record<Locale, Dictionary> = {
       closeLabel: "Cerrar",
     },
     planComparisonModal: {
-      title: "Alcanzaste el límite de la prueba gratuita",
+      title: "Alcanzaste el límite gratuito de invitado",
       description:
-        "Ya usaste todos los procesamientos gratuitos anónimos disponibles. Crea una cuenta gratuita para continuar hoy, o descubre lo que ofrece QAVELIX PRO.",
+        "Has alcanzado el límite gratuito de invitado de {limit} usos. ¡Crea una cuenta gratuita para obtener {freeLimit} operaciones gratuitas más!",
       anonymousTierName: "Sin cuenta",
       usesLifetime: "{limit} usos en total",
       createAccountLabel: "Crear cuenta gratuita",
       signInLabel: "Iniciar sesión",
     },
-    adGateModal: {
-      title: "Tu próximo uso está a un anuncio de distancia",
-      description:
-        "Mira este breve anuncio para continuar el procesamiento, o evita los anuncios con QAVELIX PRO.",
-      countdownLabel: "Continuar en {seconds}s...",
-      readyLabel: "Todo listo — continúa cuando quieras.",
-      continueLabel: "Continuar",
-      upsellMessage:
-        "Haz upgrade a QAVELIX PRO: 100 usos diarios sin anuncios y soporte para archivos de hasta 500MB.",
-      upgradeButtonLabel: "Actualizar a Pro",
-      anonymousPlanExplainer:
-        "Plan anónimo: hasta 5 usos (2 sin anuncios, 3 con anuncios). Crea una cuenta gratuita para duplicar tu límite a 10 usos.",
-      freePlanExplainer:
-        "Cuenta gratuita: 10 usos diarios (con anuncios). Actualiza a Pro para 100 usos sin anuncios.",
-    },
-    cookieConsentBanner: {
-      ariaLabel: "Consentimiento de cookies",
-      message:
-        "QAVELIX usa una cookie de sesión estrictamente necesaria para iniciar sesión y, si aceptas, Google AdSense puede establecer cookies publicitarias para mostrar anuncios en las páginas de los planes Gratis y anónimo. QAVELIX PRO siempre está libre de anuncios.",
-      learnMoreLabel: "Lee nuestra Política de Cookies",
-      acceptLabel: "Aceptar",
-      declineLabel: "Rechazar no esenciales",
+    usageQuotaBanner: {
+      guestRemainingLabel: "Invitado: {remaining}/{limit} usos gratuitos restantes",
+      freeRemainingLabel: "Cuenta gratuita: {remaining}/{limit} usos gratuitos restantes",
     },
     dashboard: {
       nav: {
@@ -4857,12 +4755,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Política de Privacidad de QAVELIX",
           description:
-            "Consulta cómo QAVELIX procesa archivos subidos, metadatos técnicos, archivos temporales, registros, preferencias del navegador y la publicidad de Google AdSense.",
+            "Consulta cómo QAVELIX procesa archivos subidos, metadatos técnicos, archivos temporales, registros y preferencias del navegador.",
         },
         eyebrow: "Privacidad",
         title: "Política de Privacidad",
         description:
-          "Este aviso explica cómo QAVELIX gestiona información cuando usas sus herramientas multimedia, incluida la publicidad que puede mostrar Google AdSense.",
+          "Este aviso explica cómo QAVELIX gestiona información cuando usas sus herramientas multimedia.",
         sections: [
           {
             title: "Última actualización",
@@ -4915,15 +4813,7 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Proveedores de servicio",
             body: [
               "La aplicación puede ejecutarse en el proveedor de alojamiento configurado por el operador. El proveedor y la región finales deben confirmarse para el entorno público.",
-              "QAVELIX usa Google AdSense para mostrar publicidad; consulta \"Publicidad (Google AdSense)\" más abajo para saber qué implica.",
-            ],
-          },
-          {
-            title: "Publicidad (Google AdSense)",
-            body: [
-              "QAVELIX puede mostrar anuncios servidos por Google AdSense en las páginas de herramientas de los planes Gratis y anónimo. Los suscriptores de QAVELIX PRO nunca ven anuncios.",
-              "Google actúa como proveedor de publicidad externo y puede usar cookies — incluidas __gads, __gpi e IDE, además de test_cookie, usada para comprobar si tu navegador admite cookies — para mostrar anuncios según tus visitas a este sitio y a otros. Estas cookies publicitarias solo se establecen después de que las aceptes en el banner de consentimiento de cookies; consulta la Política de Cookies y Almacenamiento Local para saber cómo funciona esa elección.",
-              "Puedes desactivar la publicidad personalizada en la Configuración de anuncios de Google (adssettings.google.com), o rechazar el uso de cookies para publicidad personalizada por parte de proveedores participantes en www.aboutads.info/choices. Obtén más información sobre cómo usa Google la información de los sitios que utilizan sus servicios en policies.google.com/technologies/partner-sites.",
+              "QAVELIX no muestra publicidad ni trabaja con ningún proveedor de anuncios. Todas las herramientas están completamente libres de anuncios, en cualquier plan.",
             ],
           },
           {
@@ -5023,12 +4913,12 @@ const dictionaries: Record<Locale, Dictionary> = {
         metadata: {
           title: "Política de Cookies y Almacenamiento Local de QAVELIX",
           description:
-            "Consulta cómo QAVELIX usa localStorage para las preferencias de tema y consentimiento de cookies, y qué cookies puede establecer Google AdSense.",
+            "Consulta cómo QAVELIX usa localStorage para las preferencias de tema.",
         },
         eyebrow: "Cookies",
         title: "Política de Cookies y Almacenamiento Local",
         description:
-          "Este aviso explica las cookies y el almacenamiento del navegador que usa QAVELIX, incluidas las cookies que Google AdSense puede establecer una vez que las aceptes.",
+          "Este aviso explica las cookies y el almacenamiento del navegador que usa QAVELIX.",
         sections: [
           {
             title: "Última actualización",
@@ -5040,29 +4930,21 @@ const dictionaries: Record<Locale, Dictionary> = {
             title: "Almacenamiento local",
             body: [
               "QAVELIX almacena el tema Claro u Oscuro seleccionado en localStorage con la clave qavelix-theme para conservar tu preferencia entre recargas de página.",
-              "QAVELIX también almacena tu elección de consentimiento de cookies (\"aceptado\" o \"rechazado\") en localStorage con la clave qavelix-cookie-consent — consulta \"Tu elección de consentimiento\" más abajo.",
               "El idioma forma parte de la ruta de la URL. QAVELIX no guarda la selección de idioma en una cookie.",
             ],
           },
           {
             title: "Cookies y seguimiento",
             body: [
-              "QAVELIX establece una cookie de sesión estrictamente necesaria cuando inicias sesión, únicamente para mantenerte autenticado. Esta cookie siempre se establece, independientemente de tu elección de consentimiento.",
-              "QAVELIX usa Google AdSense para mostrar publicidad en las páginas de herramientas de los planes Gratis y anónimo (los suscriptores de QAVELIX PRO nunca ven anuncios). Google, como proveedor de publicidad externo, puede establecer cookies de publicidad y medición — incluidas __gads, __gpi, IDE y test_cookie — para mostrar anuncios según tus visitas a este sitio y a otros. Estas cookies no son estrictamente necesarias, y QAVELIX no permite que se establezcan hasta que aceptes el banner de consentimiento de cookies descrito a continuación.",
-            ],
-          },
-          {
-            title: "Tu elección de consentimiento",
-            body: [
-              "Como QAVELIX puede establecer cookies publicitarias no esenciales a través de Google AdSense, se muestra un banner de consentimiento de cookies a los visitantes que aún no han hecho una elección. Elegir \"Aceptar\" permite que se establezcan las cookies publicitarias de AdSense y que se carguen los anuncios; elegir \"Rechazar no esenciales\" conserva solo la cookie de sesión estrictamente necesaria descrita arriba, y no se carga ningún anuncio.",
-              "Puedes cambiar de opinión en cualquier momento borrando los datos del sitio de QAVELIX en tu navegador (lo que elimina la elección almacenada y muestra el banner de nuevo), o usando la propia opción de exclusión de Google en adssettings.google.com, independientemente del banner de QAVELIX.",
+              "QAVELIX establece una cookie de sesión estrictamente necesaria cuando inicias sesión, únicamente para mantenerte autenticado. Esta cookie siempre se establece.",
+              "QAVELIX no muestra publicidad ni establece cookies de publicidad, medición o seguimiento de terceros de ningún tipo, en ningún plan.",
             ],
           },
           {
             title: "Cómo gestionar el almacenamiento",
             body: [
-              "Puedes borrar las preferencias almacenadas de QAVELIX (tema y elección de consentimiento de cookies) desde la configuración del navegador o los controles de datos del sitio. Al borrar ese almacenamiento, el tema vuelve al valor predeterminado y el banner de consentimiento de cookies se muestra de nuevo en tu próxima visita.",
-              "Este aviso se actualizará si QAVELIX añade alguna otra función no esencial de analítica, publicidad o marketing de terceros además de Google AdSense.",
+              "Puedes borrar las preferencias almacenadas de QAVELIX (tema) desde la configuración del navegador o los controles de datos del sitio. Al borrar ese almacenamiento, el tema vuelve al valor predeterminado.",
+              "Este aviso se actualizará si QAVELIX añade alguna otra función no esencial de analítica o seguimiento de terceros.",
             ],
           },
         ],

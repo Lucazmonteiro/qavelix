@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 
 import { AppFooter } from "@/components/app-footer";
 import { AppHeader } from "@/components/app-header";
-import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { NavigationControls } from "@/components/navigation-controls";
 import type { getDictionary } from "@/i18n/dictionaries";
 import { LocaleProvider, useLocaleState } from "@/i18n/locale-context";
@@ -43,7 +42,6 @@ function AppShellContent({ children }: { children: ReactNode }) {
       {children}
       <div className="page-end-sentinel" id="page-end-sentinel" aria-hidden="true" />
       <AppFooter dictionary={dictionary} locale={locale} />
-      <CookieConsentBanner />
     </>
   );
 }

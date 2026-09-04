@@ -10,7 +10,7 @@ import { useResolvedPlan } from "@/lib/use-resolved-plan";
 
 // Anonymous has no account to attach a Stripe subscription to, so both of its cards route
 // to sign-up (real upgrade happens post-account-creation from the Plan page, same as every
-// other anonymous Pro-upsell entry point in this app — PlanComparisonModal, AdGateModal).
+// other anonymous Pro-upsell entry point in this app — PlanComparisonModal.
 // A signed-in Free actor's Pro card is the one case that triggers real checkout in place.
 // Defaulting unresolved (`null`) to "anonymous" avoids a layout-shifting flash once the
 // real plan arrives — anonymous is also the only state safe to render before the actor's
