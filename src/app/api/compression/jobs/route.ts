@@ -121,7 +121,10 @@ export async function POST(request: Request) {
     });
     return securityJson(
       { ok: false, error: result.error },
-      { status: 400, requestId: security.requestId },
+      {
+        status: result.error.code === "service_unavailable" ? 503 : 400,
+        requestId: security.requestId,
+      },
     );
   }
 

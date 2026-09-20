@@ -163,6 +163,7 @@ async function readApiError(response: Response): Promise<ErrorKey> {
         return "toolUnavailableForPlan";
       case "invalid_entitlement_state":
       case "usage_service_unavailable":
+      case "service_unavailable":
         return "serviceUnavailable";
       default:
         return response.status === 404 ? "downloadUnavailable" : "serverError";

@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 
 import { env } from "@/env/server";
+import { isMaintenanceMode } from "@/lib/maintenance";
 
 // Same globalThis-anchored singleton pattern as getDb()/getAuth() (src/lib/server/db/client.ts,
 // src/lib/server/auth/auth.ts) — `next dev`'s hot reload re-evaluates this module on file
@@ -15,7 +16,10 @@ const stripeGlobal = globalThis as StripeGlobal;
 // module (auth.ts's plugin, billing.ts's display helpers) checks, instead of each
 // re-deriving "is billing configured" from env vars itself.
 export function getStripeClient(): Stripe | null {
-  if (!env.STRIPE_SECRET_KEY) {
+  // Shutdown: billing is treated as unconfigured, so auth.ts registers no Stripe plugin
+  // (no webhook/checkout/portal endpoints, no remote calls) and billing.ts's display
+  // helpers and the support-checkout route all take their existing "not configured" path.
+  if (isMaintenanceMode() || !env.STRIPE_SECRET_KEY) {
     return null;
   }
 

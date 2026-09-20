@@ -18,6 +18,7 @@ import path from "node:path";
 import { eq } from "drizzle-orm";
 
 import type { ConsumedAnalyzedUpload } from "@/lib/server/analyzed-upload-registry";
+import { isMaintenanceMode } from "@/lib/maintenance";
 import { getDb } from "@/lib/server/db/client";
 import { videoTrimmerJob as videoTrimmerJobTable } from "@/lib/server/db/schema";
 import type { Actor } from "@/lib/server/entitlements/service";
@@ -58,6 +59,7 @@ type CreateJobResult =
           | "malformed_timestamp"
           | "source_too_short"
           | "queue_full"
+          | "service_unavailable"
           | "missing_file"
           | "metadata_mismatch";
         message: string;
@@ -312,6 +314,12 @@ function enqueueJob(id: string) {
 }
 
 async function ensureVideoTrimmerWorker() {
+  // Shutdown: never start the worker or read the job table (see compression-queue.ts).
+  if (isMaintenanceMode()) {
+    queue.length = 0;
+    return;
+  }
+
   if (activeJobId) {
     return;
   }
@@ -627,6 +635,12 @@ async function runJob(job: VideoTrimmerJob) {
 }
 
 async function processNextJob() {
+  // Shutdown: drop the in-memory queue and never spawn FFmpeg.
+  if (isMaintenanceMode()) {
+    queue.length = 0;
+    return;
+  }
+
   if (activeJobId || queue.length === 0) {
     return;
   }
@@ -676,6 +690,18 @@ export async function createVideoTrimmerJobFromAnalyzedUpload(
   let jobCreated = false;
 
   try {
+    // Shutdown: reject cleanly before any file, DB, or FFmpeg work; the finally block
+    // releases the caller's usage reservation since jobCreated stays false.
+    if (isMaintenanceMode()) {
+      return {
+        ok: false,
+        error: {
+          code: "service_unavailable",
+          message: "QAVELIX is under maintenance and is not accepting new jobs.",
+        },
+      };
+    }
+
     const rangeError = validateTrimRange(startSeconds, endSeconds, upload.media.durationSeconds);
 
     if (rangeError) {

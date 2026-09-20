@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 
 import { env } from "@/env/server";
+import { isMaintenanceMode } from "@/lib/maintenance";
 import { logSecurityEvent } from "@/lib/server/security";
 
 // Same globalThis-anchored singleton pattern as getDb()/getAuth()/getStripeClient() —
@@ -55,6 +56,12 @@ export async function sendAuthEmail(
   to: string,
   url: string,
 ): Promise<boolean> {
+  // Shutdown: never call the provider. auth.ts's deliverAuthEmail() falls back to its
+  // log-only path when this returns false.
+  if (isMaintenanceMode()) {
+    return false;
+  }
+
   const resend = getResendClient();
 
   if (!resend || !env.EMAIL_FROM_ADDRESS) {

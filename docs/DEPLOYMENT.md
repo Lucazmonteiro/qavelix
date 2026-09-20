@@ -1,3 +1,10 @@
+> **⚠ SHUT DOWN (2026-09-20).** QAVELIX is offline. `src/proxy.ts` answers every request
+> with HTTP 503 (default-on maintenance mode, `src/lib/maintenance.ts`); the compression and
+> video-trimmer queues reject jobs, the Stripe client and Resend are disabled, and Stripe
+> billing/webhook endpoints are not registered. To revive the app, set
+> `QAVELIX_MAINTENANCE=off`, re-provision the services below, and re-enter credentials — none
+> are stored in this repository. Everything below describes the *pre-shutdown* setup.
+
 # QAVELIX Deployment
 
 This guide covers the production deployment path for the current QAVELIX phases.

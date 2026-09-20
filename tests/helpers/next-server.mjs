@@ -26,7 +26,7 @@ async function getAvailablePort() {
   });
 }
 
-async function waitForServer(baseUrl, getOutput) {
+async function waitForServer(baseUrl, getOutput, acceptedStatus = null) {
   const deadline = Date.now() + 60_000;
   let lastError;
 
@@ -34,7 +34,7 @@ async function waitForServer(baseUrl, getOutput) {
     try {
       const response = await fetch(`${baseUrl}/en`);
 
-      if (response.ok) {
+      if (response.ok || response.status === acceptedStatus) {
         return;
       }
 
@@ -68,7 +68,10 @@ async function stopProcess(child) {
   ]);
 }
 
-export async function withNextServer(run) {
+// options.maintenance: true starts the server in its shipped, default maintenance mode
+// (src/lib/maintenance.ts) instead of the functional-test default of maintenance off.
+export async function withNextServer(run, options = {}) {
+  const maintenance = options.maintenance === true;
   const port = await getAvailablePort();
   const baseUrl = `http://localhost:${port}`;
   const nextBin = path.join(projectRoot, "node_modules", "next", "dist", "bin", "next");
@@ -83,6 +86,9 @@ export async function withNextServer(run) {
       env: {
         ...process.env,
         NEXT_TELEMETRY_DISABLED: "1",
+        // The app ships in maintenance mode (src/lib/maintenance.ts); the functional test
+        // suite exercises the real app, so the test server explicitly turns it off.
+        QAVELIX_MAINTENANCE: maintenance ? "on" : "off",
         NEXT_PUBLIC_APP_URL: baseUrl,
         NEXT_PUBLIC_SUPPORT_EMAIL:
           process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "qavelixhq@gmail.com",
@@ -97,7 +103,7 @@ export async function withNextServer(run) {
   const getOutput = () => output.join("").slice(-6000);
 
   try {
-    await waitForServer(baseUrl, getOutput);
+    await waitForServer(baseUrl, getOutput, maintenance ? 503 : null);
     await run({ baseUrl, command, getOutput });
   } finally {
     await stopProcess(child);

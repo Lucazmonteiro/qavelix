@@ -62,6 +62,8 @@ function buildVerificationLink(defaultUrl: string, token: string): string {
 // that stays user_entitlement.plan, kept in sync here via the lifecycle hooks below so
 // getPlan()/reserveUsage()/the dashboard need zero changes.
 function createStripePlugin() {
+  // Shutdown: getStripeClient() returns null while maintenance is on, so no Stripe plugin
+  // is registered — no webhook/checkout/portal endpoints and no remote Stripe calls.
   const stripeClient = getStripeClient();
 
   if (!stripeClient || !env.STRIPE_WEBHOOK_SECRET || !env.STRIPE_PRO_MONTHLY_PRICE_ID) {

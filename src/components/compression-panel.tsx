@@ -458,6 +458,7 @@ function getCompressionErrorMessage(
       return copy.errors.toolUnavailableForPlan;
     case "invalid_entitlement_state":
     case "usage_service_unavailable":
+    case "service_unavailable":
       return copy.errors.serviceUnavailable;
     default:
       return copy.errors.uploadFailed;

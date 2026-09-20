@@ -18,6 +18,7 @@ import {
   type CompressionPresetId,
 } from "@/lib/compression-policy";
 import type { ConsumedAnalyzedUpload } from "@/lib/server/analyzed-upload-registry";
+import { isMaintenanceMode } from "@/lib/maintenance";
 import { getDb } from "@/lib/server/db/client";
 import { compressionJob as compressionJobTable } from "@/lib/server/db/schema";
 import type { Actor } from "@/lib/server/entitlements/service";
@@ -62,6 +63,7 @@ type CreateJobResult =
             code:
               | "invalid_preset"
               | "queue_full"
+              | "service_unavailable"
               | "missing_file"
               | "metadata_mismatch";
             message: string;
@@ -339,6 +341,13 @@ function enqueueJob(id: string) {
 }
 
 async function ensureCompressionWorker() {
+  // Shutdown: never start the worker or read the job table. Persisted queued jobs are left
+  // untouched (not failed, not run) and are picked up normally if the app is ever revived.
+  if (isMaintenanceMode()) {
+    queue.length = 0;
+    return;
+  }
+
   if (activeJobId) {
     return;
   }
@@ -767,6 +776,12 @@ async function runJob(job: CompressionJob) {
 }
 
 async function processNextJob() {
+  // Shutdown: drop the in-memory queue and never spawn FFmpeg.
+  if (isMaintenanceMode()) {
+    queue.length = 0;
+    return;
+  }
+
   if (activeJobId || queue.length === 0) {
     return;
   }
@@ -818,6 +833,18 @@ export async function createCompressionJobFromAnalyzedUpload(
   let jobCreated = false;
 
   try {
+    // Shutdown: reject cleanly before any file, DB, or FFmpeg work. jobCreated stays
+    // false, so the finally block below releases the caller's usage reservation.
+    if (isMaintenanceMode()) {
+      return {
+        ok: false,
+        error: {
+          code: "service_unavailable",
+          message: "QAVELIX is under maintenance and is not accepting new jobs.",
+        },
+      };
+    }
+
     pruneTerminalJobs();
 
     if (queue.length >= maxQueuedJobs) {

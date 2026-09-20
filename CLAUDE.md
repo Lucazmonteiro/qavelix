@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Status: shut down (2026-09-20).** The app runs in default-on maintenance mode
+> (`src/lib/maintenance.ts`, gate in `src/proxy.ts`): every request returns 503, both FFmpeg
+> queues reject/drop jobs, `getStripeClient()` returns null (so no Stripe plugin, checkout, or
+> webhook) and `sendAuthEmail()` never calls Resend. Set `QAVELIX_MAINTENANCE=off` to run the app
+> (the test helper does this automatically; pass `{ maintenance: true }` to `withNextServer` to
+> test the shutdown itself). Sections below describe the app as built, not as currently served.
+
 ## What this is
 
 QAVELIX is a Next.js (App Router, TypeScript) media-tools SaaS — currently a video compressor and an "Extract Audio" tool — being built in numbered phases/milestones (see `README.md` for Phases 1-9 and recent commits for Milestones 1-5). Milestones 4-5 added a full accounts/billing layer (Better Auth + Drizzle + Neon Postgres + Stripe) on top of the original anonymous-only tool. `docs/architecture/*.md` are point-in-time design docs — `platform-architecture.md` in particular reads as "nothing in this document has been implemented" but was written 2026-07-24, before Milestones 4-5 landed; treat it as historical rationale, not current status. Check `src/lib/server/entitlements/`, `src/lib/server/db/schema.ts`, and `src/lib/server/auth/auth.ts` for what's actually live.

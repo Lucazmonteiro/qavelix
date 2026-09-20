@@ -77,7 +77,11 @@ test("a genuine public production deployment cannot silently run on a Stripe tes
 
 test("Stripe client is a lazy globalThis-anchored singleton, matching getDb()/getAuth()'s existing pattern", () => {
   assert.match(stripeClientModule, /export function getStripeClient\(\): Stripe \| null/);
-  assert.match(stripeClientModule, /if \(!env\.STRIPE_SECRET_KEY\) \{\s*return null;/);
+  // Null when the key is unset, and (shutdown) whenever maintenance mode is on.
+  assert.match(
+    stripeClientModule,
+    /if \(isMaintenanceMode\(\) \|\| !env\.STRIPE_SECRET_KEY\) \{\s*return null;/,
+  );
   assert.match(stripeClientModule, /globalThis as StripeGlobal/);
   assert.match(stripeClientModule, /if \(!stripeGlobal\.__qavelixStripe\) \{/);
 });

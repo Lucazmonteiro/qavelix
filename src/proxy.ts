@@ -2,6 +2,7 @@
 
 import { siteConfig } from "@/config/site";
 import { isLocale } from "@/i18n/locales";
+import { buildMaintenanceResponse, isMaintenanceMode } from "@/lib/maintenance";
 
 const PUBLIC_FILE = /\.(.*)$/;
 const PRODUCTION_HOST = "qavelix.com";
@@ -37,6 +38,13 @@ export function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Shutdown gate — runs before everything else, so no route handler, DB query, FFmpeg
+  // process, or Stripe/Resend call is ever reached while maintenance is on (the default;
+  // see src/lib/maintenance.ts).
+  if (isMaintenanceMode()) {
+    return buildMaintenanceResponse(pathname);
+  }
+
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -62,5 +70,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Matches everything (static assets included) so the maintenance 503 covers them too;
+  // the normal-mode logic above already passes /_next and file requests straight through.
+  matcher: ["/:path*"],
 };
